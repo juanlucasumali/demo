@@ -10,6 +10,8 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
+
 CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
 
 COMMENT ON SCHEMA "public" IS 'standard public schema';
@@ -58,13 +60,25 @@ SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
 
+CREATE TABLE IF NOT EXISTS "public"."file_shares" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "file_id" "uuid",
+    "shared_by" "uuid",
+    "shared_with" "uuid",
+    "permission_level" "text"
+);
+
+ALTER TABLE "public"."file_shares" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."files" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "user_id" "uuid",
     "filename" "text",
     "file_path" "text",
-    "format" "text"
+    "format" "text",
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 ALTER TABLE "public"."files" OWNER TO "postgres";
@@ -79,17 +93,33 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
 
 ALTER TABLE "public"."users" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."file_shares"
+    ADD CONSTRAINT "file_shares_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_pkey" PRIMARY KEY ("user_id");
 
+ALTER TABLE ONLY "public"."file_shares"
+    ADD CONSTRAINT "file_shares_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."file_shares"
+    ADD CONSTRAINT "file_shares_shared_by_fkey" FOREIGN KEY ("shared_by") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."file_shares"
+    ADD CONSTRAINT "file_shares_shared_with_fkey" FOREIGN KEY ("shared_with") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
+
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+CREATE POLICY "Editors can update filename" ON "public"."files" FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM "public"."file_shares"
+  WHERE (("file_shares"."file_id" = "files"."id") AND ("file_shares"."shared_with" = "auth"."uid"()) AND ("file_shares"."permission_level" = 'editor'::"text"))))) WITH CHECK ((COALESCE(("filename" <> "filename"), false) AND ("user_id" = "user_id") AND ("file_path" = "file_path") AND ("format" = "format")));
 
 CREATE POLICY "Enable delete for users based on user_id" ON "public"."files" FOR DELETE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
@@ -105,6 +135,44 @@ CREATE POLICY "Enable update for users based on user_id" ON "public"."files" FOR
 
 CREATE POLICY "Enable update for users based on user_id" ON "public"."users" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
+CREATE POLICY "Owners and editors can create shares" ON "public"."file_shares" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."files"
+  WHERE (("files"."id" = "file_shares"."file_id") AND (("files"."user_id" = "auth"."uid"()) OR ((EXISTS ( SELECT 1
+           FROM "public"."file_shares" "fs"
+          WHERE (("fs"."file_id" = "files"."id") AND ("fs"."shared_with" = "auth"."uid"()) AND ("fs"."permission_level" = 'editor'::"text")))) AND ("file_shares"."permission_level" = ANY (ARRAY['editor'::"text", 'commenter'::"text", 'viewer'::"text"]))))))));
+
+CREATE POLICY "Owners and editors can delete files" ON "public"."files" FOR DELETE USING ((("user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
+   FROM "public"."file_shares"
+  WHERE (("file_shares"."file_id" = "files"."id") AND ("file_shares"."shared_with" = "auth"."uid"()) AND ("file_shares"."permission_level" = 'editor'::"text"))))));
+
+CREATE POLICY "Owners and editors can delete shares" ON "public"."file_shares" FOR DELETE USING ((EXISTS ( SELECT 1
+   FROM "public"."files"
+  WHERE (("files"."id" = "file_shares"."file_id") AND (("files"."user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
+           FROM "public"."file_shares" "fs"
+          WHERE (("fs"."file_id" = "files"."id") AND ("fs"."shared_with" = "auth"."uid"()) AND ("fs"."permission_level" = 'editor'::"text")))))))));
+
+CREATE POLICY "Owners and editors can read file shares" ON "public"."file_shares" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."files"
+  WHERE (("files"."id" = "file_shares"."file_id") AND (("files"."user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
+           FROM "public"."file_shares" "fs"
+          WHERE (("fs"."file_id" = "files"."id") AND ("fs"."shared_with" = "auth"."uid"()) AND ("fs"."permission_level" = 'editor'::"text")))))))));
+
+CREATE POLICY "Owners and editors can update permission_level" ON "public"."file_shares" FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM "public"."files"
+  WHERE (("files"."id" = "file_shares"."file_id") AND (("files"."user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
+           FROM "public"."file_shares" "fs"
+          WHERE (("fs"."file_id" = "files"."id") AND ("fs"."shared_with" = "auth"."uid"()) AND ("fs"."permission_level" = 'editor'::"text"))))))))) WITH CHECK ((COALESCE(("permission_level" <> "permission_level"), false) AND ("file_id" = "file_id") AND ("shared_by" = "shared_by") AND ("shared_with" = "shared_with") AND ((EXISTS ( SELECT 1
+   FROM "public"."files"
+  WHERE (("files"."id" = "file_shares"."file_id") AND ("files"."user_id" = "auth"."uid"())))) OR ("permission_level" = ANY (ARRAY['editor'::"text", 'commenter'::"text", 'viewer'::"text"])))));
+
+CREATE POLICY "Owners can update user_id and filename" ON "public"."files" FOR UPDATE USING (("user_id" = "auth"."uid"())) WITH CHECK (((COALESCE(("user_id" <> "user_id"), false) OR COALESCE(("filename" <> "filename"), false)) AND ("file_path" = "file_path") AND ("format" = "format")));
+
+CREATE POLICY "Users can read files they own or are shared with" ON "public"."files" FOR SELECT USING ((("user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
+   FROM "public"."file_shares"
+  WHERE (("file_shares"."file_id" = "files"."id") AND ("file_shares"."shared_with" = "auth"."uid"()))))));
+
+ALTER TABLE "public"."file_shares" ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE "public"."files" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
@@ -119,6 +187,10 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
+
+GRANT ALL ON TABLE "public"."file_shares" TO "anon";
+GRANT ALL ON TABLE "public"."file_shares" TO "authenticated";
+GRANT ALL ON TABLE "public"."file_shares" TO "service_role";
 
 GRANT ALL ON TABLE "public"."files" TO "anon";
 GRANT ALL ON TABLE "public"."files" TO "authenticated";
@@ -144,3 +216,10 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES  TO "service_role";
 
 RESET ALL;
+
+--
+-- Dumped schema changes for auth and storage
+--
+
+CREATE OR REPLACE TRIGGER "on_auth_user_created" AFTER INSERT OR DELETE OR UPDATE ON "auth"."users" FOR EACH ROW EXECUTE FUNCTION "public"."handle_new_user"();
+

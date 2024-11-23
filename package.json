@@ -23,6 +23,8 @@
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-toast": "^1.2.2",
+    "@supabase/supabase-js": "^2.46.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "electron-updater": "^6.1.7",

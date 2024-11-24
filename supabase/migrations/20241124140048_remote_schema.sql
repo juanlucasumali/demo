@@ -33,23 +33,16 @@ CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     AS $$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
-        -- Insert new user into public.users
         INSERT INTO public.users (user_id, email)
         VALUES (NEW.id, NEW.email);
-        
     ELSIF (TG_OP = 'UPDATE') THEN
-        -- Update existing user in public.users
         UPDATE public.users
         SET email = NEW.email
         WHERE user_id = NEW.id;
-        
     ELSIF (TG_OP = 'DELETE') THEN
-        -- Delete user from public.users
-        -- Note: This might not be necessary due to your CASCADE delete constraint
         DELETE FROM public.users
         WHERE user_id = OLD.id;
     END IF;
-    
     RETURN NEW;
 END;
 $$;
@@ -66,7 +59,8 @@ CREATE TABLE IF NOT EXISTS "public"."file_shares" (
     "file_id" "uuid",
     "shared_by" "uuid",
     "shared_with" "uuid",
-    "permission_level" "text"
+    "permission_level" "text",
+    CONSTRAINT "valid_permission_levels" CHECK (("permission_level" = ANY (ARRAY['viewer'::"text", 'commenter'::"text", 'editor'::"text"])))
 );
 
 ALTER TABLE "public"."file_shares" OWNER TO "postgres";
@@ -117,59 +111,19 @@ ALTER TABLE ONLY "public"."files"
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
-CREATE POLICY "Editors can update filename" ON "public"."files" FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM "public"."file_shares"
-  WHERE (("file_shares"."file_id" = "files"."id") AND ("file_shares"."shared_with" = "auth"."uid"()) AND ("file_shares"."permission_level" = 'editor'::"text"))))) WITH CHECK ((COALESCE(("filename" <> "filename"), false) AND ("user_id" = "user_id") AND ("file_path" = "file_path") AND ("format" = "format")));
-
-CREATE POLICY "Enable delete for users based on user_id" ON "public"."files" FOR DELETE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."files" FOR DELETE USING (("auth"."uid"() = "user_id"));
 
 CREATE POLICY "Enable insert for authenticated users only" ON "public"."files" FOR INSERT TO "authenticated" WITH CHECK (true);
 
-CREATE POLICY "Enable insert for users based on user_id" ON "public"."files" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable insert for users based on user_id" ON "public"."files" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 CREATE POLICY "Enable read access for all users" ON "public"."files" FOR SELECT USING (true);
 
 CREATE POLICY "Enable read access for all users" ON "public"."users" FOR SELECT USING (true);
 
-CREATE POLICY "Enable update for users based on user_id" ON "public"."files" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable update for users based on user_id" ON "public"."files" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
-CREATE POLICY "Enable update for users based on user_id" ON "public"."users" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Owners and editors can create shares" ON "public"."file_shares" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM "public"."files"
-  WHERE (("files"."id" = "file_shares"."file_id") AND (("files"."user_id" = "auth"."uid"()) OR ((EXISTS ( SELECT 1
-           FROM "public"."file_shares" "fs"
-          WHERE (("fs"."file_id" = "files"."id") AND ("fs"."shared_with" = "auth"."uid"()) AND ("fs"."permission_level" = 'editor'::"text")))) AND ("file_shares"."permission_level" = ANY (ARRAY['editor'::"text", 'commenter'::"text", 'viewer'::"text"]))))))));
-
-CREATE POLICY "Owners and editors can delete files" ON "public"."files" FOR DELETE USING ((("user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
-   FROM "public"."file_shares"
-  WHERE (("file_shares"."file_id" = "files"."id") AND ("file_shares"."shared_with" = "auth"."uid"()) AND ("file_shares"."permission_level" = 'editor'::"text"))))));
-
-CREATE POLICY "Owners and editors can delete shares" ON "public"."file_shares" FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM "public"."files"
-  WHERE (("files"."id" = "file_shares"."file_id") AND (("files"."user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
-           FROM "public"."file_shares" "fs"
-          WHERE (("fs"."file_id" = "files"."id") AND ("fs"."shared_with" = "auth"."uid"()) AND ("fs"."permission_level" = 'editor'::"text")))))))));
-
-CREATE POLICY "Owners and editors can read file shares" ON "public"."file_shares" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "public"."files"
-  WHERE (("files"."id" = "file_shares"."file_id") AND (("files"."user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
-           FROM "public"."file_shares" "fs"
-          WHERE (("fs"."file_id" = "files"."id") AND ("fs"."shared_with" = "auth"."uid"()) AND ("fs"."permission_level" = 'editor'::"text")))))))));
-
-CREATE POLICY "Owners and editors can update permission_level" ON "public"."file_shares" FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM "public"."files"
-  WHERE (("files"."id" = "file_shares"."file_id") AND (("files"."user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
-           FROM "public"."file_shares" "fs"
-          WHERE (("fs"."file_id" = "files"."id") AND ("fs"."shared_with" = "auth"."uid"()) AND ("fs"."permission_level" = 'editor'::"text"))))))))) WITH CHECK ((COALESCE(("permission_level" <> "permission_level"), false) AND ("file_id" = "file_id") AND ("shared_by" = "shared_by") AND ("shared_with" = "shared_with") AND ((EXISTS ( SELECT 1
-   FROM "public"."files"
-  WHERE (("files"."id" = "file_shares"."file_id") AND ("files"."user_id" = "auth"."uid"())))) OR ("permission_level" = ANY (ARRAY['editor'::"text", 'commenter'::"text", 'viewer'::"text"])))));
-
-CREATE POLICY "Owners can update user_id and filename" ON "public"."files" FOR UPDATE USING (("user_id" = "auth"."uid"())) WITH CHECK (((COALESCE(("user_id" <> "user_id"), false) OR COALESCE(("filename" <> "filename"), false)) AND ("file_path" = "file_path") AND ("format" = "format")));
-
-CREATE POLICY "Users can read files they own or are shared with" ON "public"."files" FOR SELECT USING ((("user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
-   FROM "public"."file_shares"
-  WHERE (("file_shares"."file_id" = "files"."id") AND ("file_shares"."shared_with" = "auth"."uid"()))))));
+CREATE POLICY "Enable update for users based on user_id" ON "public"."users" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
 ALTER TABLE "public"."file_shares" ENABLE ROW LEVEL SECURITY;
 

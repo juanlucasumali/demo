@@ -3,12 +3,13 @@ import Toolbar from './Toolbar';
 import NavigationPane from './NavigationPane';
 import ContentArea from './ContentArea';
 import { useFiles } from '../hooks/useFiles';
+import { useToast } from '@renderer/hooks/use-toast';
 
 const MainInterface: React.FC = () => {
   const [filterFormat, setFilterFormat] = useState('');
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
-  
-  const { isLoading, error, uploadFile } = useFiles(filterFormat);
+  const { uploadFile, convertFiles, downloadFromYoutube, error, isLoading } = useFiles(filterFormat);
+  const { toast } = useToast();
 
   const handleFilesSelected = async (fileList: FileList) => {
     const filesArray = Array.from(fileList);
@@ -25,6 +26,39 @@ const MainInterface: React.FC = () => {
     }
   };
 
+  const handleConvert = async (files: File[], format: string) => {
+    console.log("Starting conversion...")
+    try {
+      await convertFiles(files, format);
+      toast({
+        title: "Success",
+        description: "Files converted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to convert files",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleYoutubeDownload = async (url: string, format: string) => {
+    try {
+      await downloadFromYoutube(url, format);
+      toast({
+        title: "Success",
+        description: "YouTube audio downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download YouTube audio",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (error) return <div>Error loading files</div>;
   if (isLoading) return <div>Loading...</div>;
 
@@ -33,6 +67,8 @@ const MainInterface: React.FC = () => {
       <Toolbar
         onFilesSelected={handleFilesSelected}
         onFilterChange={setFilterFormat}
+        onConvert={handleConvert}
+        onYoutubeDownload={handleYoutubeDownload}
       />
       <div className="flex flex-grow overflow-hidden">
         <NavigationPane />

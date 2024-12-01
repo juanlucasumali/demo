@@ -6,7 +6,7 @@ import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useToast } from '@renderer/hooks/use-toast';
-import { AudioConverter } from "../components/converter/AudioConverter"
+import { AudioConverter, ConvertedFile } from "../components/converter/AudioConverter"
 
 type ConversionType = {
   input: 'mp3'
@@ -19,11 +19,13 @@ interface ConversionDialogProps {
 
 export function ConversionDialog({ onYoutubeDownload }: ConversionDialogProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [convertedFiles, setConvertedFiles] = useState<ConvertedFile[]>([])
   const [youtubeUrl, setYoutubeUrl] = useState("")
   const [format, setFormat] = useState("mp3")
   const [open, setOpen] = useState(false)
   const [conversionType, setConversionType] = useState<ConversionType>(null)
   const { toast } = useToast()
+  
 
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -61,10 +63,8 @@ export function ConversionDialog({ onYoutubeDownload }: ConversionDialogProps) {
     await onYoutubeDownload(youtubeUrl, format)
   }
 
-  const handleConversionComplete = () => {
-    setSelectedFiles([])
-    setConversionType(null)
-    setOpen(false)
+  const handleConversionComplete = (files: ConvertedFile[]) => {
+    setConvertedFiles(files)
   }
 
   return (

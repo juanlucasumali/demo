@@ -70,7 +70,7 @@ const MainApp: React.FC = () => {
       case 'login':
         return <Login onSuccess={handleAuthSuccess} onBack={handleBack} />;
       case 'main':
-        return <MainInterface />; // Implement this component later
+        return <MainInterface />; 
       default:
         return null;
     }

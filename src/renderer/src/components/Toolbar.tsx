@@ -60,7 +60,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
           Upload File
         </Button>
         <ConversionDialog
-          onConvert={onConvert}
           onYoutubeDownload={onYoutubeDownload}
         />
       </div>

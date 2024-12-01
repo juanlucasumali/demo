@@ -4,12 +4,14 @@ import { Progress } from "../ui/progress"
 import { useToast } from '@renderer/hooks/use-toast';
 import { processAudioFile, makeWav, audioToRawWave } from './audioProcessing'
 import { Button } from "../ui/button";
-import { Download } from "lucide-react";
+import { Download, RefreshCw, RotateCw, AlertCircle } from "lucide-react";
 
 export interface ConvertedFile {
   originalName: string;
-  blob: Blob;
+  blob: Blob | null;
   downloaded: boolean;
+  converting: boolean;
+  error?: boolean;
 }
 
 interface AudioConverterProps {
@@ -22,12 +24,18 @@ interface AudioConverterProps {
 }
 
 export function AudioConverter({ files, conversionType, onConversionComplete }: AudioConverterProps) {
-  const [progress, setProgress] = useState(0)
-  const [converting, setConverting] = useState(false)
-  const [convertedFiles, setConvertedFiles] = useState<ConvertedFile[]>([])
+  const [convertedFiles, setConvertedFiles] = useState<ConvertedFile[]>(
+    files.map(file => ({
+      originalName: file.name,
+      blob: null,
+      downloaded: false,
+      converting: false,
+      error: false
+    }))
+  );
   const { toast } = useToast()
 
-  const convertToWav = async (file: File): Promise<ConvertedFile> => {
+  const convertToWav = async (file: File): Promise<Blob> => {
     try {
       const audioContext = new AudioContext()
       const arrayBuffer = await file.arrayBuffer()
@@ -39,49 +47,55 @@ export function AudioConverter({ files, conversionType, onConversionComplete }: 
         2
       )
       
-      const wavBlob = makeWav(rawData, 2, 44100, 2)
-      
-      return {
-        originalName: file.name,
-        blob: wavBlob,
-        downloaded: false
-      }
+      return makeWav(rawData, 2, 44100, 2)
     } catch (error) {
       return Promise.reject(error)
     }
   }
 
-  const handleConversion = async () => {
-    setConverting(true)
-    setProgress(0)
-    const converted: ConvertedFile[] = []
-    
+  const convertSingleFile = async (fileIndex: number) => {
+    if (convertedFiles[fileIndex].converting || convertedFiles[fileIndex].blob) return;
+
+    setConvertedFiles(prev => prev.map((file, i) => 
+      i === fileIndex ? { ...file, converting: true, error: false } : file
+    ));
+
     try {
-      for (let i = 0; i < files.length; i++) {
-        const convertedFile = await convertToWav(files[i])
-        converted.push(convertedFile)
-        setProgress(((i + 1) / files.length) * 100)
-      }
-      
-      setConvertedFiles(converted)
+      const blob = await convertToWav(files[fileIndex]);
+      setConvertedFiles(prev => prev.map((file, i) => 
+        i === fileIndex ? { ...file, blob, converting: false } : file
+      ));
       toast({
         title: "Success",
-        description: "All files converted successfully",
-      })
-      
-      onConversionComplete?.(converted)
+        description: `${files[fileIndex].name} converted successfully`,
+      });
     } catch (error) {
+      setConvertedFiles(prev => prev.map((file, i) => 
+        i === fileIndex ? { ...file, converting: false, error: true } : file
+      ));
       toast({
         title: "Error",
-        description: "Failed to convert some files",
+        description: `Failed to convert ${files[fileIndex].name}`,
         variant: "destructive",
-      })
-    } finally {
-      setConverting(false)
+      });
     }
   }
 
-  const handleDownload = (file: ConvertedFile) => {
+  const handleConvertAll = async () => {
+    const unconvertedIndexes = convertedFiles
+      .map((file, index) => ({ file, index }))
+      .filter(({ file }) => !file.blob && !file.converting)
+      .map(({ index }) => index);
+
+    for (const index of unconvertedIndexes) {
+      await convertSingleFile(index);
+    }
+  }
+
+  const handleDownload = (fileIndex: number) => {
+    const file = convertedFiles[fileIndex];
+    if (!file.blob) return;
+
     const url = URL.createObjectURL(file.blob)
     const a = document.createElement('a')
     a.href = url
@@ -89,12 +103,9 @@ export function AudioConverter({ files, conversionType, onConversionComplete }: 
     a.click()
     URL.revokeObjectURL(url)
     
-    // Mark file as downloaded
-    setConvertedFiles(prev => 
-      prev.map(f => 
-        f === file ? { ...f, downloaded: true } : f
-      )
-    )
+    setConvertedFiles(prev => prev.map((f, i) => 
+      i === fileIndex ? { ...f, downloaded: true } : f
+    ));
   }
 
   return (
@@ -105,40 +116,56 @@ export function AudioConverter({ files, conversionType, onConversionComplete }: 
             <h3 className="text-sm font-medium">Files to convert:</h3>
             <ul className="text-sm">
               {files.map((file, index) => (
-                <li key={index} className="flex items-center justify-between">
+                <li key={index} className="flex items-center justify-between py-1">
                   <span className="text-muted-foreground">{file.name}</span>
-                  {convertedFiles[index] && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownload(convertedFiles[index])}
-                      className={convertedFiles[index].downloaded ? "text-green-500" : ""}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {convertedFiles[index].error ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => convertSingleFile(index)}
+                        className="text-red-500"
+                      >
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Retry
+                      </Button>
+                    ) : convertedFiles[index].blob ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownload(index)}
+                        className={convertedFiles[index].downloaded ? "text-green-500" : ""}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => convertSingleFile(index)}
+                        disabled={convertedFiles[index].converting}
+                      >
+                        {convertedFiles[index].converting ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
           </div>
         )}
         
-        {converting ? (
-          <div className="space-y-2">
-            <Progress value={progress} />
-            <p className="text-sm text-muted-foreground">
-              Converting... {Math.round(progress)}%
-            </p>
-          </div>
-        ) : (
-          <Button 
-            onClick={handleConversion}
-            className="w-full"
-            disabled={files.length === 0 || convertedFiles.length > 0}
-          >
-            Convert to {conversionType.output.toUpperCase()}
-          </Button>
-        )}
+        <Button 
+          onClick={handleConvertAll}
+          className="w-full"
+          disabled={files.length === 0 || convertedFiles.every(f => f.blob || f.converting)}
+        >
+          Convert All
+        </Button>
       </div>
     </Card>
   )

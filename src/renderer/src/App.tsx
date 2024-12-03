@@ -1,5 +1,4 @@
 import { FC, useEffect, useState } from 'react'
-import { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabaseClient'
 import { Dashboard } from './components/Dashboard'
 import { AuthForm } from './components/auth/AuthForm'
@@ -7,7 +6,6 @@ import { AuthForm } from './components/auth/AuthForm'
 type ViewType = "welcome" | "signup" | "login" | "main"
 
 const App: FC = () => {
-  const [session, setSession] = useState<Session | null>(null)
   const [view, setView] = useState<ViewType>("welcome")
 
   useEffect(() => {
@@ -22,7 +20,6 @@ const App: FC = () => {
       }
 
       if (session && isMounted) {
-        setSession(session)
         setView("main")
       }
     }
@@ -30,7 +27,6 @@ const App: FC = () => {
     getInitialSession()
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
       if (session) {
         setView("main")
       } else {

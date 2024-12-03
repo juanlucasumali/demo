@@ -5,7 +5,6 @@ import {
   MoreHorizontal,
   Share,
   Trash2,
-  type LucideIcon,
 } from "lucide-react"
 
 import {

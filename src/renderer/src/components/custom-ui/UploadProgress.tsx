@@ -65,14 +65,12 @@ export const UploadProgress: React.FC<UploadProgressProps> = ({
                   ) : status.progress === -1 ? (
                     <XCircle className="h-4 w-4 text-red-600 shrink-0" />
                   ) : status.progress === -2 ? (
-                    <AlertCircle className="h-4 w-4 text-yellow-600 shrink-0" />
+                    <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
                   ) : (
                     <LoaderCircle className="h-4 w-4 animate-spin shrink-0" />
                   )}
                   <p className="text-sm truncate">
                     {fileName}
-                    {status.conflict && " (Click to resolve)"}
-                    {status.progress === -1 && " (Click for details)"}
                   </p>
                 </div>
                 <Button

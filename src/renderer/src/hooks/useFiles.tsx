@@ -17,6 +17,7 @@ interface UseFilesReturn {
   error: any;
   uploadFile: (file: File) => Promise<void>;
   downloadFile: (file: FileItem) => Promise<void>;
+  deleteFile: (file: FileItem)  => Promise<void>;
   mutate: () => Promise<any>;
 }
 
@@ -118,12 +119,50 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
     }
   };
 
+    const deleteFile = async (file: FileItem) => {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) return;
+
+      try {
+        // Get the file path from the database
+        const { data: fileData } = await supabase
+          .from('files')
+          .select('file_path')
+          .eq('id', file.id)
+          .single();
+
+        if (!fileData) throw new Error('File not found');
+
+        // Delete from storage
+        const { error: storageError } = await supabase.storage
+          .from('files')
+          .remove([fileData.file_path]);
+
+        if (storageError) throw storageError;
+
+        // Delete from database
+        const { error: dbError } = await supabase
+          .from('files')
+          .delete()
+          .eq('id', file.id);
+
+        if (dbError) throw dbError;
+
+        await mutate(); // Refresh the data
+      } catch (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
+    };
+
+
   return {
     data: data || [],
     isLoading: !error && !data,
     error,
     uploadFile,
     downloadFile,
+    deleteFile,
     mutate
   };
 }

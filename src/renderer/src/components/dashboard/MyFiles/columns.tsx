@@ -10,6 +10,10 @@ import {
 } from "../../ui/dropdown-menu";
 import { format } from "date-fns";
 import { filesize } from "filesize";
+import { useFiles } from "@renderer/hooks/useFiles";
+import { DeleteDialog } from "@renderer/components/dialogs/DeleteDialog";
+import { useState } from "react";
+import { useToast } from "@renderer/hooks/use-toast";
 
 export const columns: ColumnDef<FileItem>[] = [
   {
@@ -79,27 +83,59 @@ export const columns: ColumnDef<FileItem>[] = [
     id: "actions",
     cell: ({ row }) => {
       const file = row.original;
+      const { downloadFile, deleteFile } = useFiles();
+      const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+      const { toast } = useToast();
+
+      const handleDelete = async () => {
+        try {
+          await deleteFile(file);
+          toast({
+            title: "Success",
+            description: `${file.name} has been deleted.`,
+          });
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: "Failed to delete file.",
+            variant: "destructive",
+          });
+        }
+        setShowDeleteDialog(false);
+      };
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => alert(`Downloading ${file.name}`)}>
-              Download
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => alert(`Renaming ${file.name}`)}>
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => alert(`Deleting ${file.name}`)}>
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => downloadFile(file)}>
+                Download
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => alert(`Renaming ${file.name}`)}>
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600"
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DeleteDialog
+            isOpen={showDeleteDialog}
+            onClose={() => setShowDeleteDialog(false)}
+            onConfirm={handleDelete}
+            fileName={file.name}
+          />
+        </>
       );
     },
   },

@@ -5,6 +5,7 @@ export interface NavItem {
     url: string
     icon: LucideIcon
     isActive?: boolean
+    viewType: string
     items?: {
       title: string
       url: string

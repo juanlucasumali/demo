@@ -9,6 +9,7 @@ import {
 } from "./ui/select";
 import { Button } from "./ui/button";
 import { ConversionDialog } from './ConversionDialog';
+import { Folder } from 'lucide-react';
 
 interface ToolbarProps {
   onFilesSelected: (files: FileList) => void;
@@ -43,22 +44,26 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <div className="flex items-center justify-between p-4 border-b">
-      <div className="flex space-x-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="audio/*"
-          multiple
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        <Button variant="default" onClick={handleUploadClick}>
-          Upload File
-        </Button>
-        <ConversionDialog />
+      <div className="flex items-center gap-3.5">
+        <Folder className="h-6 w-6" />
+        <h1 className="text-2xl font-bold">My Files</h1>
       </div>
       {/* Right side */}
       <div className="flex items-center space-x-2">
+        <div className="flex space-x-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*"
+            multiple
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <Button variant="default" onClick={handleUploadClick}>
+            Upload File
+          </Button>
+          <ConversionDialog />
+        </div>
         <Select onValueChange={handleFilterChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by format" />

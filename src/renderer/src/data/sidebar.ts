@@ -1,4 +1,4 @@
-import { BookOpen, Bot, Frame, LifeBuoy, Map, PieChart, Send, Settings2, SquareTerminal } from "lucide-react";
+import { BookOpen, Bot, Folder, Frame, LifeBuoy, Map, PieChart, Send, Settings2 } from "lucide-react";
 
 export const sidebarData = {
     user: {
@@ -8,10 +8,11 @@ export const sidebarData = {
     },
     navMain: [
       {
-        title: "Playground",
+        title: "My Files",
         url: "#",
-        icon: SquareTerminal,
+        icon: Folder,
         isActive: true,
+        viewType: "files",
         items: [
           {
             title: "History",
@@ -31,6 +32,7 @@ export const sidebarData = {
         title: "Models",
         url: "#",
         icon: Bot,
+        viewType: "models",
         items: [
           {
             title: "Genesis",
@@ -50,6 +52,7 @@ export const sidebarData = {
         title: "Documentation",
         url: "#",
         icon: BookOpen,
+        viewType: "documentation",
         items: [
           {
             title: "Introduction",
@@ -73,6 +76,7 @@ export const sidebarData = {
         title: "Settings",
         url: "#",
         icon: Settings2,
+        viewType: "settings",
         items: [
           {
             title: "General",

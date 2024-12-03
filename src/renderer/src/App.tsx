@@ -1,9 +1,10 @@
 import { FC, useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
-import { Dashboard } from './components/Dashboard'
+import { Dashboard } from './components/dashboard/Dashboard'
 import { AuthForm } from './components/auth/AuthForm'
+import MainInterface from './components/dashboard/MyFiles/MyFiles'
 
-type ViewType = "welcome" | "signup" | "login" | "main"
+export type ViewType = "welcome" | "signup" | "login" | "main" | "files"
 
 const App: FC = () => {
   const [view, setView] = useState<ViewType>("welcome")
@@ -44,10 +45,14 @@ const App: FC = () => {
     setView("main")
   }
 
+  
+
   return (
     <div className="flex h-screen w-full items-center justify-center px-4">
       {view === "main" ? (
-        <Dashboard />
+        <Dashboard setView={setView} />
+      ) : view === "files" ? (
+        <MainInterface />
       ) : (
         <AuthForm
           view={view as "welcome" | "login" | "signup"}

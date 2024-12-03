@@ -18,10 +18,13 @@ import {
   SidebarMenuItem,
 } from "../ui/sidebar"
 import { sidebarData } from '@renderer/data/sidebar'
+import { NavItem } from '@renderer/types/sidebar'
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {}
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  setCurrentPage: (page: NavItem) => void;
+}
 
-export const AppSidebar: FC<AppSidebarProps> = ({ ...props }) => {
+export const AppSidebar: FC<AppSidebarProps> = ({ setCurrentPage, ...props }) => {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -42,7 +45,7 @@ export const AppSidebar: FC<AppSidebarProps> = ({ ...props }) => {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarData.navMain} />
+        <NavMain items={sidebarData.navMain} setCurrentPage={setCurrentPage} />
         <NavProjects projects={sidebarData.projects} />
         <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>

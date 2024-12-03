@@ -21,22 +21,27 @@ import {
 import { NavItem } from "@renderer/types/sidebar"
 
 interface NavMainProps {
-  items: NavItem[]
+  items: NavItem[];
+  setCurrentPage: (item: NavItem) => void;
 }
 
-export const NavMain: FC<NavMainProps> = ({ items }) => {
+export const NavMain: FC<NavMainProps> = ({ items, setCurrentPage }) => {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Main</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+              <SidebarMenuButton 
+                asChild 
+                tooltip={item.title}
+                onClick={() => setCurrentPage(item)}
+              >
+                <div className="flex items-center">
                   <item.icon />
                   <span>{item.title}</span>
-                </a>
+                </div>
               </SidebarMenuButton>
               {item.items?.length ? (
                 <>

@@ -1,31 +1,64 @@
 import { FC, useEffect, useState } from 'react'
 import { Session } from '@supabase/supabase-js'
-import MainApp from './components/MainApp'
 import { supabase } from './lib/supabaseClient'
-import MainInterface from './components/MainInterface'
+import { Dashboard } from './components/Dashboard'
+import { AuthForm } from './components/auth/AuthForm'
+
+type ViewType = "welcome" | "signup" | "login" | "main"
 
 const App: FC = () => {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null>(null)
+  const [view, setView] = useState<ViewType>("welcome")
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let isMounted = true
+
+    const getInitialSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession()
+
+      if (error) {
+        console.error("Error getting session:", error)
+        return
+      }
+
+      if (session && isMounted) {
+        setSession(session)
+        setView("main")
+      }
+    }
+
+    getInitialSession()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (session) {
+        setView("main")
+      } else {
+        setView("welcome")
+      }
     })
 
-    // Listen for changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      authListener?.subscription.unsubscribe()
+    }
   }, [])
 
+  const handleAuthSuccess = () => {
+    setView("main")
+  }
+
   return (
-    <div className="w-full h-screen flex flex-col px-5 space-y-8 items-center justify-center">
-      {session ? <MainInterface /> : <MainApp />}
+    <div className="flex h-screen w-full items-center justify-center px-4">
+      {view === "main" ? (
+        <Dashboard />
+      ) : (
+        <AuthForm
+          view={view as "welcome" | "login" | "signup"}
+          onViewChange={setView}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   )
 }

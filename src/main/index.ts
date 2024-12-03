@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, webContents } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -8,7 +8,6 @@ import * as path from 'path'
 import * as os from 'os'
 
 function createWindow(): void {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -21,8 +20,47 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: true, 
       contextIsolation: false,
-      sandbox: false
+      sandbox: false,
+      zoomFactor: 1.0  // Set initial zoom factor
     }
+  })
+
+    // Reset zoom factor when window is ready to show
+    mainWindow.on('ready-to-show', () => {
+      mainWindow.webContents.setZoomFactor(1.0)  // Reset zoom factor
+      mainWindow.show()
+    })
+
+    // Set minimum and maximum zoom levels
+    mainWindow.webContents.setVisualZoomLevelLimits(1, 5) // This allows zoom from 100% to 500%
+
+    // Optional: Add zoom keyboard shortcuts
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.control || input.meta) { // Ctrl on Windows/Linux, Cmd on Mac
+        if (input.key === '=' || input.key === '+') {
+          mainWindow.webContents.zoomFactor += 0.1
+          event.preventDefault()
+        } else if (input.key === '-') {
+          mainWindow.webContents.zoomFactor -= 0.1
+          event.preventDefault()
+        } else if (input.key === '0') {
+          mainWindow.webContents.zoomFactor = 1.0
+          event.preventDefault()
+        }
+      }
+    })
+
+  // Add IPC handlers for zoom control
+  ipcMain.on('zoom-in', () => {
+    mainWindow.webContents.zoomFactor += 0.1
+  })
+
+  ipcMain.on('zoom-out', () => {
+    mainWindow.webContents.zoomFactor -= 0.1
+  })
+
+  ipcMain.on('zoom-reset', () => {
+    mainWindow.webContents.zoomFactor = 1.0
   })
 
   mainWindow.on('ready-to-show', () => {

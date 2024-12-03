@@ -1,6 +1,5 @@
 import useSWR from 'swr';
 import { supabase } from '../lib/supabaseClient';
-import { youtube_parser } from '@renderer/lib/files';
 
 interface FileData {
   id: string;
@@ -16,8 +15,6 @@ interface UseFilesReturn {
   error: any;
   uploadFile: (file: File) => Promise<void>;
   downloadFile: (file: FileData) => Promise<void>;
-  convertFiles: (file: File[], format: string) => Promise<void>;
-  downloadFromYoutube: (url: string, format: string) => Promise<void>;
   mutate: () => void;
 }
 
@@ -102,64 +99,12 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
     }
   };
 
-    const convertFiles = async (files: File[], format: string) => {
-        const user = (await supabase.auth.getUser()).data.user;
-        if (!user) return;
-
-        // This is where you'd implement the actual conversion logic
-        // For now, we'll just simulate it
-        for (const file of files) {
-        try {
-            // Simulate conversion
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Upload converted file
-            const newFilename = file.name.replace(/\.[^/.]+$/, `.${format}`);
-            const blob = new Blob([await file.arrayBuffer()], { type: `audio/${format}` });
-            const convertedFile = new File([blob], newFilename, { type: `audio/${format}` });
-            
-            await uploadFile(convertedFile);
-        } catch (error) {
-            console.error('Conversion error:', error);
-            throw error;
-        }
-        }
-    };
-
-    const downloadFromYoutube = async (url: string, format: string) => {
-        const user = (await supabase.auth.getUser()).data.user;
-        if (!user) return;
-
-        try {
-        const videoId = youtube_parser(url);
-        // const videoId = url; //TODO: Find youtube parser
-        if (!videoId) throw new Error('Invalid YouTube URL');
-
-        // This is where you'd implement the actual YouTube download logic
-        // For now, we'll just simulate it
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Simulate file creation
-        const filename = `youtube-${videoId}.${format}`;
-        const blob = new Blob([], { type: `audio/${format}` });
-        const file = new File([blob], filename, { type: `audio/${format}` });
-
-        await uploadFile(file);
-        } catch (error) {
-        console.error('YouTube download error:', error);
-        throw error;
-        }
-    };
-
-
   return {
     files: files || [],
     isLoading: !error && !files,
     error,
     uploadFile,
     downloadFile,
-    convertFiles,
-    downloadFromYoutube,
     mutate
   };
 }

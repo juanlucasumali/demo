@@ -1,10 +1,9 @@
 import { useState } from "react"
 import { Card } from "../ui/card"
-import { Progress } from "../ui/progress"
 import { useToast } from '@renderer/hooks/use-toast';
 import { processAudioFile, makeWav, audioToRawWave } from './audioProcessing'
 import { Button } from "../ui/button";
-import { Download, RefreshCw, RotateCw, AlertCircle } from "lucide-react";
+import { Download, RefreshCw, AlertCircle } from "lucide-react";
 
 export interface ConvertedFile {
   originalName: string;
@@ -16,14 +15,9 @@ export interface ConvertedFile {
 
 interface AudioConverterProps {
   files: File[]
-  conversionType: {
-    input: string
-    output: string
-  }
-  onConversionComplete?: (convertedFiles: ConvertedFile[]) => void
 }
 
-export function AudioConverter({ files, conversionType, onConversionComplete }: AudioConverterProps) {
+export function AudioConverter({ files }: AudioConverterProps) {
   const [convertedFiles, setConvertedFiles] = useState<ConvertedFile[]>(
     files.map(file => ({
       originalName: file.name,

@@ -6,22 +6,30 @@ import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useToast } from '@renderer/hooks/use-toast';
-import { AudioConverter, ConvertedFile } from "../components/converter/AudioConverter"
+import { AudioConverter } from "../components/converter/AudioConverter"
+import { isValidYoutubeUrl } from "@renderer/lib/files"
 
 type ConversionType = {
   input: 'mp3'
   output: 'wav'
 } | null
 
-interface ConversionDialogProps {
-  onYoutubeDownload: (url: string, format: string) => Promise<void>
+type YouTubeDownload = {
+  id: string;
+  title: string;
+  url: string;
+  blob: Blob;
+  downloaded: boolean;
 }
 
-export function ConversionDialog({ onYoutubeDownload }: ConversionDialogProps) {
+interface ConversionDialogProps {
+}
+
+export function ConversionDialog({ }: ConversionDialogProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [convertedFiles, setConvertedFiles] = useState<ConvertedFile[]>([])
+  const [youtubeDownloads, setYoutubeDownloads] = useState<YouTubeDownload[]>([]);
   const [youtubeUrl, setYoutubeUrl] = useState("")
-  const [format, setFormat] = useState("mp3")
+  const [isDownloading, setIsDownloading] = useState(false)
   const [open, setOpen] = useState(false)
   const [conversionType, setConversionType] = useState<ConversionType>(null)
   const { toast } = useToast()
@@ -59,13 +67,73 @@ export function ConversionDialog({ onYoutubeDownload }: ConversionDialogProps) {
       })
       return
     }
-
-    await onYoutubeDownload(youtubeUrl, format)
+  
+    if (!isValidYoutubeUrl(youtubeUrl)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid YouTube URL",
+        variant: "destructive",
+      })
+      return
+    }
+  
+    try {
+      setIsDownloading(true)
+  
+      const { Downloader } = require('ytdl-mp3');
+      const downloader = new Downloader({});
+  
+      // Download and get the file buffer
+      const result = await downloader.downloadSong(youtubeUrl);
+      
+      // Create a Blob from the file
+      const response = await fetch(result);
+      const blob = await response.blob();
+      
+      // Extract video ID and create download object
+      const videoId = youtubeUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1] || 'unknown';
+      
+      // Add to downloads list
+      setYoutubeDownloads(prev => [...prev, {
+        id: videoId,
+        title: `YouTube Audio - ${videoId}`,
+        url: youtubeUrl,
+        blob: blob,
+        downloaded: false
+      }]);
+  
+      setYoutubeUrl(''); // Clear input field
+  
+      toast({
+        title: "Success",
+        description: "Audio converted successfully",
+      })
+  
+    } catch (error) {
+      console.error('YouTube download error:', error)
+      toast({
+        title: "Error",
+        description: "Failed to download audio",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDownloading(false)
+    }
   }
-
-  const handleConversionComplete = (files: ConvertedFile[]) => {
-    setConvertedFiles(files)
-  }
+  
+  // Add this function to handle downloads from the list
+  const handleYoutubeFileDownload = (download: YouTubeDownload) => {
+    const url = URL.createObjectURL(download.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `yt2mp3-${download.id}.mp3`;
+    a.click();
+    URL.revokeObjectURL(url);
+  
+    setYoutubeDownloads(prev => 
+      prev.map(d => d.id === download.id ? { ...d, downloaded: true } : d)
+    );
+  }  
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -121,15 +189,53 @@ export function ConversionDialog({ onYoutubeDownload }: ConversionDialogProps) {
               {selectedFiles.length > 0 && conversionType && (
                 <AudioConverter 
                   files={selectedFiles}
-                  conversionType={conversionType}
-                  onConversionComplete={handleConversionComplete}
                 />
               )}
             </div>
           </TabsContent>
           
           <TabsContent value="youtube">
-            {/* YouTube section remains the same */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>YouTube URL</Label>
+                <Input
+                  placeholder="Enter YouTube URL"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                />
+              </div>
+              
+              <Button 
+                onClick={handleYoutubeDownload}
+                disabled={isDownloading || !youtubeUrl}
+                className="w-full"
+              >
+                {isDownloading ? "Converting..." : "Convert to MP3"}
+              </Button>
+
+              {youtubeDownloads.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <Label>Converted Files</Label>
+                  <div className="space-y-2">
+                    {youtubeDownloads.map((download) => (
+                      <div
+                        key={download.id}
+                        className="flex items-center justify-between p-2 border rounded"
+                      >
+                        <span className="truncate mr-2">{download.title}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleYoutubeFileDownload(download)}
+                        >
+                          {download.downloaded ? "Downloaded" : "Download"}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>

@@ -13,15 +13,11 @@ import { ConversionDialog } from './ConversionDialog';
 interface ToolbarProps {
   onFilesSelected: (files: FileList) => void;
   onFilterChange?: (value: string) => void;
-  onConvert: (files: File[], format: string) => Promise<void>;
-  onYoutubeDownload: (url: string, format: string) => Promise<void>;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({ 
   onFilesSelected,
   onFilterChange,
-  onConvert,
-  onYoutubeDownload
  }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,9 +55,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <Button variant="default" onClick={handleUploadClick}>
           Upload File
         </Button>
-        <ConversionDialog
-          onYoutubeDownload={onYoutubeDownload}
-        />
+        <ConversionDialog />
       </div>
       {/* Right side */}
       <div className="flex items-center space-x-2">

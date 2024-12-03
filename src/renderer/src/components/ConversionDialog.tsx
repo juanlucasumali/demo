@@ -10,8 +10,8 @@ import { AudioConverter } from "../components/converter/AudioConverter"
 import { isValidYoutubeUrl } from "@renderer/lib/files"
 
 type ConversionType = {
-  input: 'mp3'
-  output: 'wav'
+  input: 'mp3' | 'wav'
+  output: 'mp3' | 'wav'
 } | null
 
 type YouTubeDownload = {
@@ -149,50 +149,62 @@ export function ConversionDialog({ }: ConversionDialogProps) {
         </DialogHeader>
         
         <Tabs defaultValue="file" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="file">File Conversion</TabsTrigger>
-            <TabsTrigger value="youtube">YouTube Download</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="file">
-            <div className="space-y-4">
-              <div>
-                <Label>Conversion Type</Label>
-                <Select
-                  onValueChange={(value) => {
-                    setSelectedFiles([]) // Clear files when changing conversion type
-                    setConversionType(value === 'mp3-to-wav' ? { input: 'mp3', output: 'wav' } : null)
-                  }}
-                  value={conversionType ? 'mp3-to-wav' : ''}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select conversion type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mp3-to-wav">MP3 to WAV</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {conversionType && (
-                <div>
-                  <Label>Select {conversionType.input.toUpperCase()} Files</Label>
-                  <Input
-                    type="file"
-                    multiple
-                    accept={`.${conversionType.input}`}
-                    onChange={handleFileSelection}
-                  />
-                </div>
-              )}
-              
-              {selectedFiles.length > 0 && conversionType && (
-                <AudioConverter 
-                  files={selectedFiles}
-                />
-              )}
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="file">File Conversion</TabsTrigger>
+          <TabsTrigger value="youtube">YouTube Download</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="file">
+          <div className="space-y-4">
+            <div>
+              <Label>Conversion Type</Label>
+              <Select
+                onValueChange={(value) => {
+                  setSelectedFiles([]) // Clear files when changing conversion type
+                  switch(value) {
+                    case 'mp3-to-wav':
+                      setConversionType({ input: 'mp3', output: 'wav' })
+                      break;
+                    case 'wav-to-mp3':
+                      setConversionType({ input: 'wav', output: 'mp3' })
+                      break;
+                    default:
+                      setConversionType(null)
+                  }
+                }}
+                value={conversionType ? 
+                  `${conversionType.input}-to-${conversionType.output}` : 
+                  ''}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select conversion type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mp3-to-wav">MP3 to WAV</SelectItem>
+                  <SelectItem value="wav-to-mp3">WAV to MP3</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </TabsContent>
+
+            {conversionType && (
+              <div>
+                <Label>Select {conversionType.input.toUpperCase()} Files</Label>
+                <Input
+                  type="file"
+                  multiple
+                  accept={`.${conversionType.input}`}
+                  onChange={handleFileSelection}
+                />
+              </div>
+            )}
+            
+            {selectedFiles.length > 0 && conversionType && (
+              <AudioConverter 
+                files={selectedFiles}
+              />
+            )}
+          </div>
+        </TabsContent>
           
           <TabsContent value="youtube">
             <div className="space-y-4">

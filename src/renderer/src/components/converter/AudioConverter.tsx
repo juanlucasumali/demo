@@ -3,7 +3,7 @@ import { Card } from "../ui/card"
 import { useToast } from '@renderer/hooks/use-toast';
 import { processAudioFile, makeWav, audioToRawWave } from './audioProcessing'
 import { Button } from "../ui/button";
-import { Download, RefreshCw, AlertCircle } from "lucide-react";
+import { Download, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 
 export interface ConvertedFile {
   originalName: string;
@@ -11,6 +11,7 @@ export interface ConvertedFile {
   downloaded: boolean;
   converting: boolean;
   error?: boolean;
+  targetFormat: 'wav' | 'mp3';
 }
 
 interface AudioConverterProps {
@@ -24,7 +25,8 @@ export function AudioConverter({ files }: AudioConverterProps) {
       blob: null,
       downloaded: false,
       converting: false,
-      error: false
+      error: false,
+      targetFormat: file.name.toLowerCase().endsWith('.mp3') ? 'wav' : 'mp3'
     }))
   );
   const { toast } = useToast()
@@ -47,6 +49,17 @@ export function AudioConverter({ files }: AudioConverterProps) {
     }
   }
 
+  const convertToMp3 = async (file: File): Promise<Blob> => {
+    try {
+      const buffer = await file.arrayBuffer();
+      const mp3Buffer = await window.api.convertToMp3(Buffer.from(buffer));
+      return new Blob([mp3Buffer], { type: 'audio/mp3' });
+    } catch (error) {
+      console.log("error:", error)
+      return Promise.reject(error);
+    }
+  }  
+
   const convertSingleFile = async (fileIndex: number) => {
     if (convertedFiles[fileIndex].converting || convertedFiles[fileIndex].blob) return;
 
@@ -55,7 +68,11 @@ export function AudioConverter({ files }: AudioConverterProps) {
     ));
 
     try {
-      const blob = await convertToWav(files[fileIndex]);
+      const targetFormat = convertedFiles[fileIndex].targetFormat;
+      const blob = targetFormat === 'wav' 
+        ? await convertToWav(files[fileIndex])
+        : await convertToMp3(files[fileIndex]);
+
       setConvertedFiles(prev => prev.map((file, i) => 
         i === fileIndex ? { ...file, blob, converting: false } : file
       ));
@@ -93,7 +110,10 @@ export function AudioConverter({ files }: AudioConverterProps) {
     const url = URL.createObjectURL(file.blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = file.originalName.replace(/\.[^/.]+$/, '.wav')
+    a.download = file.originalName.replace(
+      /\.[^/.]+$/, 
+      `.${file.targetFormat}`
+    )
     a.click()
     URL.revokeObjectURL(url)
     
@@ -140,7 +160,7 @@ export function AudioConverter({ files }: AudioConverterProps) {
                         disabled={convertedFiles[index].converting}
                       >
                         {convertedFiles[index].converting ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <RefreshCw className="h-4 w-4" />
                         )}

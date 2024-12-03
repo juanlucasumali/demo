@@ -1,7 +1,11 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { Lame } from 'node-lame'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as os from 'os'
 
 function createWindow(): void {
   // Create the browser window.
@@ -73,3 +77,38 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
+
+// Add these IPC handlers
+ipcMain.handle('convert-to-mp3', async (_, arrayBuffer: ArrayBuffer) => {
+  try {
+    const tempDir = os.tmpdir()
+    const inputPath = path.join(tempDir, `input-${Date.now()}.wav`)
+    const outputPath = path.join(tempDir, `output-${Date.now()}.mp3`)
+
+    // Convert ArrayBuffer to Uint8Array and write to file
+    const uint8Array = new Uint8Array(arrayBuffer)
+    fs.writeFileSync(inputPath, uint8Array)
+
+    // Create encoder instance
+    const encoder = new Lame({
+      output: outputPath,
+      bitrate: 192
+    }).setFile(inputPath)
+
+    // Encode the file
+    await encoder.encode()
+
+    // Read the result and convert to Uint8Array
+    const result = new Uint8Array(fs.readFileSync(outputPath))
+
+    // Clean up temporary files
+    fs.unlinkSync(inputPath)
+    fs.unlinkSync(outputPath)
+
+    // Return the ArrayBuffer
+    return result.buffer
+  } catch (error) {
+    console.error('Conversion error:', error)
+    throw error
+  }
+})

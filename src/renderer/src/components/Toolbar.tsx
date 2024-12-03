@@ -54,7 +54,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept="audio/*"
+            accept=".mp3,.wav,.m4a,.aac,.ogg,.flac"
             multiple
             onChange={handleFileChange}
             className="hidden"

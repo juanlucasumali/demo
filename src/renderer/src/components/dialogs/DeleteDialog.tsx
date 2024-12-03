@@ -13,26 +13,46 @@ import {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
-    fileName: string;
+    fileCount?: number;
+    fileName?: string;
   }
   
-  export function DeleteDialog({ isOpen, onClose, onConfirm, fileName }: DeleteDialogProps) {
+  export function DeleteDialog({ 
+    isOpen, 
+    onClose, 
+    onConfirm, 
+    fileCount,
+    fileName 
+  }: DeleteDialogProps) {
     return (
       <AlertDialog open={isOpen} onOpenChange={onClose}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete{" "}
-              <span className="font-semibold">{fileName}</span> from our servers.
+              {fileCount === 1 || !fileCount ? (
+                <>
+                  This action cannot be undone. This will permanently delete{" "}
+                  <span className="font-semibold">{fileName}</span> from our servers.
+                </>
+              ) : (
+                <>
+                  This action cannot be undone. This will permanently delete{" "}
+                  <span className="font-semibold">{fileCount} files</span> from our servers.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirm}>Delete</AlertDialogAction>
+            <AlertDialogAction 
+              onClick={onConfirm}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     );
   }
-  

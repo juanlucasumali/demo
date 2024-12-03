@@ -1,6 +1,7 @@
 import useSWR from 'swr';
 import { supabase } from '../lib/supabaseClient';
 import { FileItem } from '../types/files'; // Import the FileItem type
+import { getNextFileName, sanitizeFileName } from '@renderer/lib/files';
 
 interface DatabaseFile {
   id: string;
@@ -11,13 +12,18 @@ interface DatabaseFile {
   size?: number;
 }
 
-interface UseFilesReturn {
-  data: FileItem[]; // Changed to match FileItem type
+export interface UseFilesReturn {
+  data: FileItem[];
   isLoading: boolean;
   error: any;
-  uploadFile: (file: File) => Promise<void>;
+  uploadFile: (
+    file: File,
+    onProgress?: (progress: number) => void,
+    replaceExisting?: boolean
+  ) => Promise<void>;
+  checkFileExists: (fileName: string) => Promise<boolean>;
   downloadFile: (file: FileItem) => Promise<void>;
-  deleteFile: (file: FileItem)  => Promise<void>;
+  deleteFile: (file: FileItem) => Promise<void>;
   mutate: () => Promise<any>;
 }
 
@@ -57,67 +63,167 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
     }
   );
 
-  const uploadFile = async (file: File) => {
+  const checkFileExists = async (fileName: string): Promise<boolean> => {
     const user = (await supabase.auth.getUser()).data.user;
-    if (!user) return;
+    if (!user) return false;
 
     try {
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from('files')
-        .upload(`${user.id}/${file.name}`, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      const { data: existingFiles } = await supabase
+      .from('files')
+      .select('filename')
+      .eq('user_id', user.id)
+      .eq('filename', fileName)
+      .single();
 
-      if (storageError) throw storageError;
-
-      const { error: dbError } = await supabase
-        .from('files')
-        .insert({
-          user_id: user.id,
-          filename: file.name,
-          file_path: storageData.path,
-          format: file.type,
-          size: file.size,
-        });
-
-      if (dbError) throw dbError;
-      
-      await mutate();
+      return !!existingFiles;
     } catch (error) {
-      console.error('Upload error:', error);
+      // Convert the Supabase error object to a more useful format
+      if (typeof error === 'object' && error !== null) {
+        throw {
+          message: (error as any).message || 'Unknown error occurred',
+          details: error,
+        };
+      }
       throw error;
     }
-  };
+  }
+
+  const uploadFile = async (
+    file: File, 
+    onProgress?: (progress: number) => void,
+    replaceExisting: boolean = false
+  ) => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+  
+    try {
+      // Simulate upload progress
+      const chunkSize = 1024 * 1024; // 1MB chunks
+      const totalChunks = Math.ceil(file.size / chunkSize);
+      let uploadedChunks = 0;
+  
+      const reportProgress = () => {
+        uploadedChunks++;
+        const progress = Math.min((uploadedChunks / totalChunks) * 100, 99);
+        onProgress?.(progress);
+      };
+  
+      let finalFileName = file.name;
+      if (!replaceExisting) {
+        const { data: existingFiles } = await supabase
+          .from('files')
+          .select('filename')
+          .eq('user_id', user.id);
+  
+        const existingFileItems = (existingFiles || []).map(f => ({ 
+          name: f.filename,
+          id: '',
+          type: '',
+          dateUploaded: '',
+          size: 0
+        }));
+  
+        finalFileName = getNextFileName(file.name, existingFileItems);
+      }
+
+        // Sanitize the filename for storage
+        const sanitizedStorageFileName = sanitizeFileName(finalFileName);
+        const storageKey = `${user.id}/${Date.now()}_${sanitizedStorageFileName}`;
+
+        // If replacing, delete the existing file first
+        if (replaceExisting) {
+          const { data: existingFile } = await supabase
+            .from('files')
+            .select('file_path')
+            .eq('user_id', user.id)
+            .eq('filename', file.name)
+            .single();
+
+          if (existingFile) {
+            await supabase.storage
+              .from('files')
+              .remove([existingFile.file_path]);
+
+            await supabase
+              .from('files')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('filename', file.name);
+          }
+        }
+
+        const options = {
+          cacheControl: '3600',
+          upsert: false,
+          onUploadProgress: reportProgress,
+        };
+
+        // Upload with sanitized storage key
+        const { data: storageData, error: storageError } = await supabase.storage
+          .from('files')
+          .upload(storageKey, file, options);
+
+        if (storageError) throw storageError;
+
+        // Store original filename in database but sanitized path in storage
+        const { error: dbError } = await supabase
+          .from('files')
+          .insert({
+            user_id: user.id,
+            filename: finalFileName, // Keep original filename for display
+            file_path: storageData.path, // Use sanitized path for storage
+            format: file.type,
+            size: file.size,
+          });
+
+        if (dbError) throw dbError;
+        
+        onProgress?.(100);
+        await mutate();
+      } catch (error) {
+      // Convert the Supabase error object to a more useful format
+      if (typeof error === 'object' && error !== null) {
+        throw {
+          message: (error as any).message || 'Unknown error occurred',
+          details: error,
+        };
+      }
+      throw error;
+    }
+  }
 
   const downloadFile = async (file: FileItem) => {
     try {
-      // You'll need to get the file_path from the database using the file.id
       const { data: fileData } = await supabase
         .from('files')
         .select('file_path')
         .eq('id', file.id)
         .single();
-
+  
       if (!fileData) throw new Error('File not found');
-
+  
       const { data, error } = await supabase.storage
         .from('files')
         .download(fileData.file_path);
-
+  
       if (error) throw error;
-
+  
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = file.name;
+      a.download = file.name; // Use original filename for download
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Download error:', error);
+      if (typeof error === 'object' && error !== null) {
+        throw {
+          message: (error as any).message || 'Unknown error occurred',
+          details: error,
+        };
+      }
       throw error;
     }
-  };
+  }
 
     const deleteFile = async (file: FileItem) => {
       const user = (await supabase.auth.getUser()).data.user;
@@ -150,10 +256,16 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
 
         await mutate(); // Refresh the data
       } catch (error) {
-        console.error('Delete error:', error);
-        throw error;
+      // Convert the Supabase error object to a more useful format
+      if (typeof error === 'object' && error !== null) {
+        throw {
+          message: (error as any).message || 'Unknown error occurred',
+          details: error,
+        };
       }
-    };
+      throw error;
+    }
+  }
 
 
   return {
@@ -163,6 +275,7 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
     uploadFile,
     downloadFile,
     deleteFile,
+    checkFileExists,
     mutate
   };
 }

@@ -45,12 +45,10 @@ const App: FC = () => {
     setView("main")
   }
 
-  
-
   return (
     <div className="flex h-screen w-full items-center justify-center px-4">
       {view === "main" ? (
-        <Dashboard setView={setView} />
+        <Dashboard />
       ) : view === "files" ? (
         <MainInterface />
       ) : (

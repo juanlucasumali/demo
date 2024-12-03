@@ -7,8 +7,16 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  RowSelectionState,
 } from "@tanstack/react-table";
-
+import { Checkbox } from "../../ui/checkbox";
+import { Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -17,29 +25,58 @@ import {
   TableHeader,
   TableRow,
 } from "../../ui/table";
-import { Button } from "../../ui/button";
-import { Input } from "../../ui/input";
+import { Input } from "@renderer/components/ui/input";
+import { Button } from "@renderer/components/ui/button";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  onDeleteSelected?: (selectedRows: TData[]) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onDeleteSelected,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+
+  // Add selection column
+  const selectionColumn: ColumnDef<TData, any> = {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableGlobalFilter: false,
+  };
+
+  const allColumns = [selectionColumn, ...columns];
 
   const table = useReactTable({
     data,
-    columns,
-    onSortingChange: setSorting,
+    columns: allColumns,
     state: {
       sorting,
       globalFilter,
+      rowSelection,
     },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -51,33 +88,64 @@ export function DataTable<TData, TValue>({
     },
   });
 
+  const selectedRows = table.getSelectedRowModel().rows;
+
   return (
     <div>
-      <div className="flex items-center py-4">
+      <div className="flex items-center justify-between py-4">
         <Input
           placeholder="Search files..."
           value={globalFilter ?? ""}
           onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
         />
+        
+        {selectedRows.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {selectedRows.length} selected
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => {
+                    if (onDeleteSelected) {
+                      const selectedData = selectedRows.map(row => row.original);
+                      onDeleteSelected(selectedData);
+                      setRowSelection({});
+                    }
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete selected
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -100,7 +168,10 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={allColumns.length}
+                  className="h-24 text-center"
+                >
                   No files found.
                 </TableCell>
               </TableRow>
@@ -108,7 +179,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      {/* Pagination Controls */}
+
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"

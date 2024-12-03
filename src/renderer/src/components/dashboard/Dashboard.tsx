@@ -3,16 +3,14 @@ import { AppSidebar } from "./AppSidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb"
 import { Separator } from "../ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "../ui/sidebar"
-import { ViewType } from '@renderer/App'
 import MainInterface from './MyFiles/MyFiles'
 import { NavItem } from '@renderer/types/sidebar'
 import { sidebarData } from '@renderer/data/sidebar'
 
 interface DashboardProps {
-  setView: (view: ViewType) => void;
 }
 
-export const Dashboard: FC<DashboardProps> = ({ setView }) => {
+export const Dashboard: FC<DashboardProps> = ({ }) => {
   const defaultPage = sidebarData.navMain.find(item => item.viewType === "files") || sidebarData.navMain[0];
 const [currentPage, setCurrentPage] = useState<NavItem>(defaultPage);
 

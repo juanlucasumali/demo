@@ -10,7 +10,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -19,7 +18,6 @@ import {
 } from "../ui/sidebar"
 import { NavItem, NavSubItem } from '@renderer/types/sidebar';
 import { FileTreeItem } from '@renderer/types/files';
-
 
 const FileTreeNode: FC<{ item: NavSubItem | FileTreeItem }> = ({ item }) => {
   // Check if it's a NavSubItem
@@ -35,38 +33,47 @@ const FileTreeNode: FC<{ item: NavSubItem | FileTreeItem }> = ({ item }) => {
     );
   }
 
-    // It's a FileTreeItem
+  // For files
+  if (item.type === 'file') {
     return (
-      <Collapsible asChild defaultOpen={false}>
-        <SidebarMenuItem>
-          <SidebarMenuButton asChild tooltip={item.name}>
-            <div className="flex items-center">
-              {item.type === 'folder' ? <Folder className="mr-2" /> : <File className="mr-2" />}
-              <span>{item.name}</span>
-            </div>
-          </SidebarMenuButton>
-          {item.type === 'folder' && item.children && (
-            <>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuAction className="data-[state=open]:rotate-90">
-                  <ChevronRight />
-                  <span className="sr-only">Toggle</span>
-                </SidebarMenuAction>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {item.children.map((child) => (
-                    <FileTreeNode key={child.id} item={child} />
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </>
-          )}
-        </SidebarMenuItem>
-      </Collapsible>
+      <SidebarMenuItem className="w-full">
+        <SidebarMenuButton tooltip={item.name} className="w-full">
+          <File className="flex-shrink-0" />
+          <span className="truncate min-w-0 flex-1">{item.name}</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     );
-  };
-  
+  }
+
+  // For folders
+  return (
+    <Collapsible asChild defaultOpen={false} className="w-full">
+      <SidebarMenuItem className="w-full">
+        <div className="flex w-full items-center">
+          <CollapsibleTrigger asChild>
+            <button className="p-1 hover:bg-transparent group">
+              <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+            </button>
+          </CollapsibleTrigger>
+          <SidebarMenuButton tooltip={item.name} className="flex-1">
+            <Folder className="flex-shrink-0" />
+            <span className="truncate min-w-0 flex-1">{item.name}</span>
+          </SidebarMenuButton>
+        </div>
+        {item.children && (
+          <CollapsibleContent className="w-full">
+            <SidebarMenuSub className="w-full">
+              {item.children.map((child) => (
+                <FileTreeNode key={child.id} item={child} />
+              ))}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        )}
+      </SidebarMenuItem>
+    </Collapsible>
+  );
+};
+
 interface NavMainProps {
   items: NavItem[];
   setCurrentPage: (item: NavItem) => void;
@@ -74,41 +81,45 @@ interface NavMainProps {
 
 export const NavMain: FC<NavMainProps> = ({ items, setCurrentPage }) => {
   return (
-    <SidebarGroup>
+    <SidebarGroup className="w-full">
       <SidebarGroupLabel>Main</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="w-full">
         {items.map((item) => (
-          <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
-                tooltip={item.title}
-                onClick={() => setCurrentPage(item)}
-              >
-                <div className="flex items-center">
-                  <item.icon />
-                  <span>{item.title}</span>
-                </div>
-              </SidebarMenuButton>
-              {item.items?.length ? (
-                <>
+          <Collapsible 
+            key={item.title} 
+            asChild 
+            defaultOpen={item.isActive}
+            className="w-full"
+          >
+            <SidebarMenuItem className="w-full">
+              <div className="flex w-full items-center">
+                {item.items?.length ? (
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuAction className="data-[state=open]:rotate-90">
-                      <ChevronRight />
-                      <span className="sr-only">Toggle</span>
-                    </SidebarMenuAction>
+                    <button className="p-1 hover:bg-transparent group">
+                      <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                    </button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items?.map((subItem: any) => (
-                        <FileTreeNode 
-                          key={subItem.id || subItem.title} 
-                          item={subItem} 
-                        />
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </>
+                ) : null}
+                <SidebarMenuButton 
+                  tooltip={item.title}
+                  onClick={() => setCurrentPage(item)}
+                  className="flex-1"
+                >
+                  <item.icon className="flex-shrink-0" />
+                  <span className="truncate min-w-0 flex-1">{item.title}</span>
+                </SidebarMenuButton>
+              </div>
+              {item.items?.length ? (
+                <CollapsibleContent className="w-full">
+                  <SidebarMenuSub className="w-full">
+                    {item.items?.map((subItem: any) => (
+                      <FileTreeNode 
+                        key={subItem.id || subItem.title} 
+                        item={subItem} 
+                      />
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
               ) : null}
             </SidebarMenuItem>
           </Collapsible>

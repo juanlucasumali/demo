@@ -67,19 +67,6 @@ export const sidebarData = {
           size: 5000000,
           dateUploaded: '2024-03-01T10:00:00Z'
         },
-        // Regular nav items
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
       ],
     },
       {

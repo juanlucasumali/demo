@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowDown, ArrowUp, MoreHorizontal } from "lucide-react";
 import { FileItem } from "../../../types/files";
 import { Button } from "../../ui/button";
 import {
@@ -21,12 +21,17 @@ export const columns: ColumnDef<FileItem>[] = [
     header: ({ column }) => (
       <Button
         variant="ghost"
-        onClick={() =>
-          column.toggleSorting(column.getIsSorted() === "asc")
-        }
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="flex items-center"
       >
-        File Name
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <span>File Name</span>
+        <div className="w-4 ml-2">
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="h-4 w-4" />
+          ) : null}
+        </div>
       </Button>
     ),
     cell: ({ row }) => (
@@ -40,20 +45,30 @@ export const columns: ColumnDef<FileItem>[] = [
   },
   {
     accessorKey: "dateUploaded",
-    header: ({ column }) => (
+    header: ({ column, table }) => (
       <Button
-        variant="ghost"
-        onClick={() =>
-          column.toggleSorting(column.getIsSorted() === "asc")
-        }
-      >
-        Date Uploaded
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      className="flex items-center"
+    >
+      <span>Date Uploaded</span>
+      <div className="w-8 ml-2">
+        {column.getIsSorted() === "asc" ? (
+          <ArrowUp className="h-4 w-4" />
+        ) : column.getIsSorted() === "desc" ? (
+          <ArrowDown className="h-4 w-4" />
+        ) : !table.getState().sorting.length ||
+          table.getState().sorting[0].id === "dateUploaded" ? (
+          <ArrowDown className="h-4 w-4" />
+        ) : null}
+      </div>
+    </Button>
     ),
+    sortingFn: "datetime",
+    sortDescFirst: true, // This makes it sort descending by default
     cell: ({ row }) => {
       const date = new Date(row.getValue("dateUploaded"));
-      const formatted = format(date, "PPP p"); // e.g., "Oct 1, 2023, 10:00 AM"
+      const formatted = format(date, "MMM d, yyyy, h:mm:ss aa"); // e.g., "Dec 3, 2024, 4:32:21 PM"
       return <span>{formatted}</span>;
     },
   },
@@ -62,12 +77,17 @@ export const columns: ColumnDef<FileItem>[] = [
     header: ({ column }) => (
       <Button
         variant="ghost"
-        onClick={() =>
-          column.toggleSorting(column.getIsSorted() === "asc")
-        }
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="flex items-center"
       >
-        Size
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <span>Size</span>
+        <div className="w-4 ml-2">
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="h-4 w-4" />
+          ) : null}
+        </div>
       </Button>
     ),
     cell: ({ row }) => {

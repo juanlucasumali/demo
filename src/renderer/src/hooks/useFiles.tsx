@@ -8,7 +8,6 @@ interface DatabaseFile {
   filename: string;
   file_path: string;
   format: string;
-  type: string;
   created_at: string;
   size?: number;
 }
@@ -53,7 +52,7 @@ const fetcher = async (filterFormat: string) => {
     id: file.id,
     name: file.filename,
     format: file.format,
-    type: file.type,
+    type: 'file',
     dateUploaded: file.created_at,
     size: file.size || 0,
   }));
@@ -186,7 +185,6 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
             filename: finalFileName,
             file_path: storageData.path,
             format: file.type,  // Add debug here
-            type: 'file',
             size: file.size,
           });
 

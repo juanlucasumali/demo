@@ -72,7 +72,9 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
     "filename" "text",
     "file_path" "text",
     "format" "text",
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "size" bigint,
+    "status" "text"
 );
 
 ALTER TABLE "public"."files" OWNER TO "postgres";

@@ -37,7 +37,7 @@ export const columns: ColumnDef<FileItem>[] = [
     ),
     cell: ({ row }) => (
       <div className="w-72 flex items-center gap-2">
-        {row.original.type === 'folder' ? (
+        {row.original.type === 'folder' || row.original.type === 'main-folder' ? (
           <Folder className="h-4 w-4 flex-shrink-0 text-muted-foreground fill-current" />
         ) : (
           <File className="h-4 w-4 flex-shrink-0 text-muted-foreground" />

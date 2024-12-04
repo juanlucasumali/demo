@@ -10,7 +10,7 @@ interface DatabaseFile {
   format: string;
   created_at: string;
   size?: number;
-  type: 'file' | 'folder' | 'my-files'
+  type: 'file' | 'folder' | 'main-folder'
 }
 
 export interface UseFilesReturn {

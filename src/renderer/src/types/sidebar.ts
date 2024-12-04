@@ -1,4 +1,10 @@
 import { LucideIcon } from "lucide-react"
+import { FileTreeItem } from "./files"
+
+export interface NavSubItem {
+  title: string;
+  url: string;
+}
 
 export interface NavItem {
     title: string
@@ -6,10 +12,7 @@ export interface NavItem {
     icon: LucideIcon
     isActive?: boolean
     viewType: string
-    items?: {
-      title: string
-      url: string
-    }[]
+    items?: (NavSubItem | FileTreeItem)[];
   }
 
 export interface Project {

@@ -36,7 +36,9 @@ export const columns: ColumnDef<FileItem>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <span className="font-medium">{row.getValue("name")}</span>
+      <div className="w-72">
+        <span className="w-72 font-medium">{row.getValue("name")}</span>
+      </div>
     ),
   },
     {

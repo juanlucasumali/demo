@@ -23,10 +23,10 @@ export const columns: ColumnDef<FileItem>[] = [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="flex items-center"
+        className="flex items-center p-0 hover:bg-transparent" // Remove default padding
       >
-        <span>File Name</span>
-        <div className="w-4 ml-2">
+        File Name
+        <div className="ml-2">
           {column.getIsSorted() === "asc" ? (
             <ArrowUp className="h-4 w-4" />
           ) : column.getIsSorted() === "desc" ? (
@@ -36,7 +36,7 @@ export const columns: ColumnDef<FileItem>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <div className="w-72">
+      <div className="w-96 truncate">
         <span className="font-medium">{row.getValue("name")}</span>
       </div>
     ),
@@ -53,10 +53,10 @@ export const columns: ColumnDef<FileItem>[] = [
     accessorKey: "dateUploaded",
     header: ({ column, table }) => (
       <Button
-      variant="ghost"
-      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      className="flex items-center"
-    >
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="flex items-center p-0 hover:bg-transparent" // Remove default padding
+      >
       <span>Date Uploaded</span>
       <div className="w-8 ml-2">
         {column.getIsSorted() === "asc" ? (
@@ -84,7 +84,7 @@ export const columns: ColumnDef<FileItem>[] = [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="flex items-center"
+        className="flex items-center p-0 hover:bg-transparent" // Remove default padding
       >
         <span>Size</span>
         <div className="w-4 ml-2">

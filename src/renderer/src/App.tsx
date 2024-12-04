@@ -2,7 +2,7 @@ import { FC, useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { AuthForm } from './components/auth/AuthForm'
-import MainInterface from './components/dashboard/MyFiles/MyFiles'
+import MyFiles from './components/dashboard/MyFiles/MyFiles'
 
 export type ViewType = "welcome" | "signup" | "login" | "main" | "files"
 
@@ -50,7 +50,7 @@ const App: FC = () => {
       {view === "main" ? (
         <Dashboard />
       ) : view === "files" ? (
-        <MainInterface />
+        <MyFiles />
       ) : (
         <AuthForm
           view={view as "welcome" | "login" | "signup"}

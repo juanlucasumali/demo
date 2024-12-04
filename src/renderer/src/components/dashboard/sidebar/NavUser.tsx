@@ -6,12 +6,12 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react"
-import { supabase } from "../../lib/supabaseClient" // Make sure this path is correct
+import { supabase } from "../../../lib/supabaseClient" // Make sure this path is correct
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "../ui/avatar"
+} from "../../ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,13 +20,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu"
+} from "../../ui/dropdown-menu"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "../ui/sidebar"
+} from "../../ui/sidebar"
 
 export function NavUser({
   user,

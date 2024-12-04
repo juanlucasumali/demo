@@ -16,7 +16,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "../ui/sidebar"
+} from "../../ui/sidebar"
 import { sidebarData } from '@renderer/data/sidebar'
 import { NavItem } from '@renderer/types/sidebar'
 
@@ -45,7 +45,7 @@ export const AppSidebar: FC<AppSidebarProps> = ({ setCurrentPage, ...props }) =>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarData.navMain} setCurrentPage={setCurrentPage} />
+        <NavMain setCurrentPage={setCurrentPage} />
         <NavProjects projects={sidebarData.projects} />
         <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>

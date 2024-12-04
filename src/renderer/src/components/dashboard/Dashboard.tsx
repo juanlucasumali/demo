@@ -1,5 +1,5 @@
 import { FC, useState } from 'react'
-import { AppSidebar } from "./AppSidebar"
+import { AppSidebar } from "./sidebar/AppSidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb"
 import { Separator } from "../ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "../ui/sidebar"

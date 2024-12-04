@@ -10,10 +10,11 @@ export type FileItem = {
   export interface FileTreeItem {
     id: string;
     name: string;
-    type: 'folder' | 'file';
+    type: 'file' | 'folder';
+    parent_id?: string;
+    children?: FileTreeItem[];
     format?: string;
     size?: number;
     dateUploaded?: string;
-    children?: FileTreeItem[];
   }
   

@@ -28,6 +28,27 @@ CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
+CREATE OR REPLACE FUNCTION "public"."create_my_files_folder"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    INSERT INTO public.items (
+        user_id,
+        name,
+        type,
+        sub_type
+    ) VALUES (
+        NEW.user_id,
+        'My Files',
+        'folder'
+        'my-files'
+    );
+    RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION "public"."create_my_files_folder"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -53,31 +74,31 @@ SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
 
-CREATE TABLE IF NOT EXISTS "public"."file_shares" (
+CREATE TABLE IF NOT EXISTS "public"."folder_items" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "file_id" "uuid",
-    "shared_by" "uuid",
-    "shared_with" "uuid",
-    "permission_level" "text",
-    CONSTRAINT "valid_permission_levels" CHECK (("permission_level" = ANY (ARRAY['viewer'::"text", 'commenter'::"text", 'editor'::"text"])))
+    "parent_id" "uuid",
+    "item_id" "uuid",
+    "item_type" "text",
+    "user_id" "uuid"
 );
 
-ALTER TABLE "public"."file_shares" OWNER TO "postgres";
+ALTER TABLE "public"."folder_items" OWNER TO "postgres";
 
-CREATE TABLE IF NOT EXISTS "public"."files" (
+CREATE TABLE IF NOT EXISTS "public"."items" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "user_id" "uuid",
-    "filename" "text",
+    "name" "text",
     "file_path" "text",
     "format" "text",
     "updated_at" timestamp with time zone DEFAULT "now"(),
     "size" bigint,
-    "status" "text"
+    "type" "text" NOT NULL,
+    "sub_type" "text"
 );
 
-ALTER TABLE "public"."files" OWNER TO "postgres";
+ALTER TABLE "public"."items" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."users" (
     "user_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -89,47 +110,55 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
 
 ALTER TABLE "public"."users" OWNER TO "postgres";
 
-ALTER TABLE ONLY "public"."file_shares"
-    ADD CONSTRAINT "file_shares_pkey" PRIMARY KEY ("id");
-
-ALTER TABLE ONLY "public"."files"
+ALTER TABLE ONLY "public"."items"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."folder_items"
+    ADD CONSTRAINT "folder_items_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_pkey" PRIMARY KEY ("user_id");
 
-ALTER TABLE ONLY "public"."file_shares"
-    ADD CONSTRAINT "file_shares_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+CREATE OR REPLACE TRIGGER "create_my_files_folder_trigger" AFTER INSERT ON "public"."users" FOR EACH ROW EXECUTE FUNCTION "public"."create_my_files_folder"();
 
-ALTER TABLE ONLY "public"."file_shares"
-    ADD CONSTRAINT "file_shares_shared_by_fkey" FOREIGN KEY ("shared_by") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."file_shares"
-    ADD CONSTRAINT "file_shares_shared_with_fkey" FOREIGN KEY ("shared_with") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."files"
+ALTER TABLE ONLY "public"."items"
     ADD CONSTRAINT "files_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."folder_items"
+    ADD CONSTRAINT "folder_items_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "public"."items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."folder_items"
+    ADD CONSTRAINT "folder_items_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."folder_items"
+    ADD CONSTRAINT "folder_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
-CREATE POLICY "Enable delete for users based on user_id" ON "public"."files" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."folder_items" FOR DELETE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Enable insert for authenticated users only" ON "public"."files" FOR INSERT TO "authenticated" WITH CHECK (true);
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."items" FOR DELETE USING (("auth"."uid"() = "user_id"));
 
-CREATE POLICY "Enable insert for users based on user_id" ON "public"."files" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Enable insert for users based on user_id" ON "public"."folder_items" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Enable read access for all users" ON "public"."files" FOR SELECT USING (true);
+CREATE POLICY "Enable insert for users based on user_id" ON "public"."items" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 CREATE POLICY "Enable read access for all users" ON "public"."users" FOR SELECT USING (true);
 
-CREATE POLICY "Enable update for users based on user_id" ON "public"."files" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Enable read access for authenticated users only" ON "public"."folder_items" FOR SELECT TO "authenticated" USING (true);
+
+CREATE POLICY "Enable read access for authenticated users only" ON "public"."items" FOR SELECT TO "authenticated" USING (true);
+
+CREATE POLICY "Enable update for users based on user_id" ON "public"."folder_items" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+CREATE POLICY "Enable update for users based on user_id" ON "public"."items" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
 CREATE POLICY "Enable update for users based on user_id" ON "public"."users" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
-ALTER TABLE "public"."file_shares" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."folder_items" ENABLE ROW LEVEL SECURITY;
 
-ALTER TABLE "public"."files" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."items" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
 
@@ -140,17 +169,21 @@ GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
 GRANT USAGE ON SCHEMA "public" TO "service_role";
 
+GRANT ALL ON FUNCTION "public"."create_my_files_folder"() TO "anon";
+GRANT ALL ON FUNCTION "public"."create_my_files_folder"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_my_files_folder"() TO "service_role";
+
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 
-GRANT ALL ON TABLE "public"."file_shares" TO "anon";
-GRANT ALL ON TABLE "public"."file_shares" TO "authenticated";
-GRANT ALL ON TABLE "public"."file_shares" TO "service_role";
+GRANT ALL ON TABLE "public"."folder_items" TO "anon";
+GRANT ALL ON TABLE "public"."folder_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."folder_items" TO "service_role";
 
-GRANT ALL ON TABLE "public"."files" TO "anon";
-GRANT ALL ON TABLE "public"."files" TO "authenticated";
-GRANT ALL ON TABLE "public"."files" TO "service_role";
+GRANT ALL ON TABLE "public"."items" TO "anon";
+GRANT ALL ON TABLE "public"."items" TO "authenticated";
+GRANT ALL ON TABLE "public"."items" TO "service_role";
 
 GRANT ALL ON TABLE "public"."users" TO "anon";
 GRANT ALL ON TABLE "public"."users" TO "authenticated";

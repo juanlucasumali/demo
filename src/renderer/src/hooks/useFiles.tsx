@@ -5,11 +5,12 @@ import { getNextFileName, sanitizeFileName } from '@renderer/lib/files';
 
 interface DatabaseFile {
   id: string;
-  filename: string;
+  name: string;
   file_path: string;
   format: string;
   created_at: string;
   size?: number;
+  type: 'file' | 'folder'
 }
 
 export interface UseFilesReturn {
@@ -33,7 +34,7 @@ const fetcher = async (filterFormat: string) => {
   if (!user) throw new Error('No user found');
 
   let query = supabase
-    .from('files')
+    .from('items')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
@@ -51,9 +52,9 @@ const fetcher = async (filterFormat: string) => {
   
   return data.map((file: DatabaseFile): FileItem => ({
     id: file.id,
-    name: file.filename,
-    format: file.format,
-    type: 'file',
+    name: file.name,
+    format: file.type == 'folder' ? ' ' : file.format,
+    type: file.type,
     dateUploaded: file.created_at,
     size: file.size || 0,
   }));
@@ -77,14 +78,12 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
 
     try {
       const { data: existingFiles } = await supabase
-      .from('files')
-      .select('filename')
+      .from('items')
+      .select('name')
       .eq('user_id', user.id)
-      .eq('filename', fileName)
+      .eq('name', fileName)
       .single();
 
-      console.log("FILE EXISTS!", data, fileName)
-      console.log("verdict:", !!existingFiles)
       return !!existingFiles;
     } catch (error) {
       // Convert the Supabase error object to a more useful format
@@ -121,12 +120,12 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
       let finalFileName = file.name;
       if (!replaceExisting) {
         const { data: existingFiles } = await supabase
-          .from('files')
-          .select('filename')
+          .from('items')
+          .select('name')
           .eq('user_id', user.id);
   
         const existingFileItems = (existingFiles || []).map(f => ({ 
-          name: f.filename,
+          name: f.name,
           id: '',
           format: '',
           type: '',
@@ -146,10 +145,10 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
         // If replacing, delete the existing file first
         if (replaceExisting) {
           const { data: existingFile } = await supabase
-            .from('files')
+            .from('items')
             .select('file_path')
             .eq('user_id', user.id)
-            .eq('filename', file.name)
+            .eq('name', file.name)
             .single();
 
           if (existingFile) {
@@ -158,10 +157,10 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
               .remove([existingFile.file_path]);
 
             await supabase
-              .from('files')
+              .from('items')
               .delete()
               .eq('user_id', user.id)
-              .eq('filename', file.name);
+              .eq('name', file.name);
           }
         }
 
@@ -180,12 +179,13 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
 
         // Store original filename in database but sanitized path in storage
         const { error: dbError } = await supabase
-          .from('files')
+          .from('items')
           .insert({
             user_id: user.id,
-            filename: finalFileName,
+            name: finalFileName,
             file_path: storageData.path,
             format: file.type,  // Add debug here
+            type: 'file',
             size: file.size,
           });
 
@@ -208,7 +208,7 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
   const downloadFile = async (file: FileItem) => {
     try {
       const { data: fileData } = await supabase
-        .from('files')
+        .from('items')
         .select('file_path')
         .eq('id', file.id)
         .single();
@@ -245,7 +245,7 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
       try {
         // Get the file path from the database
         const { data: fileData } = await supabase
-          .from('files')
+          .from('items')
           .select('file_path')
           .eq('id', file.id)
           .single();
@@ -261,7 +261,7 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
 
         // Delete from database
         const { error: dbError } = await supabase
-          .from('files')
+          .from('items')
           .delete()
           .eq('id', file.id);
 
@@ -286,9 +286,10 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
 
     try {
       const { error } = await supabase
-        .from('folders')
+        .from('items')
         .insert({
           name: folderName,
+          type: 'folder',
           user_id: user.id,
         });
 

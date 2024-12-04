@@ -43,8 +43,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   return (
     <div className="flex items-center justify-between p-4 border-b">
       <div className="flex items-center gap-3.5">
-        <Folder className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">My Files</h1>
+        <Folder className="h-6 w-6 flex-shrink-0 text-muted-foreground fill-current" />
+      <h1 className="text-2xl font-bold">My Files</h1>
       </div>
       {/* Right side */}
       <div className="flex items-center space-x-2">
@@ -61,6 +61,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             <Upload className="mr-2 h-4 w-4" />
             Upload File
           </Button>
+          <ConversionDialog />
           <Button 
             variant="default" 
             onClick={() => setCreateFolderDialogOpen(true)}
@@ -68,7 +69,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
             <FolderPlus className="mr-2 h-4 w-4" />
             Create Folder
           </Button>
-          <ConversionDialog />
         </div>
       </div>
       <CreateFolderDialog

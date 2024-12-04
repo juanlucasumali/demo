@@ -56,7 +56,7 @@ const FileTreeNode: FC<{ item: NavSubItem | FileTreeItem }> = ({ item }) => {
             </button>
           </CollapsibleTrigger>
           <SidebarMenuButton tooltip={item.name} className="flex-1">
-            <Folder className="flex-shrink-0" />
+            <Folder className="h-4 w-4 flex-shrink-0 text-muted-foreground fill-current" />
             <span className="truncate min-w-0 flex-1">{item.name}</span>
           </SidebarMenuButton>
         </div>
@@ -100,14 +100,20 @@ export const NavMain: FC<NavMainProps> = ({ items, setCurrentPage }) => {
                     </button>
                   </CollapsibleTrigger>
                 ) : null}
-                <SidebarMenuButton 
-                  tooltip={item.title}
-                  onClick={() => setCurrentPage(item)}
-                  className="flex-1"
-                >
-                  <item.icon className="flex-shrink-0" />
-                  <span className="truncate min-w-0 flex-1">{item.title}</span>
-                </SidebarMenuButton>
+                  <SidebarMenuButton 
+                    tooltip={item.title}
+                    onClick={() => setCurrentPage(item)}
+                    className="flex-1"
+                  >
+                    <item.icon 
+                      className={`flex-shrink-0 ${
+                        item.icon === Folder 
+                          ? "text-muted-foreground fill-current" 
+                          : ""
+                      }`} 
+                    />
+                    <span className="truncate min-w-0 flex-1">{item.title}</span>
+                  </SidebarMenuButton>
               </div>
               {item.items?.length ? (
                 <CollapsibleContent className="w-full">

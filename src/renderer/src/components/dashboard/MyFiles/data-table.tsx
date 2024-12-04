@@ -60,7 +60,6 @@ export function DataTable<TData, TValue>({
     }
   };  
 
-
   // Add selection column
   const selectionColumn: ColumnDef<TData, any> = {
     id: "select",

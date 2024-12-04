@@ -14,6 +14,7 @@ import { useFiles } from "@renderer/hooks/useFiles";
 import { DeleteDialog } from "@renderer/components/dialogs/DeleteDialog";
 import { useState } from "react";
 import { useToast } from "@renderer/hooks/use-toast";
+import { getDisplayFormat } from "@renderer/lib/files";
 
 export const columns: ColumnDef<FileItem>[] = [
   {
@@ -38,11 +39,14 @@ export const columns: ColumnDef<FileItem>[] = [
       <span className="font-medium">{row.getValue("name")}</span>
     ),
   },
-  {
-    accessorKey: "type",
-    header: "Type",
-    cell: ({ row }) => <span>{row.getValue("type")}</span>,
-  },
+    {
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => {
+        const type = row.getValue("type");
+        return <span>{getDisplayFormat(type)}</span>;
+      },
+    },
   {
     accessorKey: "dateUploaded",
     header: ({ column, table }) => (

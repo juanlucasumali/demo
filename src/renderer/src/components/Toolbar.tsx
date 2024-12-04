@@ -10,11 +10,18 @@ import {
 import { Button } from "./ui/button";
 import { ConversionDialog } from './ConversionDialog';
 import { Folder } from 'lucide-react';
+import { audioFormats } from '@renderer/lib/files';
 
 interface ToolbarProps {
   onFilesSelected: (files: FileList) => void;
   onFilterChange?: (value: string) => void;
 }
+
+// Create accept string for file input
+const acceptedFormats = audioFormats
+  .filter(format => format.value !== "all")
+  .map(format => `.${format.value}`)
+  .join(",");
 
 const Toolbar: React.FC<ToolbarProps> = ({ 
   onFilesSelected,
@@ -38,9 +45,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   const handleFilterChange = (value: string) => {
     if (onFilterChange) {
-      onFilterChange(value);
+      if (value === "all") {
+        onFilterChange("");
+      } else {
+        const format = audioFormats.find(f => f.value === value);
+        if (format) {
+          onFilterChange(format.mimeTypes.join(","));
+        }
+      }
     }
-  };
+  };  
 
   return (
     <div className="flex items-center justify-between p-4 border-b">
@@ -54,7 +68,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".mp3,.wav,.m4a,.aac,.ogg,.flac"
+            accept={acceptedFormats}
             multiple
             onChange={handleFileChange}
             className="hidden"
@@ -70,11 +84,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="audio/wav">WAV</SelectItem>
-              <SelectItem value="audio/mpeg">MP3</SelectItem>
-              <SelectItem value="audio/aiff">AIFF</SelectItem>
-              <SelectItem value="audio/flac">FLAC</SelectItem>
+              {audioFormats.map((format) => (
+                <SelectItem key={format.value} value={format.value}>
+                  {format.label}
+                </SelectItem>
+              ))}
             </SelectGroup>
           </SelectContent>
         </Select>

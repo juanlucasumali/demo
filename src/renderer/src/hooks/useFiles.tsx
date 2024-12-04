@@ -38,13 +38,16 @@ const fetcher = async (filterFormat: string) => {
     .order('created_at', { ascending: false });
 
   if (filterFormat && filterFormat !== 'all') {
-    query = query.eq('format', filterFormat);
+    const mimeTypes = filterFormat.split(',');
+    query = query.in('format', mimeTypes);
   }
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) {
+    console.error('Query error:', error);
+    throw error;
+  }
   
-  // Transform the database data to match FileItem type
   return data.map((file: DatabaseFile): FileItem => ({
     id: file.id,
     name: file.filename,
@@ -54,12 +57,15 @@ const fetcher = async (filterFormat: string) => {
   }));
 };
 
+
 export function useFiles(filterFormat: string = ''): UseFilesReturn {
   const { data, error, mutate } = useSWR(
     ['files', filterFormat],
     () => fetcher(filterFormat),
     {
       revalidateOnFocus: false,
+      keepPreviousData: true, // Add this option
+      dedupingInterval: 5000, // Add a deduping interval
     }
   );
 
@@ -128,7 +134,9 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
 
         // Sanitize the filename for storage
         const sanitizedStorageFileName = sanitizeFileName(finalFileName);
-        const storageKey = `${user.id}/${Date.now()}_${sanitizedStorageFileName}`;
+        const storageKey = `${user.id}/${Date.now()}_${sanitizedStorageFileName}`
+          .replace(/[^a-zA-Z0-9._\-\/]/g, '_') // Only allow alphanumeric, dots, underscores, hyphens, and forward slashes
+          .replace(/_+/g, '_'); // Replace multiple consecutive underscores with a single one
 
         // If replacing, delete the existing file first
         if (replaceExisting) {
@@ -170,9 +178,9 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
           .from('files')
           .insert({
             user_id: user.id,
-            filename: finalFileName, // Keep original filename for display
-            file_path: storageData.path, // Use sanitized path for storage
-            format: file.type,
+            filename: finalFileName,
+            file_path: storageData.path,
+            format: file.type,  // Add debug here
             size: file.size,
           });
 

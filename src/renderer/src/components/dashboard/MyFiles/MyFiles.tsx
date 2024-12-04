@@ -39,7 +39,7 @@ const MyFiles: React.FC = () => {
     files: FileItem[];
   }>({ isOpen: false, files: [] });
   
-  const { uploadFile, checkFileExists, error, isLoading, data, mutate, deleteFile } = useFiles(filterFormat);
+  const { uploadFile, checkFileExists, error, isLoading, data, mutate, deleteFile, createFolder } = useFiles(filterFormat);
   const { toast } = useToast();
 
   const dismissAllUploads = () => {
@@ -170,6 +170,23 @@ const MyFiles: React.FC = () => {
     }
   };
 
+
+  const handleCreateFolder = async (folderName: string) => {
+    try {
+      await createFolder(folderName);
+      toast({
+        title: "Folder created",
+        description: `Folder "${folderName}" created successfully`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create folder",
+      });
+    }
+  };
+
   if (error)
     return (
       <div className="p-4">
@@ -196,6 +213,7 @@ const MyFiles: React.FC = () => {
         <Toolbar
           onFilesSelected={handleFilesSelected}
           onFilterChange={setFilterFormat}
+          onCreateFolder={handleCreateFolder}
         />
         <div className="flex-1 overflow-auto">
           <div className="p-4">
@@ -203,6 +221,7 @@ const MyFiles: React.FC = () => {
               columns={columns} 
               data={data || []} 
               onDeleteSelected={handleDeleteSelected}
+              onFilterChange={setFilterFormat}
             />
           </div>
         </div>

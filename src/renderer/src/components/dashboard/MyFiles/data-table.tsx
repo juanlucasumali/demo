@@ -27,21 +27,39 @@ import {
 } from "../../ui/table";
 import { Input } from "@renderer/components/ui/input";
 import { Button } from "@renderer/components/ui/button";
+import { audioFormats } from "@renderer/lib/files";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@renderer/components/ui/select";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onDeleteSelected?: (selectedRows: TData[]) => void;
+  onFilterChange?: (value: string) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   onDeleteSelected,
+  onFilterChange
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+
+  const handleFilterChange = (value: string) => {
+    if (onFilterChange) {
+      if (value === "all") {
+        onFilterChange("");
+      } else {
+        const format = audioFormats.find(f => f.value === value);
+        if (format) {
+          onFilterChange(format.mimeTypes.join(","));
+        }
+      }
+    }
+  };  
+
 
   // Add selection column
   const selectionColumn: ColumnDef<TData, any> = {
@@ -93,12 +111,28 @@ export function DataTable<TData, TValue>({
   return (
     <div>
       <div className="flex items-center justify-between py-4">
-        <Input
-          placeholder="Search files..."
-          value={globalFilter ?? ""}
-          onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm"
-        />
+        <div className="flex items-center space-x-2">
+          <Input
+            placeholder="Search files..."
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(event.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+          <Select onValueChange={handleFilterChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {audioFormats.map((format) => (
+                  <SelectItem key={format.value} value={format.value}>
+                    {format.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         
         {selectedRows.length > 0 && (
           <div className="flex items-center gap-2">

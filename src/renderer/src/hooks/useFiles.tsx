@@ -25,6 +25,7 @@ export interface UseFilesReturn {
   downloadFile: (file: FileItem) => Promise<void>;
   deleteFile: (file: FileItem) => Promise<void>;
   mutate: () => Promise<any>;
+  createFolder: (folderName: string) => Promise<boolean>;
 }
 
 const fetcher = async (filterFormat: string) => {
@@ -279,6 +280,32 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
     }
   }
 
+  const createFolder = async (folderName: string) => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error('No user found');
+
+    try {
+      const { error } = await supabase
+        .from('folders')
+        .insert({
+          name: folderName,
+          user_id: user.id,
+        });
+
+      if (error) throw error;
+      
+      await mutate(); // Refresh the data
+      return true;
+    } catch (error) {
+      if (typeof error === 'object' && error !== null) {
+        throw {
+          message: (error as any).message || 'Unknown error occurred',
+          details: error,
+        };
+      }
+      throw error;
+    }
+  };
 
   return {
     data: data || [],
@@ -288,6 +315,7 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
     downloadFile,
     deleteFile,
     checkFileExists,
+    createFolder,
     mutate
   };
 }

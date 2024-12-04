@@ -21,7 +21,7 @@ import {
 import { useToast } from "@renderer/hooks/use-toast";
 import { AudioConverter } from "../components/converter/AudioConverter";
 import { isValidYoutubeUrl } from "@renderer/lib/files";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 type ConversionType =
   | {
@@ -174,7 +174,10 @@ export function ConversionDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default">Convert Audio</Button>
+        <Button variant="default">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Convert Audio
+          </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

@@ -1,20 +1,15 @@
-import React, { useRef } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
+import React, { useRef, useState } from 'react';
 import { Button } from "./ui/button";
 import { ConversionDialog } from './ConversionDialog';
-import { Folder } from 'lucide-react';
+import { Folder, FolderPlus, Upload } from 'lucide-react';
 import { audioFormats } from '@renderer/lib/files';
+import { CreateFolderDialog } from './dialogs/CreateFolderDialog';
+
 
 interface ToolbarProps {
   onFilesSelected: (files: FileList) => void;
   onFilterChange?: (value: string) => void;
+  onCreateFolder: (folderName: string) => void;
 }
 
 // Create accept string for file input
@@ -23,10 +18,12 @@ const acceptedFormats = audioFormats
   .map(format => `.${format.value}`)
   .join(",");
 
+
 const Toolbar: React.FC<ToolbarProps> = ({ 
   onFilesSelected,
-  onFilterChange,
- }) => {
+  onCreateFolder,
+}) => {
+  const [createFolderDialogOpen, setCreateFolderDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -42,19 +39,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
       event.target.value = '';
     }
   };
-
-  const handleFilterChange = (value: string) => {
-    if (onFilterChange) {
-      if (value === "all") {
-        onFilterChange("");
-      } else {
-        const format = audioFormats.find(f => f.value === value);
-        if (format) {
-          onFilterChange(format.mimeTypes.join(","));
-        }
-      }
-    }
-  };  
 
   return (
     <div className="flex items-center justify-between p-4 border-b">
@@ -74,25 +58,27 @@ const Toolbar: React.FC<ToolbarProps> = ({
             className="hidden"
           />
           <Button variant="default" onClick={handleUploadClick}>
+            <Upload className="mr-2 h-4 w-4" />
             Upload File
+          </Button>
+          <Button 
+            variant="default" 
+            onClick={() => setCreateFolderDialogOpen(true)}
+          >
+            <FolderPlus className="mr-2 h-4 w-4" />
+            Create Folder
           </Button>
           <ConversionDialog />
         </div>
-        <Select onValueChange={handleFilterChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by format" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {audioFormats.map((format) => (
-                <SelectItem key={format.value} value={format.value}>
-                  {format.label}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
       </div>
+      <CreateFolderDialog
+        isOpen={createFolderDialogOpen}
+        onClose={() => setCreateFolderDialogOpen(false)}
+        onConfirm={(folderName) => {
+          onCreateFolder(folderName);
+          setCreateFolderDialogOpen(false);
+        }}
+      />
     </div>
   );
 };

@@ -10,7 +10,7 @@ interface DatabaseFile {
   format: string;
   created_at: string;
   size?: number;
-  type: 'file' | 'folder'
+  type: 'file' | 'folder' | 'my-files'
 }
 
 export interface UseFilesReturn {
@@ -53,7 +53,7 @@ const fetcher = async (filterFormat: string) => {
   return data.map((file: DatabaseFile): FileItem => ({
     id: file.id,
     name: file.name,
-    format: file.type == 'folder' ? ' ' : file.format,
+    format: file.type !== 'file' ? '-----' : file.format,
     type: file.type,
     dateUploaded: file.created_at,
     size: file.size || 0,

@@ -2,9 +2,10 @@ import { FC, useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { AuthForm } from './components/auth/AuthForm'
+import { VerifyEmail } from './components/auth/VerifyEmail'
 import MyFiles from './components/dashboard/MyFiles/MyFiles'
 
-export type ViewType = "welcome" | "signup" | "login" | "main" | "files"
+export type ViewType = "welcome" | "signup" | "login" | "main" | "files" | "verify"
 
 const App: FC = () => {
   const [view, setView] = useState<ViewType>("welcome")
@@ -21,7 +22,11 @@ const App: FC = () => {
       }
 
       if (session && isMounted) {
-        setView("main")
+        if (session.user.email_confirmed_at) {
+          setView("main")
+        } else {
+          setView("verify")
+        }
       }
     }
 
@@ -29,7 +34,11 @@ const App: FC = () => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        setView("main")
+        if (session.user.email_confirmed_at) {
+          setView("main")
+        } else {
+          setView("verify")
+        }
       } else {
         setView("welcome")
       }
@@ -51,6 +60,8 @@ const App: FC = () => {
         <Dashboard />
       ) : view === "files" ? (
         <MyFiles />
+      ) : view === "verify" ? (
+        <VerifyEmail />
       ) : (
         <AuthForm
           view={view as "welcome" | "login" | "signup"}

@@ -13,8 +13,8 @@ import { Label } from "../ui/label"
 import { useToast } from "@renderer/hooks/use-toast"
 
 interface AuthFormProps {
-  view: "welcome" | "login" | "signup"
-  onViewChange: (view: "welcome" | "login" | "signup") => void
+  view: "welcome" | "login" | "signup" | "verify"
+  onViewChange: (view: "welcome" | "login" | "signup" | "verify") => void
   onSuccess: () => void
 }
 
@@ -48,21 +48,25 @@ export function AuthForm({ view, onViewChange, onSuccess }: AuthFormProps) {
       })
       return
     }
-
+  
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}`,
+      },
     })
-
+  
     if (error) {
       toast({
         title: "Error signing up",
         description: error.message,
       })
     } else {
-      onSuccess()
+      onViewChange("verify") // Change to verification view instead of calling onSuccess
     }
   }
+  
 
   if (view === "welcome") {
     return (

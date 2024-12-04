@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, MoreHorizontal } from "lucide-react";
+import { ArrowDown, ArrowUp, File, Folder, MoreHorizontal } from "lucide-react";
 import { FileItem } from "../../../types/files";
 import { Button } from "../../ui/button";
 import {
@@ -25,8 +25,8 @@ export const columns: ColumnDef<FileItem>[] = [
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="flex items-center p-0 hover:bg-transparent" // Remove default padding
       >
-        File Name
-        <div className="ml-2">
+        <span>File Name</span>
+        <div className="w-4 ml-2">
           {column.getIsSorted() === "asc" ? (
             <ArrowUp className="h-4 w-4" />
           ) : column.getIsSorted() === "desc" ? (
@@ -36,17 +36,24 @@ export const columns: ColumnDef<FileItem>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <div className="w-96 truncate">
-        <span className="font-medium">{row.getValue("name")}</span>
+      <div className="w-72 flex items-center gap-2">
+        {row.original.type === 'folder' ? (
+          <Folder className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+        ) : (
+          <File className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+        )}
+        <span className="font-medium truncate">
+          {row.getValue("name")}
+        </span>
       </div>
     ),
   },
     {
-      accessorKey: "type",
-      header: "Type",
+      accessorKey: "format",
+      header: "Format",
       cell: ({ row }) => {
-        const type = row.getValue("type");
-        return <span>{getDisplayFormat(type)}</span>;
+        const format = row.getValue("format");
+        return <span>{getDisplayFormat(format)}</span>;
       },
     },
   {

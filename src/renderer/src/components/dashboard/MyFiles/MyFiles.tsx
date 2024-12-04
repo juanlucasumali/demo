@@ -90,6 +90,7 @@ const MyFiles: React.FC = () => {
           ...prev,
           [file.name]: { progress: -2, conflict: true, file }
         }));
+        console.log("FILE EXISTS, SETTING UPLOAD PROGRESS TO -2")
       } else {
         handleUpload(file);
       }

@@ -8,6 +8,7 @@ interface DatabaseFile {
   filename: string;
   file_path: string;
   format: string;
+  type: string;
   created_at: string;
   size?: number;
 }
@@ -51,7 +52,8 @@ const fetcher = async (filterFormat: string) => {
   return data.map((file: DatabaseFile): FileItem => ({
     id: file.id,
     name: file.filename,
-    type: file.format,
+    format: file.format,
+    type: file.type,
     dateUploaded: file.created_at,
     size: file.size || 0,
   }));
@@ -81,6 +83,8 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
       .eq('filename', fileName)
       .single();
 
+      console.log("FILE EXISTS!", data, fileName)
+      console.log("verdict:", !!existingFiles)
       return !!existingFiles;
     } catch (error) {
       // Convert the Supabase error object to a more useful format
@@ -124,6 +128,7 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
         const existingFileItems = (existingFiles || []).map(f => ({ 
           name: f.filename,
           id: '',
+          format: '',
           type: '',
           dateUploaded: '',
           size: 0
@@ -181,6 +186,7 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
             filename: finalFileName,
             file_path: storageData.path,
             format: file.type,  // Add debug here
+            type: 'file',
             size: file.size,
           });
 

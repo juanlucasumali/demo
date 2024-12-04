@@ -4,21 +4,24 @@ export const filesData: FileItem[] = [
   {
     id: "1",
     name: "My Beat 1",
-    type: "WAV",
+    format: "WAV",
+    type: 'file',
     dateUploaded: "2023-10-01T10:00:00Z",
     size: 10485760, // 10 MB
   },
   {
     id: "2",
     name: "Guitar Loop",
-    type: "MP3",
+    format: "MP3",
+    type: 'file',
     dateUploaded: "2023-10-02T12:30:00Z",
     size: 5242880, // 5 MB
   },
   {
     id: "3",
     name: "Drum Sample",
-    type: "AIFF",
+    format: "AIFF",
+    type: 'file',
     dateUploaded: "2023-10-03T15:45:00Z",
     size: 2097152, // 2 MB
   },

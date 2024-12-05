@@ -95,7 +95,8 @@ CREATE TABLE IF NOT EXISTS "public"."items" (
     "updated_at" timestamp with time zone DEFAULT "now"(),
     "size" bigint,
     "type" "text" NOT NULL,
-    "sub_type" "text"
+    "sub_type" "text",
+    "parent_id" "uuid"
 );
 
 ALTER TABLE "public"."items" OWNER TO "postgres";
@@ -105,7 +106,8 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "username" "text",
     "display_name" "text",
-    "email" "text"
+    "email" "text",
+    "local_path" "text"
 );
 
 ALTER TABLE "public"."users" OWNER TO "postgres";
@@ -132,6 +134,9 @@ ALTER TABLE ONLY "public"."folder_items"
 
 ALTER TABLE ONLY "public"."folder_items"
     ADD CONSTRAINT "folder_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."items"
+    ADD CONSTRAINT "items_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;

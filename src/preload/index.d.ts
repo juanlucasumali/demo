@@ -15,6 +15,14 @@ declare global {
         success: boolean;
         error?: string;
       }>;
+      scanDirectory: (dirPath: string) => Promise<Array<{
+        path: string;
+        name: string;
+        size: number;
+        type: 'file' | 'folder';
+        children?: any[];
+      }>>;
+      readFile: (filePath: string) => Promise<Buffer>;
     };
     api: {
       convertToMp3: (buffer: Buffer) => Promise<Buffer>;

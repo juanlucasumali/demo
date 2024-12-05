@@ -192,3 +192,64 @@ ipcMain.handle('create-folder-structure', async (_, { basePath, folders }) => {
     return { success: false, error: error.message };
   }
 });
+
+ipcMain.handle('scan-directory', async (_, dirPath: string) => {
+
+    // Add this function to check for files to ignore
+    const shouldIgnoreFile = (filename: string): boolean => {
+      const ignoreList = [
+        '.DS_Store',
+        'Thumbs.db',  // Windows thumbnail cache
+        '.git',
+        'node_modules',
+        // Add any other files or folders you want to ignore
+      ];
+      
+      return ignoreList.includes(filename) || filename.startsWith('.');
+    };
+  
+
+  const scanDir = async (currentPath: string): Promise<any[]> => {
+    const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+    const files = await Promise.all(
+      entries
+      .filter(entry => !shouldIgnoreFile(entry.name))
+      .map(async (entry) => {
+        const fullPath = path.join(currentPath, entry.name);
+        if (entry.isDirectory()) {
+          const children = await scanDir(fullPath);
+          return {
+            path: fullPath,
+            name: entry.name,
+            type: 'folder',
+            children
+          };
+        }
+        const stats = await fs.promises.stat(fullPath);
+        return {
+          path: fullPath,
+          name: entry.name,
+          size: stats.size,
+          type: 'file'
+        };
+      })
+    );
+    return files;
+  };
+
+  try {
+    return await scanDir(dirPath);
+  } catch (error) {
+    console.error('Error scanning directory:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('read-file', async (_, filePath: string) => {
+  try {
+    return await fs.promises.readFile(filePath);
+  } catch (error) {
+    console.error('Error reading file:', error);
+    throw error;
+  }
+});

@@ -5,7 +5,7 @@ import { Separator } from "../ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "../ui/sidebar"
 import { NavItem } from '@renderer/types/sidebar'
 import { sidebarData } from '@renderer/data/sidebar'
-import { Connect } from './sidebar/Connect'
+import { Connect } from './Connect/Connect'
 import MyFiles from './MyFiles/MyFiles'
 
 interface DashboardProps {

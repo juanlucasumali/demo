@@ -11,7 +11,9 @@ const electronExposedApi = {
   ...electronAPI,
   showOpenDialog: (options: any) => ipcRenderer.invoke('show-open-dialog', options),
   createFolderStructure: (basePath: string, folders: any[]) => 
-    ipcRenderer.invoke('create-folder-structure', { basePath, folders })
+    ipcRenderer.invoke('create-folder-structure', { basePath, folders }),
+  scanDirectory: (dirPath: string) => ipcRenderer.invoke('scan-directory', dirPath), // Add this line
+  readFile: (filePath: string) => ipcRenderer.invoke('read-file', filePath) // Add this line too
 }
 
 if (process.contextIsolated) {

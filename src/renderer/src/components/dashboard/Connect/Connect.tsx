@@ -1,16 +1,20 @@
-import { FC } from 'react'
+import { FC, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card"
 import { Button } from "../../ui/button"
 import { useUser } from '@renderer/hooks/useUser';
 import { useFolders } from '@renderer/hooks/useFolders';
 import { Alert, AlertDescription } from "../../ui/alert"
-import { CheckCircle2, XCircle } from "lucide-react"
+import { CheckCircle2, XCircle, FolderTree } from "lucide-react"
 import { useToast } from "@renderer/hooks/use-toast"
+import { LocalFolderSync } from './LocalFolderSync' // We'll create this component
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs"
 
 export const Connect: FC = () => {
   const { user, setLocalPath, error: userError, isLoading: userLoading } = useUser();
   const { createLocalFolderStructure, error: folderError, isLoading: folderLoading } = useFolders();
   const { toast } = useToast();
+  const [activeStep, setActiveStep] = useState(1);
+
 
   const handleConnect = async () => {
     try {
@@ -64,8 +68,10 @@ export const Connect: FC = () => {
     }
   };
 
+
   const steps = [
     {
+      number: 1,
       title: "Set Local Path",
       description: "Choose a folder where your audio files will be stored",
       action: handleConnect,
@@ -73,6 +79,7 @@ export const Connect: FC = () => {
       status: user?.local_path ? 'complete' : 'pending'
     },
     {
+      number: 2,
       title: "Create Folder Structure",
       description: "Create your cloud folder structure locally",
       action: handleCreateFolderStructure,
@@ -81,22 +88,42 @@ export const Connect: FC = () => {
       disabled: !user?.local_path
     },
     {
-      title: "Install Plugin",
-      description: "Copy the downloaded plugin to your DAW's VST folder:",
-      details: [
-        "Windows: C:\\Program Files\\Common Files\\VST3",
-        "Mac: /Library/Audio/Plug-Ins/VST3",
-      ]
+      number: 3,
+      title: "Export from DAW",
+      description: "Export your audio files directly to the created folders",
+      content: (
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Your folder structure has been created at:
+            <code className="mx-2 px-2 py-1 bg-muted rounded">{user?.local_path}</code>
+          </p>
+          <Alert>
+            <AlertDescription>
+              You can now export audio files from your DAW directly to any of these folders.
+              The files will be ready for syncing to the cloud in the next step.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )
     },
     {
-      title: "Configure DAW",
-      description: "Set up the plugin in your DAW:",
-      details: [
-        "1. Open your DAW",
-        "2. Scan for new plugins",
-        "3. Add our plugin to a track",
-        "4. Enable MIDI input/output in the plugin settings"
-      ]
+      number: 4,
+      title: "Sync Files",
+      description: "Select files to sync with your cloud storage",
+      content: (
+        <Tabs defaultValue="selective" className="w-full">
+          <TabsList>
+            <TabsTrigger value="selective">Selective Sync</TabsTrigger>
+            <TabsTrigger value="full">Full Sync</TabsTrigger>
+          </TabsList>
+          <TabsContent value="selective">
+            <LocalFolderSync mode="selective" />
+          </TabsContent>
+          <TabsContent value="full">
+            <LocalFolderSync mode="full" />
+          </TabsContent>
+        </Tabs>
+      )
     }
   ];
 
@@ -136,27 +163,22 @@ export const Connect: FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-8">
-                {steps.map((step, index) => (
-                  <div key={index} className="flex items-start gap-4">
+                {steps.map((step) => (
+                  <div key={step.number} className="flex items-start gap-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center
                       ${step.status === 'complete' ? 'bg-green-100 text-green-700' : 'bg-muted'}`}>
-                      {step.status === 'complete' ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+                      {step.status === 'complete' ? <CheckCircle2 className="h-4 w-4" /> : step.number}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium">{step.title}</h3>
                       <p className="text-sm text-muted-foreground mb-2">{step.description}</p>
-                      {step.details && (
-                        <ul className="text-sm text-muted-foreground list-none pl-4 space-y-1">
-                          {step.details.map((detail, i) => (
-                            <li key={i}>{detail}</li>
-                          ))}
-                        </ul>
-                      )}
+                      {step.content}
                       {step.action && (
                         <Button 
                           onClick={step.action}
                           variant={step.status === 'complete' ? "outline" : "default"}
                           className="mt-2"
+                          disabled={step.disabled}
                         >
                           {step.status === 'complete' ? "✓ Complete" : step.actionLabel}
                         </Button>

@@ -9,6 +9,7 @@ export type ViewType = "welcome" | "signup" | "login" | "main" | "files" | "veri
 
 const App: FC = () => {
   const [view, setView] = useState<ViewType>("welcome")
+  const [emailAddress, setEmailAddress] = useState("")
 
   useEffect(() => {
     let isMounted = true
@@ -61,12 +62,13 @@ const App: FC = () => {
       ) : view === "files" ? (
         <MyFiles />
       ) : view === "verify" ? (
-        <VerifyEmail />
+        <VerifyEmail emailAddress={emailAddress} onBack={() => setView("signup")} />
       ) : (
         <AuthForm
           view={view as "welcome" | "login" | "signup"}
           onViewChange={setView}
           onSuccess={handleAuthSuccess}
+          setEmailAddress={setEmailAddress}
         />
       )}
     </div>

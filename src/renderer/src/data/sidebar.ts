@@ -1,9 +1,9 @@
-import { BookOpen, Bot, Folder, Frame, LifeBuoy, Link, Map, PieChart, Send, Settings2 } from "lucide-react";
+import { BookOpen, Bot, Eye, Folder, Frame, LifeBuoy, Link, Send, Settings2, Stars } from "lucide-react";
 
 export const sidebarData = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
+    name: "Juan Lucas Umali",
+    email: "juanlucasumali@berkeley.edu",
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
@@ -158,19 +158,19 @@ export const sidebarData = {
     ],
     projects: [
       {
-        name: "Design Engineering",
+        name: "EP 001",
         url: "#",
         icon: Frame,
       },
       {
-        name: "Sales & Marketing",
+        name: "MY EYES",
         url: "#",
-        icon: PieChart,
+        icon: Eye,
       },
       {
-        name: "Travel",
+        name: "chill lo-fi beats",
         url: "#",
-        icon: Map,
+        icon: Stars,
       },
     ],
   }

@@ -11,18 +11,28 @@ import {
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { useToast } from "@renderer/hooks/use-toast"
+import { Eye, EyeOff } from "lucide-react"
 
 interface AuthFormProps {
   view: "welcome" | "login" | "signup" | "verify"
   onViewChange: (view: "welcome" | "login" | "signup" | "verify") => void
   onSuccess: () => void
+  setEmailAddress: (emailAddress: string) => void;
 }
 
-export function AuthForm({ view, onViewChange, onSuccess }: AuthFormProps) {
+export function AuthForm({ view, onViewChange, onSuccess, setEmailAddress }: AuthFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { toast } = useToast()
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value
+    setEmail(newEmail)
+    setEmailAddress(newEmail)
+  }
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -117,32 +127,64 @@ export function AuthForm({ view, onViewChange, onSuccess }: AuthFormProps) {
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder="demo@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               required
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                tabIndex={-1} 
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
           </div>
           {view === "signup" && (
             <div className="grid gap-2">
               <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+              <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  tabIndex={-1} 
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
             </div>
           )}
           <Button

@@ -5,7 +5,11 @@ import { Checkbox } from "../../ui/checkbox"
 import { useUser } from '@renderer/hooks/useUser'
 import { useFiles } from '@renderer/hooks/useFiles'
 import { Loader2, Upload } from "lucide-react"
-import { Progress } from "../../ui/progress"
+import { UploadProgress } from "@renderer/components/custom-ui/UploadProgress"
+import { FileExistsDialog } from "@renderer/components/dialogs/FileExistsDialog"
+import { ErrorDialog } from "@renderer/components/dialogs/ErrorDialog"
+import { useToast } from "@renderer/hooks/use-toast"
+import { UploadStatus } from '../MyFiles/MyFiles'
 
 interface LocalFolderSyncProps {
   mode: 'selective' | 'full'
@@ -22,62 +26,152 @@ interface LocalFile {
 
 export const LocalFolderSync: FC<LocalFolderSyncProps> = ({ mode }) => {
   const { user } = useUser();
-  const { uploadFile } = useFiles();
+  const { uploadFile, checkFileExists, mutate } = useFiles();
+  const { toast } = useToast();
+  
   const [localFiles, setLocalFiles] = useState<LocalFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [syncProgress, setSyncProgress] = useState(0);
-  const [isSyncing, setIsSyncing] = useState(false);
-  
+  const [uploadProgress, setUploadProgress] = useState<{
+    [key: string]: UploadStatus;
+  }>({});
+  const [fileExistsDialog, setFileExistsDialog] = useState<{
+    show: boolean;
+    fileName: string;
+    file?: File;
+  }>({ show: false, fileName: '' });
+  const [errorDialog, setErrorDialog] = useState<{
+    show: boolean;
+    fileName: string;
+    error: Error | string;
+  }>({ show: false, fileName: '', error: '' });
+
   useEffect(() => {
-    console.log('LocalFolderSync useEffect triggered');
-    console.log('Current user:', user);
-    console.log('Current local_path:', user?.local_path);
-    
     if (user?.local_path) {
       scanLocalFiles();
     }
   }, [user?.local_path]);
 
   const scanLocalFiles = async () => {
-    console.log('Starting scanLocalFiles...');
-    console.log('User local path:', user?.local_path);
-    
-    if (!window.electron?.scanDirectory) {
-      console.error('scanDirectory is not available in window.electron');
-      return;
-    }
+    if (!window.electron?.scanDirectory) return;
     
     setIsLoading(true);
     try {
-      console.log('Calling electron.scanDirectory...');
       const files = await window.electron.scanDirectory(user!.local_path!);
-      console.log('Received files from scanDirectory:', files);
       setLocalFiles(files);
     } catch (error) {
       console.error('Error scanning directory:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to scan directory"
+      });
     }
     setIsLoading(false);
-    console.log('scanLocalFiles completed');
-  };  
+  };
 
-  const handleToggleSelect = (filePath: string) => {
-    setLocalFiles(prev => {
-      const toggleFile = (files: LocalFile[]): LocalFile[] => {
-        return files.map(file => {
-          if (file.path === filePath) {
-            return { ...file, selected: !file.selected };
-          }
-          if (file.children) {
-            return {
-              ...file,
-              children: toggleFile(file.children)
-            };
-          }
-          return file;
-        });
-      };
-      return toggleFile(prev);
+  const handleUpload = async (file: File, replace: boolean = false) => {
+    setUploadProgress((prev) => ({
+      ...prev,
+      [file.name]: { progress: 0 }
+    }));
+  
+    try {
+      await uploadFile(
+        file,
+        (progress) => {
+          setUploadProgress((prev) => ({
+            ...prev,
+            [file.name]: { ...prev[file.name], progress }
+          }));
+        },
+        replace
+      );
+      await mutate();
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploadProgress((prev) => ({
+        ...prev,
+        [file.name]: { 
+          ...prev[file.name], 
+          progress: -1,
+          error: typeof error === 'object' && error !== null
+            ? (error as any).message || JSON.stringify(error)
+            : 'Unknown error occurred'
+        }
+      }));
+    }
+  };
+
+  const handleFileUpload = async (localFile: LocalFile) => {
+    try {
+      const fileBuffer = await window.electron.readFile(localFile.path);
+      const file = new File([fileBuffer], localFile.name);
+      
+      const exists = await checkFileExists(file.name);
+      
+      if (exists) {
+        setUploadProgress((prev) => ({
+          ...prev,
+          [file.name]: { progress: -2, conflict: true, file }
+        }));
+      } else {
+        handleUpload(file);
+      }
+    } catch (error) {
+      console.error(`Error preparing ${localFile.name} for upload:`, error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Failed to prepare ${localFile.name} for upload`
+      });
+    }
+  };
+
+  const syncFiles = async () => {
+    const filesToSync = mode === 'full' 
+      ? getAllFiles(localFiles)
+      : getSelectedFiles(localFiles);
+
+    for (const file of filesToSync) {
+      await handleFileUpload(file);
+    }
+  };
+
+  const handleResolveConflict = (fileName: string) => {
+    const fileData = uploadProgress[fileName];
+    if (fileData?.file) {
+      setFileExistsDialog({ 
+        show: true, 
+        fileName,
+        file: fileData.file 
+      });
+    }
+  };
+
+  const handleReplace = () => {
+    if (fileExistsDialog.file) {
+      handleUpload(fileExistsDialog.file, true);
+    }
+    setFileExistsDialog({ show: false, fileName: '' });
+  };
+
+  const handleKeepBoth = () => {
+    if (fileExistsDialog.file) {
+      handleUpload(fileExistsDialog.file, false);
+    }
+    setFileExistsDialog({ show: false, fileName: '' });
+  };
+
+  const dismissUpload = (fileName: string) => {
+    setUploadProgress((prev) => {
+      const newProgress = { ...prev };
+      delete newProgress[fileName];
+      return newProgress;
     });
+  };
+
+  const dismissAllUploads = () => {
+    setUploadProgress({});
   };
 
   // Add these helper functions
@@ -111,32 +205,24 @@ export const LocalFolderSync: FC<LocalFolderSyncProps> = ({ mode }) => {
     return selectedFiles;
   };
 
-  const syncFiles = async () => {
-    setIsSyncing(true);
-    setSyncProgress(0);
-
-    const filesToSync = mode === 'full' 
-      ? getAllFiles(localFiles)
-      : getSelectedFiles(localFiles);
-
-    let completed = 0;
-    
-    for (const file of filesToSync) {
-      try {
-        await uploadFile(
-          new File([await window.electron.readFile(file.path)], file.name),
-          (progress) => {
-            setSyncProgress((completed + progress) / filesToSync.length);
+  const handleToggleSelect = (filePath: string) => {
+    setLocalFiles(prev => {
+      const toggleFile = (files: LocalFile[]): LocalFile[] => {
+        return files.map(file => {
+          if (file.path === filePath) {
+            return { ...file, selected: !file.selected };
           }
-        );
-        completed++;
-      } catch (error) {
-        console.error(`Error uploading ${file.name}:`, error);
-      }
-    }
-
-    setIsSyncing(false);
-    setSyncProgress(100);
+          if (file.children) {
+            return {
+              ...file,
+              children: toggleFile(file.children)
+            };
+          }
+          return file;
+        });
+      };
+      return toggleFile(prev);
+    })
   };
 
   const renderFileTree = (files: LocalFile[], level = 0) => {
@@ -166,27 +252,48 @@ export const LocalFolderSync: FC<LocalFolderSyncProps> = ({ mode }) => {
   }
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="space-y-4">
-          <div className="max-h-[400px] overflow-auto border rounded-lg p-4">
-            {renderFileTree(localFiles)}
-          </div>
-          
-          {isSyncing && (
-            <Progress value={syncProgress} className="w-full" />
-          )}
+    <>
+      <Card>
+        <CardContent className="p-4">
+          <div className="space-y-4">
+            <div className="max-h-[400px] overflow-auto border rounded-lg p-4">
+              {renderFileTree(localFiles)}
+            </div>
 
-          <Button
-            onClick={syncFiles}
-            disabled={isSyncing}
-            className="w-full"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            {isSyncing ? 'Syncing...' : `Sync ${mode === 'full' ? 'All' : 'Selected'} Files`}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <Button
+              onClick={syncFiles}
+              className="w-full"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {`Sync ${mode === 'full' ? 'All' : 'Selected'} Files`}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <UploadProgress 
+        uploads={uploadProgress}
+        onDismiss={dismissUpload}
+        onResolveConflict={handleResolveConflict}
+        onShowError={(fileName, error) => 
+          setErrorDialog({ show: true, fileName, error })}
+        onClose={dismissAllUploads}
+      />
+
+      <ErrorDialog
+        isOpen={errorDialog.show}
+        onClose={() => setErrorDialog({ show: false, fileName: '', error: '' })}
+        error={errorDialog.error}
+        fileName={errorDialog.fileName}
+      />
+
+      <FileExistsDialog
+        isOpen={fileExistsDialog.show}
+        fileName={fileExistsDialog.file?.name || ''}
+        onReplace={handleReplace}
+        onKeepBoth={handleKeepBoth}
+        onCancel={() => setFileExistsDialog({ show: false, fileName: '', file: undefined })}
+      />
+    </>
   );
 };

@@ -1,4 +1,4 @@
-import { BookOpen, Bot, Folder, Frame, LifeBuoy, Link, Map, PieChart, PlugIcon, Send, Settings2 } from "lucide-react";
+import { BookOpen, Bot, Folder, Frame, LifeBuoy, Link, Map, PieChart, Send, Settings2 } from "lucide-react";
 
 export const sidebarData = {
   user: {

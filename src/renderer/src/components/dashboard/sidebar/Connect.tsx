@@ -2,11 +2,15 @@ import { FC } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card"
 import { Button } from "../../ui/button"
 import { useUser } from '@renderer/hooks/useUser';
+import { useFolders } from '@renderer/hooks/useFolders';
 import { Alert, AlertDescription } from "../../ui/alert"
 import { CheckCircle2, XCircle } from "lucide-react"
+import { useToast } from "@renderer/hooks/use-toast"
 
 export const Connect: FC = () => {
-  const { user, setLocalPath, error, isLoading } = useUser();
+  const { user, setLocalPath, error: userError, isLoading: userLoading } = useUser();
+  const { createLocalFolderStructure, error: folderError, isLoading: folderLoading } = useFolders();
+  const { toast } = useToast();
 
   const handleConnect = async () => {
     try {
@@ -26,8 +30,39 @@ export const Connect: FC = () => {
       }
     } catch (error) {
       console.error('Error selecting folder:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to set local path"
+      });
     }
-  };  
+  };
+
+  const handleCreateFolderStructure = async () => {
+    if (!user?.local_path) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please set a local path first"
+      });
+      return;
+    }
+
+    try {
+      await createLocalFolderStructure(user.local_path);
+      toast({
+        title: "Success",
+        description: "Folder structure created successfully"
+      });
+    } catch (error) {
+      console.error('Error creating folder structure:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create folder structure"
+      });
+    }
+  };
 
   const steps = [
     {
@@ -38,11 +73,12 @@ export const Connect: FC = () => {
       status: user?.local_path ? 'complete' : 'pending'
     },
     {
-      title: "Download VST Plugin",
-      description: "Download our VST plugin for your DAW",
-      action: () => window.open('https://yourwebsite.com/downloads', '_blank'),
-      actionLabel: "Download Plugin",
-      status: 'pending' // You might want to track this status in your database
+      title: "Create Folder Structure",
+      description: "Create your cloud folder structure locally",
+      action: handleCreateFolderStructure,
+      actionLabel: "Create Folders",
+      status: 'pending',
+      disabled: !user?.local_path
     },
     {
       title: "Install Plugin",
@@ -64,8 +100,8 @@ export const Connect: FC = () => {
     }
   ];
 
-  if (isLoading) return <div className="flex items-center justify-center h-full">Loading...</div>;
-  if (error) return <div className="text-red-500">Error: {error.message}</div>;
+  if (userLoading) return <div className="flex items-center justify-center h-full">Loading...</div>;
+  if (userError) return <div className="text-red-500">Error: {userError.message}</div>;
 
   return (
     <div className="flex flex-col h-full">

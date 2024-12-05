@@ -11,6 +11,10 @@ declare global {
         canceled: boolean;
         filePaths: string[];
       }>;
+      createFolderStructure: (basePath: string, folders: any[]) => Promise<{
+        success: boolean;
+        error?: string;
+      }>;
     };
     api: {
       convertToMp3: (buffer: Buffer) => Promise<Buffer>;

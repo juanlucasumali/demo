@@ -158,3 +158,37 @@ ipcMain.handle('show-open-dialog', async (event, options) => {
   }
   return dialog.showOpenDialog(window, options);
 });
+
+ipcMain.handle('create-folder-structure', async (_, { basePath, folders }) => {
+  try {
+    const createNestedFolders = async (folder: any, currentPath: string) => {
+      const folderPath = path.join(currentPath, folder.name);
+      
+      try {
+        await fs.promises.mkdir(folderPath, { recursive: true });
+
+        if (folder.children) {
+          for (const child of folder.children) {
+            if (child.type === 'folder') {
+              await createNestedFolders(child, folderPath);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error creating folder ${folderPath}:`, error);
+        throw error;
+      }
+    };
+
+    for (const folder of folders) {
+      if (folder.type === 'folder') {
+        await createNestedFolders(folder, basePath);
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error creating folder structure:', error);
+    return { success: false, error: error.message };
+  }
+});

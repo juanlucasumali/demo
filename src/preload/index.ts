@@ -9,7 +9,9 @@ const api = {
 // Create a separate object for electron-specific functions
 const electronExposedApi = {
   ...electronAPI,
-  showOpenDialog: (options: any) => ipcRenderer.invoke('show-open-dialog', options)
+  showOpenDialog: (options: any) => ipcRenderer.invoke('show-open-dialog', options),
+  createFolderStructure: (basePath: string, folders: any[]) => 
+    ipcRenderer.invoke('create-folder-structure', { basePath, folders })
 }
 
 if (process.contextIsolated) {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "../ui/card";
 import { useToast } from "@renderer/hooks/use-toast";
-import { processAudioFile, makeWav, audioToRawWave } from "./audioProcessing";
+import { processAudioFile, makeWav, audioToRawWave } from "./AudioProcessing";
 import { Button } from "../ui/button";
 import { Download, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 

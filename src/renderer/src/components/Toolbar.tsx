@@ -5,25 +5,24 @@ import { Folder, FolderPlus, Upload } from 'lucide-react';
 import { audioFormats } from '@renderer/lib/files';
 import { CreateFolderDialog } from './dialogs/CreateFolderDialog';
 
-
 interface ToolbarProps {
   onFilesSelected: (files: FileList) => void;
   onFilterChange?: (value: string) => void;
   onCreateFolder: (folderName: string) => void;
 }
 
-// Create accept string for file input
 const acceptedFormats = audioFormats
   .filter(format => format.value !== "all")
   .map(format => `.${format.value}`)
   .join(",");
 
-
 const Toolbar: React.FC<ToolbarProps> = ({ 
   onFilesSelected,
   onCreateFolder,
+
 }) => {
   const [createFolderDialogOpen, setCreateFolderDialogOpen] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -35,7 +34,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       onFilesSelected(event.target.files);
-      // Reset input
       event.target.value = '';
     }
   };
@@ -44,9 +42,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <div className="flex items-center justify-between p-4 border-b">
       <div className="flex items-center gap-3.5">
         <Folder className="h-6 w-6 flex-shrink-0 text-muted-foreground fill-current" />
-      <h1 className="text-2xl font-bold">My Files</h1>
+        <h1 className="text-2xl font-bold">My Files</h1>
       </div>
-      {/* Right side */}
       <div className="flex items-center space-x-2">
         <div className="flex space-x-2">
           <input

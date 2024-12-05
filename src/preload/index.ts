@@ -6,19 +6,22 @@ const api = {
   convertToMp3: (buffer: Buffer) => ipcRenderer.invoke('convert-to-mp3', buffer)
 }
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+// Create a separate object for electron-specific functions
+const electronExposedApi = {
+  ...electronAPI,
+  showOpenDialog: (options: any) => ipcRenderer.invoke('show-open-dialog', options)
+}
+
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
+    contextBridge.exposeInMainWorld('electron', electronExposedApi)
     contextBridge.exposeInMainWorld('api', api)
   } catch (error) {
     console.error(error)
   }
 } else {
   // @ts-ignore (define in dts)
-  window.electron = electronAPI
+  window.electron = electronExposedApi
   // @ts-ignore (define in dts)
   window.api = api
 }

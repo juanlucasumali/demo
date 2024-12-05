@@ -11,13 +11,15 @@ import {
 
 export function NavSecondary({
   items,
+  setCurrentPage,
   ...props
 }: {
   items: {
     title: string
     url: string
     icon: LucideIcon
-  }[]
+  }[],
+  setCurrentPage: (item: any) => void
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   return (
     <SidebarGroup {...props}>
@@ -25,7 +27,11 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild size="sm">
+              <SidebarMenuButton 
+                asChild 
+                size="sm"
+                onClick={() => setCurrentPage(item)}  // Add onClick handler
+              >
                 <a href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>

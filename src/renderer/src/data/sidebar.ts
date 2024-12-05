@@ -1,4 +1,4 @@
-import { BookOpen, Bot, Folder, Frame, LifeBuoy, Map, PieChart, Send, Settings2 } from "lucide-react";
+import { BookOpen, Bot, Folder, Frame, LifeBuoy, Link, Map, PieChart, PlugIcon, Send, Settings2 } from "lucide-react";
 
 export const sidebarData = {
   user: {
@@ -139,6 +139,12 @@ export const sidebarData = {
       },
     ],
     navSecondary: [
+      {
+        title: "Connect to a DAW",
+        url: "#",
+        icon: Link,
+        viewType: "connect"
+      },
       {
         title: "Support",
         url: "#",

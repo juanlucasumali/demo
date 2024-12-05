@@ -47,7 +47,7 @@ export const AppSidebar: FC<AppSidebarProps> = ({ setCurrentPage, ...props }) =>
       <SidebarContent>
         <NavMain setCurrentPage={setCurrentPage} />
         <NavProjects projects={sidebarData.projects} />
-        <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
+        <NavSecondary items={sidebarData.navSecondary} setCurrentPage={setCurrentPage} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={sidebarData.user} />

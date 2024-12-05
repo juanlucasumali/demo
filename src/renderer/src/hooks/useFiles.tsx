@@ -25,7 +25,7 @@ export interface UseFilesReturn {
   checkFileExists: (fileName: string) => Promise<boolean>;
   downloadFile: (file: FileItem) => Promise<void>;
   deleteFile: (file: FileItem) => Promise<void>;
-  mutate: () => Promise<any>;
+  mutate: () => Promise<void | FileItem[] | undefined>;
   createFolder: (folderName: string) => Promise<boolean>;
 }
 

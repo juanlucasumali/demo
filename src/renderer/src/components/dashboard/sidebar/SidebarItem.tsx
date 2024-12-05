@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { ChevronRight, File, Folder } from "lucide-react";
+import { ChevronRight, File, Folder, MoreHorizontal, Share, Trash2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -9,8 +9,11 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuSub,
+  SidebarMenuAction,
+  useSidebar,
 } from "../../ui/sidebar";
 import { FileTreeItem } from '@renderer/types/files';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu';
 
 interface SidebarItemProps {
   item: FileTreeItem;
@@ -19,6 +22,7 @@ interface SidebarItemProps {
 
 export const SidebarItem: FC<SidebarItemProps> = ({ item, setCurrentPage }) => {
   const isFolder = item.type === 'folder';
+  const { isMobile } = useSidebar()
 
   const handleClick = () => {
     setCurrentPage(item);
@@ -52,6 +56,33 @@ export const SidebarItem: FC<SidebarItemProps> = ({ item, setCurrentPage }) => {
               </SidebarMenuSub>
             </CollapsibleContent>
           )}
+                  <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuAction showOnHover>
+                  <MoreHorizontal />
+                  <span className="sr-only">More</span>
+                </SidebarMenuAction>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-48"
+                side={isMobile ? "bottom" : "right"}
+                align={isMobile ? "end" : "start"}
+              >
+                <DropdownMenuItem>
+                  <Folder className="text-muted-foreground" />
+                  <span>View Folder</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Share className="text-muted-foreground" />
+                  <span>Share Folder</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Trash2 className="text-muted-foreground" />
+                  <span>Delete Folder</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
         </SidebarMenuItem>
       </Collapsible>
     );

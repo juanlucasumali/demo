@@ -3,9 +3,10 @@ import { AppSidebar } from "./sidebar/AppSidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb"
 import { Separator } from "../ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "../ui/sidebar"
-import MainInterface from './MyFiles/MyFiles'
 import { NavItem } from '@renderer/types/sidebar'
 import { sidebarData } from '@renderer/data/sidebar'
+import { Connect } from './sidebar/Connect'
+import MyFiles from './MyFiles/MyFiles'
 
 interface DashboardProps {
 }
@@ -17,15 +18,17 @@ const [currentPage, setCurrentPage] = useState<NavItem>(defaultPage);
   const renderView = () => {
     switch (currentPage.viewType) {
       case "files":
-        return <MainInterface />;
+        return <MyFiles />;
       case "models":
         return <div>Models View</div>;
       case "documentation":
         return <div>Documentation View</div>;
+      case "connect":
+        return <Connect />;  
       case "settings":
         return <div>Settings View</div>;
       default:
-        return <MainInterface />;
+        return <MyFiles />;
     }
   }
 

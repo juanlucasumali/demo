@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -150,3 +150,11 @@ ipcMain.handle('convert-to-mp3', async (_, arrayBuffer: ArrayBuffer) => {
     throw error
   }
 })
+
+ipcMain.handle('show-open-dialog', async (event, options) => {
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (!window) {
+    throw new Error('No window found');
+  }
+  return dialog.showOpenDialog(window, options);
+});

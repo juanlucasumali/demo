@@ -17,9 +17,9 @@ export function VerifyEmail({ emailAddress, onBack }: VerifyEmailProps) {
       <CardHeader>
         <CardTitle className="text-2xl">Verify Your Email</CardTitle>
         <CardDescription>
-          A verification link was sent to{" "}
+          Thanks for signing up! A verification link was sent to{" "}
           <span className="font-bold">{emailAddress}</span>. 
-          After clicking on the link, reload this page.
+          After clicking on the link, reload this page and log in with your new account details.
         </CardDescription>
       </CardHeader>
       <CardContent>

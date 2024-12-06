@@ -135,66 +135,65 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
   
         finalFileName = getNextFileName(file.name, existingFileItems);
       }
-
-        // Sanitize the filename for storage
-        const sanitizedStorageFileName = sanitizeFileName(finalFileName);
-        const storageKey = `${user.id}/${Date.now()}_${sanitizedStorageFileName}`
-          .replace(/[^a-zA-Z0-9._\-\/]/g, '_') // Only allow alphanumeric, dots, underscores, hyphens, and forward slashes
-          .replace(/_+/g, '_'); // Replace multiple consecutive underscores with a single one
-
-        // If replacing, delete the existing file first
-        if (replaceExisting) {
-          const { data: existingFile } = await supabase
-            .from('items')
-            .select('file_path')
-            .eq('user_id', user.id)
-            .eq('name', file.name)
-            .single();
-
-          if (existingFile) {
-            await supabase.storage
-              .from('files')
-              .remove([existingFile.file_path]);
-
-            await supabase
-              .from('items')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('name', file.name);
-          }
-        }
-
-        const options = {
-          cacheControl: '3600',
-          upsert: false,
-          onUploadProgress: reportProgress,
-        };
-
-        // Upload with sanitized storage key
-        const { data: storageData, error: storageError } = await supabase.storage
-          .from('files')
-          .upload(storageKey, file, options);
-
-        if (storageError) throw storageError;
-
-        // Store original filename in database but sanitized path in storage
-        const { error: dbError } = await supabase
+  
+      // Sanitize the filename for storage
+      const sanitizedStorageFileName = sanitizeFileName(finalFileName);
+      const uniqueStorageKey = `${Date.now()}_${sanitizedStorageFileName}`
+        .replace(/[^a-zA-Z0-9._\-\/]/g, '_') // Only allow alphanumeric, dots, underscores, hyphens, and forward slashes
+        .replace(/_+/g, '_'); // Replace multiple consecutive underscores with a single one
+  
+      // If replacing, delete the existing file first
+      if (replaceExisting) {
+        const { data: existingFile } = await supabase
           .from('items')
-          .insert({
-            user_id: user.id,
-            name: finalFileName,
-            file_path: storageData.path,
-            format: file.type,  // Add debug here
-            type: 'file',
-            size: file.size,
-          });
-
-        if (dbError) throw dbError;
-        
-        onProgress?.(100);
-        await mutate();
-      } catch (error) {
-      // Convert the Supabase error object to a more useful format
+          .select('file_path')
+          .eq('user_id', user.id)
+          .eq('name', file.name)
+          .single();
+  
+        if (existingFile) {
+          await supabase.storage
+            .from('files')
+            .remove([existingFile.file_path]);
+  
+          await supabase
+            .from('items')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('name', file.name);
+        }
+      }
+  
+      const options = {
+        cacheControl: '3600',
+        upsert: false,
+        onUploadProgress: reportProgress,
+      };
+  
+      // Upload with unique storage key
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from('files')
+        .upload(uniqueStorageKey, file, options);
+  
+      if (storageError) throw storageError;
+  
+      // Store in database with original filename but unique storage path
+      const { error: dbError } = await supabase
+        .from('items')
+        .insert({
+          user_id: user.id,
+          name: finalFileName,
+          file_path: storageData.path,
+          format: file.type,
+          type: 'file',
+          size: file.size,
+        });
+  
+      if (dbError) throw dbError;
+      
+      onProgress?.(100);
+      await mutate();
+    } catch (error) {
       if (typeof error === 'object' && error !== null) {
         throw {
           message: (error as any).message || 'Unknown error occurred',

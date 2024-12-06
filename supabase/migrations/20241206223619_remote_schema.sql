@@ -28,45 +28,35 @@ CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
-CREATE OR REPLACE FUNCTION "public"."create_my_files_folder"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-BEGIN
-    INSERT INTO public.items (
-        user_id,
-        name,
-        type,
-        sub_type
-    ) VALUES (
-        NEW.user_id,
-        'My Files',
-        'folder'
-        'my-files'
-    );
-    RETURN NEW;
-END;
-$$;
-
-ALTER FUNCTION "public"."create_my_files_folder"() OWNER TO "postgres";
-
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $$
-BEGIN
+    AS $$BEGIN
     IF (TG_OP = 'INSERT') THEN
-        INSERT INTO public.users (user_id, email)
-        VALUES (NEW.id, NEW.email);
+        INSERT INTO public.users (
+            user_id, 
+            email,
+            username,
+            display_name
+        )
+        VALUES (
+            NEW.id, 
+            NEW.email,
+            NEW.raw_user_meta_data->>'username',
+            NEW.raw_user_meta_data->>'display_name'
+        );
     ELSIF (TG_OP = 'UPDATE') THEN
         UPDATE public.users
-        SET email = NEW.email
+        SET 
+            email = NEW.email,
+            username = COALESCE(NEW.raw_user_meta_data->>'username', users.username),
+            display_name = COALESCE(NEW.raw_user_meta_data->>'display_name', users.display_name)
         WHERE user_id = NEW.id;
     ELSIF (TG_OP = 'DELETE') THEN
         DELETE FROM public.users
         WHERE user_id = OLD.id;
     END IF;
     RETURN NEW;
-END;
-$$;
+END;$$;
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
 
@@ -121,8 +111,6 @@ ALTER TABLE ONLY "public"."folder_items"
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_pkey" PRIMARY KEY ("user_id");
 
-CREATE OR REPLACE TRIGGER "create_my_files_folder_trigger" AFTER INSERT ON "public"."users" FOR EACH ROW EXECUTE FUNCTION "public"."create_my_files_folder"();
-
 ALTER TABLE ONLY "public"."items"
     ADD CONSTRAINT "files_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
 
@@ -173,10 +161,6 @@ GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
 GRANT USAGE ON SCHEMA "public" TO "service_role";
-
-GRANT ALL ON FUNCTION "public"."create_my_files_folder"() TO "anon";
-GRANT ALL ON FUNCTION "public"."create_my_files_folder"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."create_my_files_folder"() TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";

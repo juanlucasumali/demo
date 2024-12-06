@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { supabase } from "../../lib/supabaseClient"
 import { Button } from "../ui/button"
 import {
   Card,
@@ -12,6 +11,7 @@ import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { useToast } from "@renderer/hooks/use-toast"
 import { Eye, EyeOff } from "lucide-react"
+import { useUser } from "@renderer/hooks/useUser"
 
 interface AuthFormProps {
   view: "welcome" | "login" | "signup" | "verify"
@@ -33,6 +33,7 @@ export function AuthForm({ view, onViewChange, onSuccess, setEmailAddress }: Aut
   const [passwordError, setPasswordError] = useState("")
   const [usernameError, setUsernameError] = useState("")
   const [displayNameError, setDisplayNameError] = useState("")
+  const { checkEmailExists, checkUsernameExists, signUp, signIn } = useUser();
   const { toast } = useToast()
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,7 +101,6 @@ export function AuthForm({ view, onViewChange, onSuccess, setEmailAddress }: Aut
     }
     
     const handleLogin = async () => {
-      // Check if all required fields are filled
       if (!email || !password) {
         toast({
           title: "Error",
@@ -109,50 +109,49 @@ export function AuthForm({ view, onViewChange, onSuccess, setEmailAddress }: Aut
         })
         return
       }
-    
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-    
-      if (error) {
+  
+      try {
+        await signIn({ email, password });
+        onSuccess();
+      } catch (error: any) {
         toast({
           title: "Error logging in",
           description: error.message,
           variant: "destructive"
         })
-      } else {
-        onSuccess()
       }
     }
-
-  const validateUsername = async () => {
-    if (username.length < 3) {
-      setUsernameError("Username must be at least 3 characters long")
-      return false
+  
+    const handleSignUp = async () => {
+      if (!username || !displayName) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive"
+        })
+        return
+      }
+  
+      const isUsernameValid = await validateUsername()
+      const isDisplayNameValid = validateDisplayName()
+  
+      if (!isUsernameValid || !isDisplayNameValid) return
+  
+      try {
+        await signUp({
+          email,
+          password,
+          username,
+          displayName,
+        });
+        onViewChange("verify")
+      } catch (error: any) {
+        toast({
+          title: "Error signing up",
+          description: error.message,
+        })
+      }
     }
-    if (username.length > 20) {
-      setUsernameError("Username must be less than 20 characters")
-      return false
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      setUsernameError("Username can only contain letters, numbers, and underscores")
-      return false
-    }
-
-    const { data } = await supabase
-      .from('users')
-      .select('username')
-      .eq('username', username)
-      .single()
-
-    if (data) {
-      setUsernameError("Username already exists")
-      return false
-    }
-    setUsernameError("")
-    return true
-  }
 
   const validateDisplayName = () => {
     if (displayName.length < 2) {
@@ -172,38 +171,57 @@ export function AuthForm({ view, onViewChange, onSuccess, setEmailAddress }: Aut
   }
 
   const validateEmail = async () => {
-    // Basic email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       setEmailError("Please enter a valid email address")
       return false
     }
   
-    // Check email length
-    if (email.length > 254) { // Maximum length for email addresses
+    if (email.length > 254) {
       setEmailError("Email address is too long")
       return false
     }
   
-    // Check if email already exists in database
-    const { data, error } = await supabase
-      .from('users')
-      .select('email')
-      .eq('email', email.toLowerCase()) // Case-insensitive comparison
-      .single()
-  
-    if (error && error.code !== 'PGRST116') { // PGRST116 is the "not found" error
+    try {
+      const exists = await checkEmailExists(email);
+      if (exists) {
+        setEmailError("Email already exists")
+        return false
+      }
+      setEmailError("")
+      return true
+    } catch (error) {
       setEmailError("An error occurred while checking email availability")
       return false
     }
-  
-    if (data) {
-      setEmailError("Email already exists")
+  }
+
+  const validateUsername = async () => {
+    if (username.length < 3) {
+      setUsernameError("Username must be at least 3 characters long")
       return false
     }
-  
-    setEmailError("")
-    return true
+    if (username.length > 20) {
+      setUsernameError("Username must be less than 20 characters")
+      return false
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores")
+      return false
+    }
+
+    try {
+      const exists = await checkUsernameExists(username);
+      if (exists) {
+        setUsernameError("Username already exists")
+        return false
+      }
+      setUsernameError("")
+      return true
+    } catch (error) {
+      setUsernameError("An error occurred while checking username availability")
+      return false
+    }
   }
   
   const handleNextStep = async () => {
@@ -237,45 +255,6 @@ export function AuthForm({ view, onViewChange, onSuccess, setEmailAddress }: Aut
     setSignupStep(2)
   }
   
-  const handleSignUp = async () => {
-    // Check if all required fields are filled
-    if (!username || !displayName) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      })
-      return
-    }
-  
-    const isUsernameValid = await validateUsername()
-    const isDisplayNameValid = validateDisplayName()
-  
-    if (!isUsernameValid || !isDisplayNameValid) return
-  
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username: username,
-          display_name: displayName,
-        },
-        emailRedirectTo: `${window.location.origin}`,
-      },
-    })
-    
-    if (signUpError) {
-      toast({
-        title: "Error signing up",
-        description: signUpError.message,
-      })
-      return
-    }
-
-    // Proceed to verification page
-    onViewChange("verify")
-  }
 
   if (view === "welcome") {
     return (

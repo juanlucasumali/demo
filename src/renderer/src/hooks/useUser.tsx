@@ -15,6 +15,15 @@ interface UseUserReturn {
   error: any;
   isLoading: boolean;
   setLocalPath: (path: string) => Promise<void>;
+  checkEmailExists: (email: string) => Promise<boolean>;
+  checkUsernameExists: (username: string) => Promise<boolean>;
+  signUp: (credentials: {
+    email: string;
+    password: string;
+    username: string;
+    displayName: string;
+  }) => Promise<any>;
+  signIn: (credentials: { email: string; password: string }) => Promise<any>;
   mutate: () => Promise<void | User | undefined>;
 }
 
@@ -57,11 +66,71 @@ export function useUser(): UseUserReturn {
     await mutate();
   };
 
+  const checkEmailExists = async (email: string) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw new Error('Error checking email availability');
+    }
+    return !!data;
+  };
+
+  const checkUsernameExists = async (username: string) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('username')
+      .eq('username', username)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw new Error('Error checking username availability');
+    }
+    return !!data;
+  };
+
+  const signUp = async (credentials: {
+    email: string;
+    password: string;
+    username: string;
+    displayName: string;
+  }) => {
+    const { email, password, username, displayName } = credentials;
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+          display_name: displayName,
+        },
+        emailRedirectTo: `${window.location.origin}`,
+      },
+    });
+
+    if (error) throw error;
+    return data;
+  };
+
+  const signIn = async (credentials: { email: string; password: string }) => {
+    const { data, error } = await supabase.auth.signInWithPassword(credentials);
+    if (error) throw error;
+    return data;
+  };
+
   return {
     user: user || null,
     error,
     isLoading,
     setLocalPath,
-    mutate
+    checkEmailExists,
+    checkUsernameExists,
+    signUp,
+    signIn,
+    mutate,
   };
 }

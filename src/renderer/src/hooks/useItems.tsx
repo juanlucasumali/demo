@@ -4,6 +4,7 @@ import { DatabaseItem, DemoItem, FileTreeItem } from '../types/files'; // Import
 import { getNextFileName, sanitizeFileName } from '@renderer/lib/files';
 import { buildTree } from '@renderer/utils/buildTree';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface UseItemsReturn {
   items: DemoItem[];
@@ -23,6 +24,7 @@ interface UseItemsReturn {
   deleteFile: (file: DemoItem) => Promise<void>;
   createFolder: (folderName: string) => Promise<boolean>;
   createLocalFolderStructure: (basePath: string) => Promise<void>;
+  getFolderContents: (folderId: string | null) => Promise<DemoItem[]>;
   mutate: () => Promise<void | DemoItem[] | undefined>;
 }
 
@@ -65,6 +67,7 @@ const itemsFetcher = async ([_, filterFormat, folderId]: [string, string, string
 
 export function useItems(filterFormat: string = ''): UseItemsReturn {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { data: items, error, mutate } = useSWR(
     ['items', filterFormat, currentFolderId],
@@ -79,6 +82,11 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
   // Add navigation function
   const navigateToFolder = (folderId: string | null) => {
     setCurrentFolderId(folderId);
+    if (folderId) {
+      navigate(`/dashboard/files/${folderId}`);
+    } else {
+      navigate('/dashboard/files');
+    }
   };
 
   const checkFileExists = async (fileName: string): Promise<boolean> => {
@@ -139,7 +147,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
           format: '',
           type: '',
           dateUploaded: '',
-          parentId: '',
+          parentId: null,
           size: 0
         }));
   
@@ -370,6 +378,43 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
     }
   };
 
+  const getFolderContents = async (folderId: string | null) => {
+    console.log("folderId", folderId)
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error('No user found');
+    
+    try {
+      let query = supabase
+        .from('items')
+        .select('*')
+        .eq('owner_id', user.id)
+        .eq('type', 'folder')
+        .order('name');
+  
+      if (folderId === null) {
+        query = query.is('parent_id', null); // Root folder
+      } else {
+        query = query.eq('parent_id', folderId);
+      }
+  
+      const { data, error } = await query;
+  
+      if (error) throw error;
+      
+      return data.map((item: DatabaseItem): DemoItem => ({
+        id: item.id,
+        name: item.name,
+        format: item.format,
+        type: item.type,
+        dateUploaded: item.created_at,
+        size: item.size || 0,
+        parentId: item.parent_id ?? null
+      }));
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return {
     items: items || [], // All items (files and folders)
     files: items?.filter(item => item.type === 'files') || [], // Just files
@@ -384,6 +429,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
     deleteFile,
     createFolder,
     createLocalFolderStructure,
+    getFolderContents,
     mutate
   };
 }

@@ -6,8 +6,8 @@ import { WelcomePage } from './pages/WelcomePage'
 import { LoginPage } from './pages/LoginPage'
 import { SignupPage } from './pages/SignupPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
-import { Dashboard } from './components/dashboard/Dashboard'
-import MyFiles from './components/dashboard/MyFiles/MyFiles'
+import { DashboardLayout } from './pages/dashboard/DashboardLayout'
+import { dashboardRoutes } from './routes/dashboardRoutes'
 
 const AppContent: FC = () => {
   const { session, loading } = useAuth()
@@ -39,8 +39,15 @@ const AppContent: FC = () => {
           <Route path="/verify" element={ <VerifyEmailPage /> }/>
 
           <Route element={<ProtectedRoute session={session} />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/files" element={<MyFiles />} />
+            <Route path="/dashboard/*" element={<DashboardLayout />}>
+              {dashboardRoutes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={route.element}
+                />
+              ))}
+            </Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

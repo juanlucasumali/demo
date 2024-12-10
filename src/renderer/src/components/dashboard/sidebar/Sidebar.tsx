@@ -5,11 +5,11 @@ import {
 } from "lucide-react"
 
 import { NavMain } from "./NavMain"
-import { NavProjects } from "./NavProjects"
-import { NavSecondary } from "./NavSecondary"
-import { NavUser } from "./NavUser"
+// import { NavProjects } from "./NavProjects"
+// import { NavSecondary } from "./NavSecondary"
+// import { NavUser } from "./NavUser"
 import {
-  Sidebar,
+  Sidebar as UISidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
@@ -17,16 +17,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "../../ui/sidebar"
-import { sidebarData } from '@renderer/data/sidebar'
-import { NavItem } from '@renderer/types/sidebar'
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  setCurrentPage: (page: NavItem) => void;
+interface SidebarProps extends React.ComponentProps<typeof UISidebar> {
+  onNavigate: (path: string) => void;
 }
 
-export const AppSidebar: FC<AppSidebarProps> = ({ setCurrentPage, ...props }) => {
+export const Sidebar: FC<SidebarProps> = ({ onNavigate, ...props }) => {
   return (
-    <Sidebar variant="inset" {...props}>
+    <UISidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -45,13 +43,13 @@ export const AppSidebar: FC<AppSidebarProps> = ({ setCurrentPage, ...props }) =>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain setCurrentPage={setCurrentPage} />
-        <NavProjects projects={sidebarData.projects} />
-        <NavSecondary items={sidebarData.navSecondary} setCurrentPage={setCurrentPage} className="mt-auto" />
+        <NavMain onNavigate={onNavigate} />
+        {/* <NavProjects /> */}
+        {/* <NavSecondary onNavigate={onNavigate} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        {/* <NavUser /> */}
       </SidebarFooter>
-    </Sidebar>
+    </UISidebar>
   )
 }

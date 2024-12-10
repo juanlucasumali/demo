@@ -11,12 +11,13 @@ import {
 import { format } from "date-fns";
 import { filesize } from "filesize";
 import { useItems } from "@renderer/hooks/useItems";
-import { DeleteDialog } from "@renderer/components/dialogs/DeleteDialog";
-import { useState } from "react";
-import { useToast } from "@renderer/hooks/use-toast";
 import { getDisplayFormat } from "@renderer/lib/files";
 
-export const columns: ColumnDef<DemoItem>[] = [
+interface ColumnProps {
+  onDelete: (files: DemoItem[]) => void;
+}
+
+export const createColumns = ({ onDelete }: ColumnProps): ColumnDef<DemoItem>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -121,77 +122,47 @@ export const columns: ColumnDef<DemoItem>[] = [
     id: "actions",
     cell: ({ row }) => {
       const file = row.original;
-      const { downloadFile, deleteFile } = useItems();
-      const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-      const { toast } = useToast();
-  
+      const { downloadFile } = useItems();
       const isFolder = file.type === 'folder';
   
-      const handleDelete = async (e?: React.MouseEvent) => {
-        e?.stopPropagation(); // Add this
-        try {
-          await deleteFile(file);
-          toast({
-            title: "Success",
-            description: `${file.name} has been deleted.`,
-          });
-        } catch (error) {
-          toast({
-            title: "Error",
-            description: "Failed to delete file.",
-            variant: "destructive",
-          });
-        }
-        setShowDeleteDialog(false);
-      };
-  
       return (
-        <>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="h-8 w-8 p-0"
-                onClick={(e) => e.stopPropagation()} 
-              >
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              {!isFolder && (
-                <DropdownMenuItem onClick={(e) => {
-                  e.stopPropagation();
-                  downloadFile(file);
-                }}>
-                  Download
-                </DropdownMenuItem>
-              )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              className="h-8 w-8 p-0"
+              onClick={(e) => e.stopPropagation()} 
+            >
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            {!isFolder && (
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
-                alert(`Renaming ${file.name}`);
+                downloadFile(file);
               }}>
-                Rename
+                Download
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDeleteDialog(true);
-                }}
-                className="text-red-600"
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-  
-          <DeleteDialog
-            isOpen={showDeleteDialog}
-            onClose={() => setShowDeleteDialog(false)}
-            onConfirm={handleDelete}
-            fileName={file.name}
-          />
-        </>
+            )}
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              alert(`Renaming ${file.name}`);
+            }}>
+              Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete([file]);
+              }}
+              className="text-red-600"
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       );
     },
   },

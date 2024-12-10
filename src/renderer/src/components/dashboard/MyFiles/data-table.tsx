@@ -33,8 +33,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onDeleteSelected?: (selectedRows: TData[]) => void;
-  onFilterChange?: (value: string) => void;
+  onDeleteSelected: (rows: TData[]) => void;
+  onFilterChange: (format: string) => void;
   onFolderClick: (folderId: string) => void;
 }
 

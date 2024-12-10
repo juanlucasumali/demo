@@ -1,4 +1,4 @@
-import { FileItem } from "@renderer/types/files";
+import { DemoItem } from "@renderer/types/files";
 
 export const sanitizeFileName = (fileName: string): string => {
   // First, handle the extension separately
@@ -15,7 +15,7 @@ export const sanitizeFileName = (fileName: string): string => {
   return sanitized + ext;
 };
   
-export const getNextFileName = (baseName: string, existingFiles: FileItem[]): string => {
+export const getNextFileName = (baseName: string, existingFiles: DemoItem[]): string => {
   const ext = baseName.includes('.') ? '.' + baseName.split('.').pop() : '';
   const nameWithoutExt = baseName.replace(ext, '');
   

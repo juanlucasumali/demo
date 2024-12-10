@@ -35,17 +35,26 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   onDeleteSelected?: (selectedRows: TData[]) => void;
   onFilterChange?: (value: string) => void;
+  onFolderClick: (folderId: string) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   onDeleteSelected,
-  onFilterChange
+  onFilterChange,
+  onFolderClick
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+
+    // Add handler for row clicks
+    const handleRowClick = (row: any) => {
+      if (row.type === 'folder') {
+        onFolderClick(row.id);
+      }
+    };
 
   const handleFilterChange = (value: string) => {
     if (onFilterChange) {
@@ -184,10 +193,12 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map((row: any) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className={row.original.type === 'folder' ? 'cursor-pointer hover:bg-secondary' : ''}
+                  onClick={() => handleRowClick(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

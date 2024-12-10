@@ -1,27 +1,50 @@
-import { FileTreeItem } from '../types/files';
+import { FileTreeItem, DemoItem } from '../types/files';
 
-export function buildTree(items: any[]): FileTreeItem[] {
-  const itemMap: { [key: string]: FileTreeItem } = {};
-  const tree: FileTreeItem[] = [];
 
-  // Initialize all items with an empty children array
-  items.forEach((item) => {
-    itemMap[item.id] = { 
-      ...item, 
-      children: [] // Always initialize children as an empty array
-    };
+export function buildTree(items: DemoItem[]): FileTreeItem[] {
+  // Create a map for quick lookup of items by their ID
+  const itemMap = new Map<string, FileTreeItem>();
+  
+  // First pass: create all nodes and store them in the map
+  items.forEach(item => {
+    itemMap.set(item.id, {
+      ...item,
+      children: []
+    });
   });
 
-  items.forEach((item) => {
-    if (item.parent_id) {
-      const parent = itemMap[item.parent_id];
-      if (parent && parent.children) { // Add a check for parent.children
-        parent.children.push(itemMap[item.id]);
-      }
+  // Second pass: build the tree structure
+  const rootItems: FileTreeItem[] = [];
+
+  items.forEach(item => {
+    const node = itemMap.get(item.id);
+    if (!node) return;
+
+    if (item.parentId === null) {
+      // This is a root level item
+      rootItems.push(node);
     } else {
-      tree.push(itemMap[item.id]);
+      // This item has a parent
+      const parent = itemMap.get(item.parentId);
+      if (parent) {
+        if (!parent.children) {
+          parent.children = [];
+        }
+        parent.children.push(node);
+      } else {
+        // If parent is not found, treat as root item
+        rootItems.push(node);
+      }
     }
   });
 
-  return tree;
+  // Optional: Sort children arrays (if you want alphabetical order)
+  const sortTree = (items: FileTreeItem[]): FileTreeItem[] => {
+    return items.map(item => ({
+      ...item,
+      children: item.children ? sortTree(item.children).sort((a, b) => a.name.localeCompare(b.name)) : []
+    }));
+  };
+
+  return sortTree(rootItems).sort((a, b) => a.name.localeCompare(b.name));
 }

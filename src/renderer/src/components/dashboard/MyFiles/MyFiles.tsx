@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Toolbar from "../../Toolbar";
 import { useItems } from "../../../hooks/useItems";
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
@@ -8,7 +8,7 @@ import { columns } from "./columns";
 import { FileExistsDialog } from "@renderer/components/dialogs/FileExistsDialog";
 import { UploadProgress } from "@renderer/components/custom-ui/UploadProgress";
 import { ErrorDialog } from "@renderer/components/dialogs/ErrorDialog";
-import { FileItem } from "@renderer/types/files";
+import { DemoItem } from "@renderer/types/files";
 import { DeleteDialog } from "@renderer/components/dialogs/DeleteDialog";
 import { useToast } from "@renderer/hooks/use-toast";
 
@@ -36,11 +36,15 @@ const MyFiles: React.FC = () => {
   }>({ show: false, fileName: '', error: '' });
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
-    files: FileItem[];
+    files: DemoItem[];
   }>({ isOpen: false, files: [] });
   
-  const { uploadFile, checkFileExists, error, isLoading, data, mutate, deleteFile, createFolder } = useItems(filterFormat);
+  const { uploadFile, navigateToFolder, checkFileExists, error, isLoading, items, mutate, deleteFile, createFolder } = useItems(filterFormat);
   const { toast } = useToast();
+
+  useEffect(() => {
+    navigateToFolder(null); // Navigate to root folder on component mount
+  }, []);
 
   const dismissAllUploads = () => {
     setUploadProgress({});
@@ -130,7 +134,7 @@ const MyFiles: React.FC = () => {
     });
   };
 
-  const handleDeleteSelected = (selectedRows: FileItem[]) => {
+  const handleDeleteSelected = (selectedRows: DemoItem[]) => {
     setDeleteDialog({
       isOpen: true,
       files: selectedRows,
@@ -169,7 +173,6 @@ const MyFiles: React.FC = () => {
       });
     }
   };
-
 
   const handleCreateFolder = async (folderName: string) => {
     try {
@@ -217,11 +220,12 @@ const MyFiles: React.FC = () => {
         />
         <div className="flex-1 overflow-auto">
           <div className="p-4">
-            <DataTable 
+            <DataTable
               columns={columns} 
-              data={data || []} 
+              data={items || []} 
               onDeleteSelected={handleDeleteSelected}
               onFilterChange={setFilterFormat}
+              onFolderClick={(folderId) => navigateToFolder(folderId)}
             />
           </div>
         </div>

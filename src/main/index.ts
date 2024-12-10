@@ -167,11 +167,10 @@ ipcMain.handle('create-folder-structure', async (_, { basePath, folders }) => {
       try {
         await fs.promises.mkdir(folderPath, { recursive: true });
 
-        if (folder.children) {
+        // Process children if they exist
+        if (folder.children?.length) {
           for (const child of folder.children) {
-            if (child.type === 'folder') {
-              await createNestedFolders(child, folderPath);
-            }
+            await createNestedFolders(child, folderPath);
           }
         }
       } catch (error) {
@@ -180,10 +179,9 @@ ipcMain.handle('create-folder-structure', async (_, { basePath, folders }) => {
       }
     };
 
+    // Process each root folder
     for (const folder of folders) {
-      if (folder.type === 'folder') {
-        await createNestedFolders(folder, basePath);
-      }
+      await createNestedFolders(folder, basePath);
     }
 
     return { success: true };

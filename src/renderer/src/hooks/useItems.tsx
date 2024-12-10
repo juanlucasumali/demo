@@ -1,22 +1,16 @@
 import useSWR from 'swr';
 import { supabase } from '../lib/supabaseClient';
-import { FileItem, FileTreeItem } from '../types/files'; // Import the FileItem type
+import { DatabaseItem, DemoItem, FileTreeItem } from '../types/files'; // Import the FileItem type
 import { getNextFileName, sanitizeFileName } from '@renderer/lib/files';
 import { buildTree } from '@renderer/utils/buildTree';
-
-interface DatabaseFile {
-  id: string;
-  name: string;
-  file_path: string;
-  format: string;
-  created_at: string;
-  size?: number;
-  type: 'file' | 'folder'
-}
+import { useState } from 'react';
 
 interface UseItemsReturn {
-  data: FileItem[];
+  items: DemoItem[];
+  files: DemoItem[];
   folders: FileTreeItem[];
+  currentFolderId: string | null;
+  navigateToFolder: (folderId: string | null) => void
   isLoading: boolean;
   error: any;
   uploadFile: (
@@ -25,14 +19,14 @@ interface UseItemsReturn {
     replaceExisting?: boolean
   ) => Promise<void>;
   checkFileExists: (fileName: string) => Promise<boolean>;
-  downloadFile: (file: FileItem) => Promise<void>;
-  deleteFile: (file: FileItem) => Promise<void>;
+  downloadFile: (file: DemoItem) => Promise<void>;
+  deleteFile: (file: DemoItem) => Promise<void>;
   createFolder: (folderName: string) => Promise<boolean>;
   createLocalFolderStructure: (basePath: string) => Promise<void>;
-  mutate: () => Promise<void | FileItem[] | undefined>;
+  mutate: () => Promise<void | DemoItem[] | undefined>;
 }
 
-const filesFetcher = async (filterFormat: string) => {
+const itemsFetcher = async ([_, filterFormat, folderId]: [string, string, string | null]) => {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No user found');
 
@@ -42,53 +36,54 @@ const filesFetcher = async (filterFormat: string) => {
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
 
+  // Add folder filter
+  if (folderId === null) {
+    query = query.is('parent_id', null); // Root folder
+  } else {
+    query = query.eq('parent_id', folderId);
+  }
+
+  // Add format filter if we're filtering files
   if (filterFormat && filterFormat !== 'all') {
     const mimeTypes = filterFormat.split(',');
     query = query.in('format', mimeTypes);
   }
 
   const { data, error } = await query;
-  if (error) {
-    console.error('Query error:', error);
-    throw error;
-  }
+  if (error) throw error;
   
-  return data.map((file: DatabaseFile): FileItem => ({
-    id: file.id,
-    name: file.name,
-    format: file.type !== 'file' ? '-----' : file.format,
-    type: file.type,
-    dateUploaded: file.created_at,
-    size: file.size || 0,
+  return data.map((item: DatabaseItem): DemoItem => ({
+    id: item.id,
+    name: item.name,
+    format: item.format,
+    type: item.type, // 'file' or 'folder'
+    dateUploaded: item.created_at,
+    size: item.size || 0,
+    parentId: item.parent_id
   }));
 };
 
-const foldersFetcher = async () => {
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) throw new Error('No user found');
-
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .eq('owner_id', user.id)
-    .eq('type', 'folder');
-
-  if (error) throw error;
-
-  return buildTree(data);
-};
-
 export function useItems(filterFormat: string = ''): UseItemsReturn {
-  const { data, error, mutate } = useSWR(
-    ['files', filterFormat],
-    () => filesFetcher(filterFormat),
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+
+  const { data: items, error, mutate } = useSWR(
+    ['items', filterFormat, currentFolderId],
+    itemsFetcher,
     {
       revalidateOnFocus: false,
-      keepPreviousData: true, // Add this option
-      dedupingInterval: 5000, // Add a deduping interval
+      keepPreviousData: true,
+      dedupingInterval: 5000,
     }
   );
-  const { data: folders, error: foldersError } = useSWR('folders', foldersFetcher);
+
+  // Separate files and folders from items
+  const files = items?.filter(item => item.type === 'file') || [];
+  const folders = items?.filter(item => item.type === 'folder') || [];
+
+  // Add navigation function
+  const navigateToFolder = (folderId: string | null) => {
+    setCurrentFolderId(folderId);
+  };
 
   const checkFileExists = async (fileName: string): Promise<boolean> => {
     const user = (await supabase.auth.getUser()).data.user;
@@ -148,6 +143,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
           format: '',
           type: '',
           dateUploaded: '',
+          parentId: '',
           size: 0
         }));
   
@@ -205,6 +201,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
           format: file.type,
           type: 'file',
           size: file.size,
+          parent_id: currentFolderId
         });
   
       if (dbError) throw dbError;
@@ -222,7 +219,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
     }
   }
 
-  const downloadFile = async (file: FileItem) => {
+  const downloadFile = async (file: DemoItem) => {
     try {
       const { data: fileData } = await supabase
         .from('items')
@@ -255,7 +252,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
     }
   }
 
-    const deleteFile = async (file: FileItem) => {
+    const deleteFile = async (file: DemoItem) => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) return;
 
@@ -308,6 +305,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
           name: folderName,
           type: 'folder',
           owner_id: user.id,
+          parent_id: currentFolderId
         });
 
       if (error) throw error;
@@ -326,28 +324,68 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
   };
   
   const createLocalFolderStructure = async (basePath: string) => {
-    if (!folders) return;
-
-    if (!window.electron?.createFolderStructure) {
-      throw new Error('createFolderStructure is not available');
-    }
-
-    const result = await window.electron.createFolderStructure(basePath, folders);
-    
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to create folder structure');
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error('No user found');
+  
+    try {
+      // Get ALL folders for the user
+      const { data: allFolders, error } = await supabase
+        .from('items')
+        .select('*')
+        .eq('owner_id', user.id)
+        .eq('type', 'folder');
+  
+      if (error) throw error;
+      if (!allFolders) return;
+  
+      // Convert to Items and build tree structure
+      const folderItems = allFolders.map((folder): DemoItem => ({
+        id: folder.id,
+        name: folder.name,
+        format: '',
+        type: 'folder',
+        dateUploaded: folder.created_at,
+        size: 0,
+        parentId: folder.parent_id
+      }));
+  
+      const folderTree = buildTree(folderItems);
+  
+      if (!window.electron?.createFolderStructure) {
+        throw new Error('createFolderStructure is not available');
+      }
+  
+      const result = await window.electron.createFolderStructure(
+        basePath,
+        folderTree
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create folder structure');
+      }
+    } catch (error) {
+      if (typeof error === 'object' && error !== null) {
+        throw {
+          message: (error as any).message || 'Unknown error occurred',
+          details: error,
+        };
+      }
+      throw error;
     }
   };
 
   return {
-    data: data || [],
-    folders: folders || [],
-    isLoading: (!error && !data) || (!foldersError && !folders),
-    error: error || foldersError,
+    items: items || [], // All items (files and folders)
+    files: files || [], // Just files
+    folders: buildTree(items?.filter(item => item.type === 'folder') || []), // Folders in tree structure
+    currentFolderId,
+    navigateToFolder,
+    isLoading: !error && !items,
+    error,
     uploadFile,
+    checkFileExists,
     downloadFile,
     deleteFile,
-    checkFileExists,
     createFolder,
     createLocalFolderStructure,
     mutate

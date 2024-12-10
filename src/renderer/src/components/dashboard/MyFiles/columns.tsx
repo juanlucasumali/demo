@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, File, Folder, MoreHorizontal } from "lucide-react";
-import { FileItem } from "../../../types/files";
+import { DemoItem } from "../../../types/files";
 import { Button } from "../../ui/button";
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useToast } from "@renderer/hooks/use-toast";
 import { getDisplayFormat } from "@renderer/lib/files";
 
-export const columns: ColumnDef<FileItem>[] = [
+export const columns: ColumnDef<DemoItem>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -35,18 +35,23 @@ export const columns: ColumnDef<FileItem>[] = [
         </div>
       </Button>
     ),
-    cell: ({ row }) => (
-      <div className="w-72 flex items-center gap-2">
-        {row.original.type === 'folder'? (
-          <Folder className="h-4 w-4 flex-shrink-0 text-muted-foreground fill-current" />
-        ) : (
-          <File className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-        )}
-        <span className="font-medium truncate">
-          {row.getValue("name")}
-        </span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const isFolder = row.original.type === 'folder';
+      return (
+        <div 
+          className={`w-72 flex items-center gap-2 ${isFolder ? 'hover:text-primary' : ''}`}
+        >
+          {isFolder ? (
+            <Folder className="h-4 w-4 flex-shrink-0 text-muted-foreground fill-current" />
+          ) : (
+            <File className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          )}
+          <span className={`truncate ${isFolder ? 'font-medium' : ''}`}>
+            {row.getValue("name")}
+          </span>
+        </div>
+      );
+    },
   },
     {
       accessorKey: "format",
@@ -119,8 +124,11 @@ export const columns: ColumnDef<FileItem>[] = [
       const { downloadFile, deleteFile } = useItems();
       const [showDeleteDialog, setShowDeleteDialog] = useState(false);
       const { toast } = useToast();
-
-      const handleDelete = async () => {
+  
+      const isFolder = file.type === 'folder';
+  
+      const handleDelete = async (e?: React.MouseEvent) => {
+        e?.stopPropagation(); // Add this
         try {
           await deleteFile(file);
           toast({
@@ -136,32 +144,47 @@ export const columns: ColumnDef<FileItem>[] = [
         }
         setShowDeleteDialog(false);
       };
-
+  
       return (
         <>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button 
+                variant="ghost" 
+                className="h-8 w-8 p-0"
+                onClick={(e) => e.stopPropagation()} 
+              >
                 <span className="sr-only">Open menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => downloadFile(file)}>
-                Download
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alert(`Renaming ${file.name}`)}>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              {!isFolder && (
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation();
+                  downloadFile(file);
+                }}>
+                  Download
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                alert(`Renaming ${file.name}`);
+              }}>
                 Rename
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => setShowDeleteDialog(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDeleteDialog(true);
+                }}
                 className="text-red-600"
               >
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
+  
           <DeleteDialog
             isOpen={showDeleteDialog}
             onClose={() => setShowDeleteDialog(false)}

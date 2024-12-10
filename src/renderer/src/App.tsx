@@ -1,77 +1,60 @@
-import { FC, useEffect, useState } from 'react'
-import { supabase } from './lib/supabaseClient'
+import { FC } from 'react'
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth, AuthProvider } from './hooks/useAuth'
+import { ProtectedRoute } from './routes/ProtectedRoute'
+import { WelcomePage } from './pages/WelcomePage'
+import { LoginPage } from './pages/LoginPage'
+import { SignupPage } from './pages/SignupPage'
+import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { Dashboard } from './components/dashboard/Dashboard'
-import { AuthForm } from './components/auth/AuthForm'
-import { VerifyEmail } from './components/auth/VerifyEmail'
 import MyFiles from './components/dashboard/MyFiles/MyFiles'
 
-export type ViewType = "welcome" | "signup" | "login" | "main" | "files" | "verify"
+const AppContent: FC = () => {
+  const { session, loading } = useAuth()
 
-const App: FC = () => {
-  const [view, setView] = useState<ViewType>("welcome")
-  const [emailAddress, setEmailAddress] = useState("")
-
-  useEffect(() => {
-    let isMounted = true
-
-    const getInitialSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession()
-
-      if (error) {
-        console.error("Error getting session:", error)
-        return
-      }
-
-      if (session && isMounted) {
-        if (session.user.email_confirmed_at) {
-          setView("main")
-        } else {
-          setView("verify")
-        }
-      }
-    }
-
-    getInitialSession()
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        if (session.user.email_confirmed_at) {
-          setView("main")
-        } else {
-          setView("verify")
-        }
-      } else {
-        setView("welcome")
-      }
-    })
-
-    return () => {
-      isMounted = false
-      authListener?.subscription.unsubscribe()
-    }
-  }, [])
-
-  const handleAuthSuccess = () => {
-    setView("main")
-  }
+  if (loading) return <div>Loading...</div>
 
   return (
     <div className="flex h-screen w-full items-center justify-center px-4">
-      {view === "main" ? (
-        <Dashboard />
-      ) : view === "files" ? (
-        <MyFiles />
-      ) : view === "verify" ? (
-        <VerifyEmail emailAddress={emailAddress} onBack={() => setView("signup")} />
-      ) : (
-        <AuthForm
-          view={view as "welcome" | "login" | "signup"}
-          onViewChange={setView}
-          onSuccess={handleAuthSuccess}
-          setEmailAddress={setEmailAddress}
-        />
-      )}
+      <Router>
+        <Routes>
+          <Route path="/" element={
+            session && session.user
+              ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
+              : <WelcomePage />
+          }/>
+
+          <Route path="/login" element={
+            session && session.user
+              ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
+              : <LoginPage />
+          }/>
+
+          <Route path="/signup" element={
+            session && session.user
+              ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
+              : <SignupPage />
+          }/>
+
+          <Route path="/verify" element={ <VerifyEmailPage /> }/>
+
+          <Route element={<ProtectedRoute session={session} />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/files" element={<MyFiles />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
     </div>
+  )
+}
+
+const App: FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

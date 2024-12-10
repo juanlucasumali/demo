@@ -76,10 +76,6 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
     }
   );
 
-  // Separate files and folders from items
-  const files = items?.filter(item => item.type === 'file') || [];
-  const folders = items?.filter(item => item.type === 'folder') || [];
-
   // Add navigation function
   const navigateToFolder = (folderId: string | null) => {
     setCurrentFolderId(folderId);
@@ -376,7 +372,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
 
   return {
     items: items || [], // All items (files and folders)
-    files: files || [], // Just files
+    files: items?.filter(item => item.type === 'files') || [], // Just files
     folders: buildTree(items?.filter(item => item.type === 'folder') || []), // Folders in tree structure
     currentFolderId,
     navigateToFolder,

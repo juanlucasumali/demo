@@ -1,10 +1,5 @@
 import { FileItem } from "@renderer/types/files";
 
-export const isValidYoutubeUrl = (url: string) => {
-  const pattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/
-  return pattern.test(url)
-}
-
 export const sanitizeFileName = (fileName: string): string => {
   // First, handle the extension separately
   const ext = fileName.includes('.') ? '.' + fileName.split('.').pop() : '';

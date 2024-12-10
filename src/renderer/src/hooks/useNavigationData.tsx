@@ -10,7 +10,7 @@ export function useNavigationData() {
     const { data: items, error } = await supabase
       .from('items')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('owner_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

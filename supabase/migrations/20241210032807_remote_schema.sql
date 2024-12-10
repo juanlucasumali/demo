@@ -64,21 +64,9 @@ SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
 
-CREATE TABLE IF NOT EXISTS "public"."folder_items" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "parent_id" "uuid",
-    "item_id" "uuid",
-    "item_type" "text",
-    "user_id" "uuid"
-);
-
-ALTER TABLE "public"."folder_items" OWNER TO "postgres";
-
 CREATE TABLE IF NOT EXISTS "public"."items" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "user_id" "uuid",
     "name" "text",
     "file_path" "text",
     "format" "text",
@@ -86,7 +74,8 @@ CREATE TABLE IF NOT EXISTS "public"."items" (
     "size" bigint,
     "type" "text" NOT NULL,
     "sub_type" "text",
-    "parent_id" "uuid"
+    "parent_id" "uuid",
+    "owner_id" "uuid"
 );
 
 ALTER TABLE "public"."items" OWNER TO "postgres";
@@ -105,23 +94,11 @@ ALTER TABLE "public"."users" OWNER TO "postgres";
 ALTER TABLE ONLY "public"."items"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
 
-ALTER TABLE ONLY "public"."folder_items"
-    ADD CONSTRAINT "folder_items_pkey" PRIMARY KEY ("id");
-
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_pkey" PRIMARY KEY ("user_id");
 
 ALTER TABLE ONLY "public"."items"
-    ADD CONSTRAINT "files_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."folder_items"
-    ADD CONSTRAINT "folder_items_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "public"."items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."folder_items"
-    ADD CONSTRAINT "folder_items_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."folder_items"
-    ADD CONSTRAINT "folder_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "items_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."items"
     ADD CONSTRAINT "items_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
@@ -129,27 +106,17 @@ ALTER TABLE ONLY "public"."items"
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
-CREATE POLICY "Enable delete for users based on user_id" ON "public"."folder_items" FOR DELETE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."items" FOR DELETE USING (("auth"."uid"() = "owner_id"));
 
-CREATE POLICY "Enable delete for users based on user_id" ON "public"."items" FOR DELETE USING (("auth"."uid"() = "user_id"));
-
-CREATE POLICY "Enable insert for users based on user_id" ON "public"."folder_items" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable insert for users based on user_id" ON "public"."items" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Enable insert for users based on user_id" ON "public"."items" FOR INSERT WITH CHECK (("auth"."uid"() = "owner_id"));
 
 CREATE POLICY "Enable read access for all users" ON "public"."users" FOR SELECT USING (true);
 
-CREATE POLICY "Enable read access for authenticated users only" ON "public"."folder_items" FOR SELECT TO "authenticated" USING (true);
-
 CREATE POLICY "Enable read access for authenticated users only" ON "public"."items" FOR SELECT TO "authenticated" USING (true);
 
-CREATE POLICY "Enable update for users based on user_id" ON "public"."folder_items" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable update for users based on user_id" ON "public"."items" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Enable update for users based on user_id" ON "public"."items" FOR UPDATE USING (("auth"."uid"() = "owner_id")) WITH CHECK (("auth"."uid"() = "owner_id"));
 
 CREATE POLICY "Enable update for users based on user_id" ON "public"."users" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
-
-ALTER TABLE "public"."folder_items" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."items" ENABLE ROW LEVEL SECURITY;
 
@@ -165,10 +132,6 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
-
-GRANT ALL ON TABLE "public"."folder_items" TO "anon";
-GRANT ALL ON TABLE "public"."folder_items" TO "authenticated";
-GRANT ALL ON TABLE "public"."folder_items" TO "service_role";
 
 GRANT ALL ON TABLE "public"."items" TO "anon";
 GRANT ALL ON TABLE "public"."items" TO "authenticated";

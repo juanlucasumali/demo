@@ -39,7 +39,7 @@ const filesFetcher = async (filterFormat: string) => {
   let query = supabase
     .from('items')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
 
   if (filterFormat && filterFormat !== 'all') {
@@ -70,7 +70,7 @@ const foldersFetcher = async () => {
   const { data, error } = await supabase
     .from('items')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('owner_id', user.id)
     .eq('type', 'folder');
 
   if (error) throw error;
@@ -98,7 +98,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
       const { data: existingFiles } = await supabase
       .from('items')
       .select('name')
-      .eq('user_id', user.id)
+      .eq('owner_id', user.id)
       .eq('name', fileName)
       .single();
 
@@ -140,7 +140,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
         const { data: existingFiles } = await supabase
           .from('items')
           .select('name')
-          .eq('user_id', user.id);
+          .eq('owner_id', user.id);
   
         const existingFileItems = (existingFiles || []).map(f => ({ 
           name: f.name,
@@ -165,7 +165,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
         const { data: existingFile } = await supabase
           .from('items')
           .select('file_path')
-          .eq('user_id', user.id)
+          .eq('owner_id', user.id)
           .eq('name', file.name)
           .single();
   
@@ -177,7 +177,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
           await supabase
             .from('items')
             .delete()
-            .eq('user_id', user.id)
+            .eq('owner_id', user.id)
             .eq('name', file.name);
         }
       }
@@ -199,7 +199,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
       const { error: dbError } = await supabase
         .from('items')
         .insert({
-          user_id: user.id,
+          owner_id: user.id,
           name: finalFileName,
           file_path: storageData.path,
           format: file.type,
@@ -307,7 +307,7 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
         .insert({
           name: folderName,
           type: 'folder',
-          user_id: user.id,
+          owner_id: user.id,
         });
 
       if (error) throw error;
@@ -338,8 +338,6 @@ export function useItems(filterFormat: string = ''): UseItemsReturn {
       throw new Error(result.error || 'Failed to create folder structure');
     }
   };
-
-
 
   return {
     data: data || [],

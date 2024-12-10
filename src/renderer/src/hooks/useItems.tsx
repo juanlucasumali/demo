@@ -1,7 +1,8 @@
 import useSWR from 'swr';
 import { supabase } from '../lib/supabaseClient';
-import { FileItem } from '../types/files'; // Import the FileItem type
+import { FileItem, FileTreeItem } from '../types/files'; // Import the FileItem type
 import { getNextFileName, sanitizeFileName } from '@renderer/lib/files';
+import { buildTree } from '@renderer/utils/buildTree';
 
 interface DatabaseFile {
   id: string;
@@ -13,8 +14,9 @@ interface DatabaseFile {
   type: 'file' | 'folder'
 }
 
-export interface UseFilesReturn {
+interface UseItemsReturn {
   data: FileItem[];
+  folders: FileTreeItem[];
   isLoading: boolean;
   error: any;
   uploadFile: (
@@ -25,11 +27,12 @@ export interface UseFilesReturn {
   checkFileExists: (fileName: string) => Promise<boolean>;
   downloadFile: (file: FileItem) => Promise<void>;
   deleteFile: (file: FileItem) => Promise<void>;
-  mutate: () => Promise<void | FileItem[] | undefined>;
   createFolder: (folderName: string) => Promise<boolean>;
+  createLocalFolderStructure: (basePath: string) => Promise<void>;
+  mutate: () => Promise<void | FileItem[] | undefined>;
 }
 
-const fetcher = async (filterFormat: string) => {
+const filesFetcher = async (filterFormat: string) => {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No user found');
 
@@ -60,17 +63,32 @@ const fetcher = async (filterFormat: string) => {
   }));
 };
 
+const foldersFetcher = async () => {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No user found');
 
-export function useFiles(filterFormat: string = ''): UseFilesReturn {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('type', 'folder');
+
+  if (error) throw error;
+
+  return buildTree(data);
+};
+
+export function useItems(filterFormat: string = ''): UseItemsReturn {
   const { data, error, mutate } = useSWR(
     ['files', filterFormat],
-    () => fetcher(filterFormat),
+    () => filesFetcher(filterFormat),
     {
       revalidateOnFocus: false,
       keepPreviousData: true, // Add this option
       dedupingInterval: 5000, // Add a deduping interval
     }
   );
+  const { data: folders, error: foldersError } = useSWR('folders', foldersFetcher);
 
   const checkFileExists = async (fileName: string): Promise<boolean> => {
     const user = (await supabase.auth.getUser()).data.user;
@@ -306,16 +324,34 @@ export function useFiles(filterFormat: string = ''): UseFilesReturn {
       throw error;
     }
   };
+  
+  const createLocalFolderStructure = async (basePath: string) => {
+    if (!folders) return;
+
+    if (!window.electron?.createFolderStructure) {
+      throw new Error('createFolderStructure is not available');
+    }
+
+    const result = await window.electron.createFolderStructure(basePath, folders);
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create folder structure');
+    }
+  };
+
+
 
   return {
     data: data || [],
-    isLoading: !error && !data,
-    error,
+    folders: folders || [],
+    isLoading: (!error && !data) || (!foldersError && !folders),
+    error: error || foldersError,
     uploadFile,
     downloadFile,
     deleteFile,
     checkFileExists,
     createFolder,
+    createLocalFolderStructure,
     mutate
   };
 }

@@ -3,7 +3,7 @@ import { Card, CardContent } from "../../ui/card"
 import { Button } from "../../ui/button"
 import { Checkbox } from "../../ui/checkbox"
 import { useUser } from '@renderer/hooks/useUser'
-import { useFiles } from '@renderer/hooks/useFiles'
+import { useItems } from '@renderer/hooks/useItems'
 import { Loader2, Upload } from "lucide-react"
 import { UploadProgress } from "@renderer/components/custom-ui/UploadProgress"
 import { FileExistsDialog } from "@renderer/components/dialogs/FileExistsDialog"
@@ -26,7 +26,7 @@ interface LocalFile {
 
 export const LocalFolderSync: FC<LocalFolderSyncProps> = ({ mode }) => {
   const { user } = useUser();
-  const { uploadFile, checkFileExists, mutate } = useFiles();
+  const { uploadFile, checkFileExists, mutate } = useItems();
   const { toast } = useToast();
   
   const [localFiles, setLocalFiles] = useState<LocalFile[]>([]);

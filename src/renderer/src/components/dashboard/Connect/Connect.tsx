@@ -2,16 +2,16 @@ import { FC } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card"
 import { Button } from "../../ui/button"
 import { useUser } from '@renderer/hooks/useUser';
-import { useFolders } from '@renderer/hooks/useFolders';
 import { Alert, AlertDescription } from "../../ui/alert"
 import { CheckCircle2, XCircle } from "lucide-react"
 import { useToast } from "@renderer/hooks/use-toast"
 import { LocalFolderSync } from './LocalFolderSync' // We'll create this component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs"
+import { useItems } from '@renderer/hooks/useItems';
 
 export const Connect: FC = () => {
   const { user, setLocalPath, error: userError, isLoading: userLoading } = useUser();
-  const { createLocalFolderStructure } = useFolders();
+  const { createLocalFolderStructure } = useItems();
   const { toast } = useToast();
 
   const handleConnect = async () => {

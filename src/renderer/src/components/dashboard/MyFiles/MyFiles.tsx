@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Toolbar from "../../Toolbar";
-import { useFiles } from "../../../hooks/useFiles";
+import { useItems } from "../../../hooks/useItems";
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { DataTable } from "./data-table";
@@ -39,7 +39,7 @@ const MyFiles: React.FC = () => {
     files: FileItem[];
   }>({ isOpen: false, files: [] });
   
-  const { uploadFile, checkFileExists, error, isLoading, data, mutate, deleteFile, createFolder } = useFiles(filterFormat);
+  const { uploadFile, checkFileExists, error, isLoading, data, mutate, deleteFile, createFolder } = useItems(filterFormat);
   const { toast } = useToast();
 
   const dismissAllUploads = () => {

@@ -10,7 +10,7 @@ import {
 } from "../../ui/dropdown-menu";
 import { format } from "date-fns";
 import { filesize } from "filesize";
-import { useFiles } from "@renderer/hooks/useFiles";
+import { useItems } from "@renderer/hooks/useItems";
 import { DeleteDialog } from "@renderer/components/dialogs/DeleteDialog";
 import { useState } from "react";
 import { useToast } from "@renderer/hooks/use-toast";
@@ -116,7 +116,7 @@ export const columns: ColumnDef<FileItem>[] = [
     id: "actions",
     cell: ({ row }) => {
       const file = row.original;
-      const { downloadFile, deleteFile } = useFiles();
+      const { downloadFile, deleteFile } = useItems();
       const [showDeleteDialog, setShowDeleteDialog] = useState(false);
       const { toast } = useToast();
 

@@ -1,5 +1,5 @@
 export interface DatabaseItem {
-  id: string;
+  id: string | null;
   name: string;
   format: string | null;
   type: 'file' | 'folder';

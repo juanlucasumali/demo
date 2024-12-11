@@ -292,7 +292,6 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     }
   }
 
-
   const createLocalFolderStructure = async (basePath: string) => {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('No user found');

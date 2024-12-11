@@ -42,7 +42,7 @@ export const Sidebar: FC<SidebarProps> = (props) => {
         <SidebarMenu>
           <SidebarItem
             item={{
-              id: 'root',
+              id: null,
               name: 'My Files',
               type: 'folder',
               format: '',

@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { ChevronRight, Folder, MoreHorizontal, Share } from 'lucide-react';
 import {
   Collapsible,
@@ -24,7 +24,7 @@ interface SidebarItemProps {
 
 export const SidebarItem: FC<SidebarItemProps> = ({ item, isRoot = false }) => {
   const { isMobile } = useSidebar();
-  const { navigateToFolder, getFolderContents } = useFileSystem();
+  const { currentFolderId, items, navigateToFolder, getFolderContents } = useFileSystem();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [subFolders, setSubFolders] = useState<DatabaseItem[]>([]);
@@ -32,6 +32,41 @@ export const SidebarItem: FC<SidebarItemProps> = ({ item, isRoot = false }) => {
   const [hasLoaded, setHasLoaded] = useState(false);
 
   const isFolder = item.type === 'folder';
+
+  console.log('items, currentFolderId', items, currentFolderId)
+
+  useEffect(() => {
+    const syncSubFolders = async () => {
+      // Only sync if the folder is expanded and it's a folder
+      if (isExpanded && hasLoaded && (currentFolderId === item.id)) {
+        try {
+          const newSubFolders = await getFolderContents(isRoot ? null : item.id);
+          
+          // Compare current subfolders with new subfolders
+          const currentIds = new Set(subFolders.map(f => f.id));
+          const newIds = new Set(newSubFolders.map(f => f.id));
+          
+          // Find folders to add and remove
+          const foldersToAdd = newSubFolders.filter(f => !currentIds.has(f.id));
+          const foldersToRemove = subFolders.filter(f => !newIds.has(f.id));
+          
+          if (foldersToAdd.length > 0 || foldersToRemove.length > 0) {
+            setSubFolders(prev => {
+              const updated = prev.filter(f => !foldersToRemove.some(r => r.id === f.id));
+              return [...updated, ...foldersToAdd].sort((a, b) => {
+                // Sort by created_at in descending order (most recent first)
+                return new Date(b.dateUploaded).getTime() - new Date(a.dateUploaded).getTime();
+              });
+            });
+          }
+        } catch (error) {
+          console.error('Error syncing folders:', error);
+        }
+      }
+    };
+
+    syncSubFolders();
+  }, [items]);
 
   const handleExpand = async () => {
     // Only fetch once
@@ -50,8 +85,8 @@ export const SidebarItem: FC<SidebarItemProps> = ({ item, isRoot = false }) => {
     setIsExpanded(!isExpanded);
   };
 
-  const handleFolderClick = (folderId: string) => {
-    const targetFolderId = folderId === 'root' ? null : folderId;
+  const handleFolderClick = (folderId: string | null) => {
+    const targetFolderId = folderId;
     navigateToFolder(targetFolderId);
   };
 

@@ -6,6 +6,7 @@ import { Lame } from 'node-lame'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import './b2Service'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -21,7 +22,11 @@ function createWindow(): void {
       nodeIntegration: true, 
       contextIsolation: false,
       sandbox: false,
-      zoomFactor: 1.0  // Set initial zoom factor
+      zoomFactor: 1.0,  // Set initial zoom factor
+      additionalArguments: [
+        `--content-security-policy`,
+        `default-src 'self' https://api.backblazeb2.com https://*.backblazeb2.com https://*.supabase.co; connect-src 'self' https://api.backblazeb2.com https://*.backblazeb2.com https://*.supabase.co`
+      ]
     }
   })
 

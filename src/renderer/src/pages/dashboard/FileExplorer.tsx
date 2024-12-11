@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Toolbar from "../../components/Toolbar";
-import { useItems } from "../../hooks/useItems";
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { DataTable } from "./DataTable";
@@ -8,54 +7,49 @@ import { createColumns } from "./Columns";
 import { FileExistsDialog } from "@renderer/components/dialogs/FileExistsDialog";
 import { UploadProgress } from "@renderer/components/custom-ui/UploadProgress";
 import { ErrorDialog } from "@renderer/components/dialogs/ErrorDialog";
-import { DemoItem } from "@renderer/types/files";
+import { DatabaseItem } from "@renderer/types/files";
 import { DeleteDialog } from "@renderer/components/dialogs/DeleteDialog";
 import { useToast } from "@renderer/hooks/use-toast";
-import { useParams } from "react-router-dom";
+import { useFileSystem } from "@renderer/contexts/FileSystemContext";
 
 export type UploadStatus = {
   progress: number;
   conflict?: boolean;
   file?: File;
-  error?: Error | string; // Add error property
+  error?: Error | string;
 };
 
 const FileExplorer: React.FC = () => {
-  const { folderId } = useParams();
-  const [filterFormat, setFilterFormat] = useState("");
-  const [uploadProgress, setUploadProgress] = useState<{
-    [key: string]: UploadStatus;
-  }>({});
-  const [fileExistsDialog, setFileExistsDialog] = useState<{
-    show: boolean;
-    fileName: string;
-    file?: File;
-  }>({ show: false, fileName: '' });
-  const [errorDialog, setErrorDialog] = useState<{
-    show: boolean;
-    fileName: string;
-    error: Error | string;
-  }>({ show: false, fileName: '', error: '' });
-  const [deleteDialog, setDeleteDialog] = useState<{
-    isOpen: boolean;
-    files: DemoItem[];
-  }>({ isOpen: false, files: [] });
-  
-  const { uploadFile, navigateToFolder, checkFileExists, error, isLoading, items, mutate, deleteFile, createFolder } = useItems(filterFormat);
-  const { toast } = useToast();
+  const {
+    items,
+    isLoading,
+    error,
+    setFilterFormat,
+    uploadFile,
+    checkFileExists,
+    deleteFile,
+    createFolder,
+    refresh
+  } = useFileSystem();
 
-  useEffect(() => {
-    navigateToFolder(null); // Navigate to root folder on component mount
-  }, []);
+  const [uploadProgress, setUploadProgress] = useState<{[key: string]: UploadStatus}>({});
+  const [fileExistsDialog, setFileExistsDialog] = useState<{ show: boolean; fileName: string; file?: File; }>({ show: false, fileName: '' });
+  const [errorDialog, setErrorDialog] = useState<{ show: boolean; fileName: string; error: Error | string; }>({ show: false, fileName: '', error: '' });
+  const [deleteDialog, setDeleteDialog] = useState<{isOpen: boolean; files: DatabaseItem[];}>({ isOpen: false, files: [] });
+
+  const { toast } = useToast();
 
   const dismissAllUploads = () => {
     setUploadProgress({});
   };
 
-  const handleUpload = async (file: File, replace: boolean = false) => {
+  const handleUpload = async (file: File, replace: boolean = false, newFileName?: string) => {
+    
+    const finalFileName = newFileName ?? file.name;
+    
     setUploadProgress((prev) => ({
       ...prev,
-      [file.name]: { progress: 0 }
+      [finalFileName]: { progress: 0 }
     }));
   
     try {
@@ -64,21 +58,22 @@ const FileExplorer: React.FC = () => {
         (progress) => {
           setUploadProgress((prev) => ({
             ...prev,
-            [file.name]: { ...prev[file.name], progress }
+            [finalFileName]: { ...prev[finalFileName], progress }
           }));
         },
-        replace
+        replace,
+        newFileName
       );
-      await mutate();
-    } catch (error) {
-      console.error("Upload error:", error);
+      await refresh();
+    } catch (err) {
+      console.error("Upload error:", err);
       setUploadProgress((prev) => ({
         ...prev,
-        [file.name]: { 
-          ...prev[file.name], 
+        [finalFileName]: { 
+          ...prev[finalFileName], 
           progress: -1,
-          error: typeof error === 'object' && error !== null
-            ? (error as any).message || JSON.stringify(error)
+          error: typeof err === 'object' && err !== null
+            ? (err as any).message || JSON.stringify(err)
             : 'Unknown error occurred'
         }
       }));
@@ -96,7 +91,6 @@ const FileExplorer: React.FC = () => {
           ...prev,
           [file.name]: { progress: -2, conflict: true, file }
         }));
-        console.log("FILE EXISTS, SETTING UPLOAD PROGRESS TO -2")
       } else {
         handleUpload(file);
       }
@@ -121,9 +115,20 @@ const FileExplorer: React.FC = () => {
     setFileExistsDialog({ show: false, fileName: '' });
   };
 
-  const handleKeepBoth = () => {
+  const handleKeepBoth = (newFileName: string) => {
     if (fileExistsDialog.file) {
-      handleUpload(fileExistsDialog.file, false);
+      // First update the uploadProgress state with the new filename
+      setUploadProgress((prev) => {
+        const newProgress = { ...prev };
+        // Copy the data from old key to new key
+        if (fileExistsDialog.fileName in newProgress) {
+          newProgress[newFileName] = { ...newProgress[fileExistsDialog.fileName] };
+          // Remove the old key
+          delete newProgress[fileExistsDialog.fileName];
+        }
+        return newProgress;
+      });
+      handleUpload(fileExistsDialog.file, true, newFileName);
     }
     setFileExistsDialog({ show: false, fileName: '' });
   };
@@ -136,7 +141,7 @@ const FileExplorer: React.FC = () => {
     });
   };
 
-  const handleDeleteSelected = (selectedRows: DemoItem[]) => {
+  const handleDeleteSelected = (selectedRows: DatabaseItem[]) => {
     setDeleteDialog({
       isOpen: true,
       files: selectedRows,
@@ -144,7 +149,6 @@ const FileExplorer: React.FC = () => {
   };
 
   const handleConfirmDelete = async () => {
-    // Show loading toast
     toast({
       title: deleteDialog.files.length === 1
         ? `Deleting ${deleteDialog.files[0].name}...`
@@ -153,19 +157,16 @@ const FileExplorer: React.FC = () => {
 
     try {
       await Promise.all(deleteDialog.files.map(file => deleteFile(file)));
-      await mutate();
+      await refresh();
       setDeleteDialog({ isOpen: false, files: [] });
       
-      // Show success toast
       toast({
         title: deleteDialog.files.length === 1
           ? `${deleteDialog.files[0].name} deleted successfully`
           : `${deleteDialog.files.length} files deleted successfully`,
       });
-    } catch (error) {
-      console.error('Error deleting files:', error);
-      
-      // Show error toast
+    } catch (err) {
+      console.error('Error deleting files:', err);
       toast({
         variant: "destructive",
         title: "Delete failed",
@@ -183,7 +184,7 @@ const FileExplorer: React.FC = () => {
         title: "Folder created",
         description: `Folder "${folderName}" created successfully`,
       });
-    } catch (error) {
+    } catch (err) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -191,10 +192,6 @@ const FileExplorer: React.FC = () => {
       });
     }
   };
-
-  useEffect(() => {
-    navigateToFolder(folderId || null);
-  }, [folderId]);
 
   if (error)
     return (
@@ -249,8 +246,8 @@ const FileExplorer: React.FC = () => {
           uploads={uploadProgress}
           onDismiss={dismissUpload}
           onResolveConflict={handleResolveConflict}
-          onShowError={(fileName, error) => 
-            setErrorDialog({ show: true, fileName, error })}
+          onShowError={(fileName, err) => 
+            setErrorDialog({ show: true, fileName, error: err })}
           onClose={dismissAllUploads}
         />
 
@@ -265,11 +262,11 @@ const FileExplorer: React.FC = () => {
           isOpen={fileExistsDialog.show}
           fileName={fileExistsDialog.file?.name || ''}
           onReplace={handleReplace}
-          onKeepBoth={handleKeepBoth}
+          onKeepBoth={(newFileName) => handleKeepBoth(newFileName)}
           onCancel={() => setFileExistsDialog({ show: false, fileName: '', file: undefined })}
         />
       </div>
     );
-  };
+};
 
-  export default FileExplorer;
+export default FileExplorer;

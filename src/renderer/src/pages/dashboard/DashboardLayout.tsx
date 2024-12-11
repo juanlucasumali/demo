@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../../components/ui/breadcrumb"
 import { Separator } from "../../components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "../../components/ui/sidebar"
-import { Sidebar } from '@renderer/pages/dashboard/Sidebar'
+import { Sidebar } from '@renderer/pages/sidebar/Sidebar'
 
 export const DashboardLayout: FC = () => {
 

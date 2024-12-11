@@ -3,13 +3,13 @@ import { Card, CardContent } from "../../ui/card"
 import { Button } from "../../ui/button"
 import { Checkbox } from "../../ui/checkbox"
 import { useUser } from '@renderer/hooks/useUser'
-import { useItems } from '@renderer/hooks/useItems'
 import { Loader2, Upload } from "lucide-react"
 import { UploadProgress } from "@renderer/components/custom-ui/UploadProgress"
 import { FileExistsDialog } from "@renderer/components/dialogs/FileExistsDialog"
 import { ErrorDialog } from "@renderer/components/dialogs/ErrorDialog"
 import { useToast } from "@renderer/hooks/use-toast"
 import { UploadStatus } from '../../../pages/dashboard/FileExplorer'
+import { useFileSystem } from '@renderer/contexts/FileSystemContext'
 
 interface LocalFolderSyncProps {
   mode: 'selective' | 'full'
@@ -26,7 +26,7 @@ interface LocalFile {
 
 export const LocalFolderSync: FC<LocalFolderSyncProps> = ({ mode }) => {
   const { user } = useUser();
-  const { uploadFile, checkFileExists, mutate } = useItems();
+  const { uploadFile, checkFileExists, refresh } = useFileSystem();
   const { toast } = useToast();
   
   const [localFiles, setLocalFiles] = useState<LocalFile[]>([]);
@@ -86,7 +86,7 @@ export const LocalFolderSync: FC<LocalFolderSyncProps> = ({ mode }) => {
         },
         replace
       );
-      await mutate();
+      await refresh();
     } catch (error) {
       console.error("Upload error:", error);
       setUploadProgress((prev) => ({

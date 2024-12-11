@@ -8,7 +8,7 @@ import { SignupPage } from './pages/SignupPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { DashboardLayout } from './pages/dashboard/DashboardLayout'
 import { dashboardRoutes } from './routes/dashboardRoutes'
-import { FoldersProvider } from './contexts/FoldersContext'
+import { FileSystemProvider } from './contexts/FileSystemContext'
 
 const AppContent: FC = () => {
   const { session, loading } = useAuth()
@@ -18,7 +18,7 @@ const AppContent: FC = () => {
   return (
     <div className="flex h-screen w-full items-center justify-center px-4">
       <Router>
-        <FoldersProvider> 
+        <FileSystemProvider>
           <Routes>
             <Route path="/" element={
               session && session.user
@@ -54,7 +54,7 @@ const AppContent: FC = () => {
 
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </FoldersProvider> 
+        </FileSystemProvider>
       </Router>
     </div>
   )

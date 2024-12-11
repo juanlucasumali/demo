@@ -29,3 +29,23 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.api = api
 }
+
+const b2Api = {
+  uploadFile: (fileName: string, fileBuffer: ArrayBuffer) => 
+    ipcRenderer.invoke('b2-upload-file', { fileName, fileBuffer }),
+  downloadFile: (fileName: string) => 
+    ipcRenderer.invoke('b2-download-file', { fileName }),
+  deleteFile: (fileName: string) => 
+    ipcRenderer.invoke('b2-delete-file', { fileName })
+};
+
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld('b2', b2Api)
+  } catch (error) {
+    console.error(error)
+  }
+} else {
+  // @ts-ignore (define in dts)
+  window.b2 = b2Api
+}

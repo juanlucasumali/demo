@@ -7,11 +7,11 @@ import { CheckCircle2, XCircle } from "lucide-react"
 import { useToast } from "@renderer/hooks/use-toast"
 import { LocalFolderSync } from './LocalFolderSync' // We'll create this component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs"
-import { useItems } from '@renderer/hooks/useItems';
+import { useFileSystem } from '@renderer/contexts/FileSystemContext';
 
 export const Connect: FC = () => {
   const { user, setLocalPath, error: userError, isLoading: userLoading } = useUser();
-  const { createLocalFolderStructure } = useItems();
+  const { createLocalFolderStructure } = useFileSystem();
   const { toast } = useToast();
 
   const handleConnect = async () => {

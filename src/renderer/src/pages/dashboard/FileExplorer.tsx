@@ -24,6 +24,7 @@ const FileExplorer: React.FC = () => {
     items,
     isLoading,
     error,
+    setFilterFormat,
     uploadFile,
     checkFileExists,
     deleteFile,
@@ -31,7 +32,6 @@ const FileExplorer: React.FC = () => {
     refresh
   } = useFileSystem();
 
-  const [filterFormat, setFilterFormat] = useState("");
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: UploadStatus}>({});
   const [fileExistsDialog, setFileExistsDialog] = useState<{ show: boolean; fileName: string; file?: File; }>({ show: false, fileName: '' });
   const [errorDialog, setErrorDialog] = useState<{ show: boolean; fileName: string; error: Error | string; }>({ show: false, fileName: '', error: '' });

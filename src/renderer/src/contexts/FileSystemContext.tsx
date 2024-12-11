@@ -7,9 +7,11 @@ import { buildTree } from '@renderer/utils/buildTree';
 interface FileSystemContextValue {
   items: DatabaseItem[];
   currentFolderId: string | null;
+  filterFormat: string;
   isLoading: boolean;
   error: any;
   navigateToFolder: (folderId: string | null) => void;
+  setFilterFormat: (format: string) => void;
   createFolder: (folderName: string) => Promise<void>;
   getFolderContents: (folderId: string | null) => Promise<DatabaseItem[]>;
   uploadFile: (
@@ -28,7 +30,7 @@ interface FileSystemContextValue {
 const FileSystemContext = createContext<FileSystemContextValue | undefined>(undefined);
 
 // Fetcher function for SWR
-const itemsFetcher = async ([_, folderId]: [string, string | null]) => {
+const itemsFetcher = async ([_, folderId, filterFormat]: [string, string | null, string]) => {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No user found');
 
@@ -38,10 +40,17 @@ const itemsFetcher = async ([_, folderId]: [string, string | null]) => {
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
 
+  // Add folder filter
   if (folderId === null) {
     query = query.is('parent_id', null);
   } else {
     query = query.eq('parent_id', folderId);
+  }
+
+  // Add format filter if specified
+  if (filterFormat && filterFormat !== 'all') {
+    const mimeTypes = filterFormat.split(',');
+    query = query.in('format', mimeTypes);
   }
 
   const { data, error } = await query;
@@ -61,9 +70,10 @@ const itemsFetcher = async ([_, folderId]: [string, string | null]) => {
 
 export function FileSystemProvider({ children }: { children: ReactNode }) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [filterFormat, setFilterFormat] = useState<string>('');
 
   const { data: items, error, mutate } = useSWR(
-    ['items', currentFolderId],
+    ['items', currentFolderId, filterFormat],
     itemsFetcher,
     {
       revalidateOnFocus: false,
@@ -340,9 +350,11 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
   const value: FileSystemContextValue = {
     items: items || [],
     currentFolderId,
+    filterFormat,
     isLoading: !error && !items,
     error,
     navigateToFolder,
+    setFilterFormat, // Add this
     createFolder,
     getFolderContents,
     uploadFile,
@@ -352,6 +364,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     createLocalFolderStructure,
     refresh: () => mutate()
   };
+
 
   return (
     <FileSystemContext.Provider value={value}>

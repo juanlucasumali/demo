@@ -2,13 +2,14 @@ import { createContext, useContext, ReactNode, useState } from 'react';
 import { FileTreeItem, DemoItem } from '../types/files';
 import { supabase } from '../lib/supabaseClient';
 import { buildTree } from '../utils/buildTree';
+import { useNavigate } from 'react-router-dom';
 
 interface FoldersContextType {
   folders: FileTreeItem[];
   currentFolderId: string | null;
   isLoading: boolean;
   error: any;
-  setCurrentFolder: (folderId: string | null) => void;
+  navigateToFolder: (folderId: string | null) => void;
   createFolder: (folderName: string) => Promise<boolean>;
   deleteFolder: (folderId: string) => Promise<boolean>;
   getFolderContents: (folderId: string | null) => Promise<DemoItem[]>;
@@ -22,6 +23,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
+  const navigate = useNavigate();
 
   const fetchFolders = async () => {
     try {
@@ -51,6 +53,16 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       setError(err);
       setIsLoading(false);
+    }
+  };
+
+  const navigateToFolder = (folderId: string | null) => {
+    console.log("In FoldersCOntext, folderId:", folderId)
+    setCurrentFolderId(folderId);
+    if (folderId) {
+      navigate(`/dashboard/files/${folderId}`);
+    } else {
+      navigate('/dashboard/files');
     }
   };
 
@@ -87,6 +99,13 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       await fetchFolders();
+      // Navigate to parent folder or root after deletion
+      const deletedFolder = folders.find(f => f.id === folderId);
+      if (deletedFolder?.parentId) {
+        navigateToFolder(deletedFolder.parentId);
+      } else {
+        navigateToFolder(null);
+      }
       return true;
     } catch (error) {
       throw error;
@@ -132,7 +151,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     currentFolderId,
     isLoading,
     error,
-    setCurrentFolder: setCurrentFolderId,
+    navigateToFolder,
     createFolder,
     deleteFolder,
     getFolderContents,

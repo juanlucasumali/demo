@@ -9,7 +9,7 @@ import { UploadProgress } from "@renderer/components/custom-ui/UploadProgress"
 import { FileExistsDialog } from "@renderer/components/dialogs/FileExistsDialog"
 import { ErrorDialog } from "@renderer/components/dialogs/ErrorDialog"
 import { useToast } from "@renderer/hooks/use-toast"
-import { UploadStatus } from '../MyFiles/MyFiles'
+import { UploadStatus } from '../../../pages/dashboard/FileExplorer'
 
 interface LocalFolderSyncProps {
   mode: 'selective' | 'full'

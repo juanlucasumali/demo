@@ -1,18 +1,18 @@
-import MyFiles from '../components/dashboard/MyFiles/MyFiles'
+import FileExplorer from '@renderer/pages/dashboard/FileExplorer'
 import { Connect } from '../components/dashboard/Connect/Connect'
 
 export const dashboardRoutes = [
   {
     path: '',
-    element: <MyFiles />,
+    element: <FileExplorer />,
   },
   {
     path: 'files',
-    element: <MyFiles />,
+    element: <FileExplorer />,
   },
     {
     path: 'files/:folderId',  // Add this route for folder navigation
-    element: <MyFiles />,
+    element: <FileExplorer />,
   },
   {
     path: 'models',

@@ -50,7 +50,6 @@ export const getDisplayFormat = (mimeType: any): string => {
 
   // Handle null or undefined
   if (!mimeType) {
-    console.log('Warning: mimeType is null or undefined');
     return 'UNKNOWN';
   }
 
@@ -84,8 +83,6 @@ export const getDisplayFormat = (mimeType: any): string => {
     .replace('audio/', '')
     .replace('x-', '')
     .toUpperCase();
-
-  console.log('Cleaned value:', cleaned); // Debug: show cleaned value
 
   return cleaned;
 };

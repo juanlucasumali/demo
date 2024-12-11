@@ -1,7 +1,7 @@
 import React from 'react';
 import { LoaderCircle, X, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "../ui/button";
-import { UploadStatus } from '../dashboard/MyFiles/MyFiles';
+import { UploadStatus } from '../../pages/dashboard/FileExplorer';
 
 interface UploadProgressProps {
   uploads: {

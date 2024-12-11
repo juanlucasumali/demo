@@ -15,7 +15,6 @@ import {
 import { DemoItem } from '@renderer/types/files'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
 import { Skeleton } from '../../ui/skeleton'
-import { useNavigate } from 'react-router-dom'
 import { useFolders } from '@renderer/contexts/FoldersContext'
 
 interface SidebarItemProps {
@@ -25,12 +24,11 @@ interface SidebarItemProps {
 
 export const SidebarItem: FC<SidebarItemProps> = ({ item, isRoot = false }) => {
   const { isMobile } = useSidebar();
-  const { getFolderContents, setCurrentFolder } = useFolders();
+  const { getFolderContents, navigateToFolder } = useFolders();
   const [isExpanded, setIsExpanded] = useState(false);
   const [subFolders, setSubFolders] = useState<DemoItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const navigate = useNavigate();
 
   const handleExpand = async () => {
     if (!hasLoaded) {
@@ -50,9 +48,8 @@ export const SidebarItem: FC<SidebarItemProps> = ({ item, isRoot = false }) => {
 
   const handleFolderClick = (folderId: string) => {
     const targetFolderId = folderId === "root" ? null : folderId;
-    setCurrentFolder(targetFolderId);
-    navigate(targetFolderId ? `/dashboard/files/${targetFolderId}` : '/dashboard/files');
-  };
+    navigateToFolder(targetFolderId);
+    };
 
   return (
     <Collapsible asChild open={isExpanded} onOpenChange={handleExpand} className="w-full">

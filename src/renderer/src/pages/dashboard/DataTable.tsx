@@ -9,14 +9,14 @@ import {
   useReactTable,
   RowSelectionState,
 } from "@tanstack/react-table";
-import { Checkbox } from "../../ui/checkbox";
+import { Checkbox } from "../../components/ui/checkbox";
 import { Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../ui/dropdown-menu";
+} from "../../components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -24,18 +24,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../ui/table";
+} from "../../components/ui/table";
 import { Input } from "@renderer/components/ui/input";
 import { Button } from "@renderer/components/ui/button";
 import { audioFormats } from "@renderer/lib/files";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@renderer/components/ui/select";
+import { useFolders } from "@renderer/contexts/FoldersContext";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onDeleteSelected: (rows: TData[]) => void;
   onFilterChange: (format: string) => void;
-  onFolderClick: (folderId: string) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -43,8 +43,8 @@ export function DataTable<TData, TValue>({
   data,
   onDeleteSelected,
   onFilterChange,
-  onFolderClick
 }: DataTableProps<TData, TValue>) {
+  const { navigateToFolder } = useFolders();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
@@ -52,10 +52,11 @@ export function DataTable<TData, TValue>({
     // Add handler for row clicks
     const handleRowClick = (row: any) => {
       if (row.type === 'folder') {
-        onFolderClick(row.id);
+        console.log("Row is a folder, navigating to", row)
+        navigateToFolder(row.id);
       }
     };
-
+  
   const handleFilterChange = (value: string) => {
     if (onFilterChange) {
       if (value === "all") {

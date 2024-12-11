@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
-import Toolbar from "../../Toolbar";
-import { useItems } from "../../../hooks/useItems";
-import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
+import Toolbar from "../../components/Toolbar";
+import { useItems } from "../../hooks/useItems";
+import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { DataTable } from "./data-table";
-import { createColumns } from "./columns";
+import { DataTable } from "./DataTable";
+import { createColumns } from "./Columns";
 import { FileExistsDialog } from "@renderer/components/dialogs/FileExistsDialog";
 import { UploadProgress } from "@renderer/components/custom-ui/UploadProgress";
 import { ErrorDialog } from "@renderer/components/dialogs/ErrorDialog";
 import { DemoItem } from "@renderer/types/files";
 import { DeleteDialog } from "@renderer/components/dialogs/DeleteDialog";
 import { useToast } from "@renderer/hooks/use-toast";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 export type UploadStatus = {
   progress: number;
@@ -20,9 +20,8 @@ export type UploadStatus = {
   error?: Error | string; // Add error property
 };
 
-const MyFiles: React.FC = () => {
+const FileExplorer: React.FC = () => {
   const { folderId } = useParams();
-  const navigate = useNavigate();
   const [filterFormat, setFilterFormat] = useState("");
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: UploadStatus;
@@ -197,11 +196,6 @@ const MyFiles: React.FC = () => {
     navigateToFolder(folderId || null);
   }, [folderId]);
 
-  const handleFolderClick = (folderId: string) => {
-    console.log("folderId:", folderId)
-    navigate(`/dashboard/files/${folderId}`);
-  };
-
   if (error)
     return (
       <div className="p-4">
@@ -239,7 +233,6 @@ const MyFiles: React.FC = () => {
               data={items || []}
               onDeleteSelected={handleDeleteSelected}
               onFilterChange={setFilterFormat}
-              onFolderClick={handleFolderClick}
             />
           </div>
         </div>
@@ -279,4 +272,4 @@ const MyFiles: React.FC = () => {
     );
   };
 
-  export default MyFiles;
+  export default FileExplorer;

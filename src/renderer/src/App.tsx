@@ -18,41 +18,43 @@ const AppContent: FC = () => {
   return (
     <div className="flex h-screen w-full items-center justify-center px-4">
       <Router>
-        <Routes>
-          <Route path="/" element={
-            session && session.user
-              ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
-              : <WelcomePage />
-          }/>
+        <FoldersProvider> 
+          <Routes>
+            <Route path="/" element={
+              session && session.user
+                ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
+                : <WelcomePage />
+            }/>
 
-          <Route path="/login" element={
-            session && session.user
-              ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
-              : <LoginPage />
-          }/>
+            <Route path="/login" element={
+              session && session.user
+                ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
+                : <LoginPage />
+            }/>
 
-          <Route path="/signup" element={
-            session && session.user
-              ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
-              : <SignupPage />
-          }/>
+            <Route path="/signup" element={
+              session && session.user
+                ? (session.user.email_confirmed_at ? <Navigate to="/dashboard" /> : <Navigate to="/verify" />)
+                : <SignupPage />
+            }/>
 
-          <Route path="/verify" element={ <VerifyEmailPage /> }/>
+            <Route path="/verify" element={ <VerifyEmailPage /> }/>
 
-          <Route element={<ProtectedRoute session={session} />}>
-            <Route path="/dashboard/*" element={<DashboardLayout />}>
-              {dashboardRoutes.map((route) => (
-                <Route
-                  key={route.path}
-                  path={route.path}
-                  element={route.element}
-                />
-              ))}
+            <Route element={<ProtectedRoute session={session} />}>
+              <Route path="/dashboard/*" element={<DashboardLayout />}>
+                {dashboardRoutes.map((route) => (
+                  <Route
+                    key={route.path}
+                    path={route.path}
+                    element={route.element}
+                  />
+                ))}
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </FoldersProvider> 
       </Router>
     </div>
   )
@@ -61,9 +63,7 @@ const AppContent: FC = () => {
 const App: FC = () => {
   return (
     <AuthProvider>
-      <FoldersProvider> 
         <AppContent />
-      </FoldersProvider>
     </AuthProvider>
   )
 }

@@ -1,23 +1,27 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, File, Folder, MoreHorizontal } from "lucide-react";
-import { DemoItem } from "../../../types/files";
-import { Button } from "../../ui/button";
+import { DemoItem } from "../../types/files";
+import { Button } from "../../components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../ui/dropdown-menu";
+} from "../../components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { filesize } from "filesize";
 import { useItems } from "@renderer/hooks/useItems";
 import { getDisplayFormat } from "@renderer/lib/files";
+import { useFolders } from "@renderer/contexts/FoldersContext";
 
 interface ColumnProps {
   onDelete: (files: DemoItem[]) => void;
 }
 
-export const createColumns = ({ onDelete }: ColumnProps): ColumnDef<DemoItem>[] => [
+export const createColumns = ({ onDelete }: ColumnProps): ColumnDef<DemoItem>[] => {
+  const { navigateToFolder } = useFolders();
+
+  return [
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -118,34 +122,42 @@ export const createColumns = ({ onDelete }: ColumnProps): ColumnDef<DemoItem>[] 
         return <span>Invalid size</span>;
     },
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const file = row.original;
-      const { downloadFile } = useItems();
-      const isFolder = file.type === 'folder';
-  
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              className="h-8 w-8 p-0"
-              onClick={(e) => e.stopPropagation()} 
-            >
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            {!isFolder && (
-              <DropdownMenuItem onClick={(e) => {
-                e.stopPropagation();
-                downloadFile(file);
-              }}>
-                Download
-              </DropdownMenuItem>
-            )}
+{
+  id: "actions",
+  cell: ({ row }) => {
+    const file = row.original;
+    const { downloadFile } = useItems();
+    const isFolder = file.type === 'folder';
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            className="h-8 w-8 p-0"
+            onClick={(e) => e.stopPropagation()} 
+          >
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          {isFolder && (
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              navigateToFolder(file.id);
+            }}>
+              Open
+            </DropdownMenuItem>
+          )}
+          {!isFolder && (
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              downloadFile(file);
+            }}>
+              Download
+            </DropdownMenuItem>
+          )}
             <DropdownMenuItem onClick={(e) => {
               e.stopPropagation();
               alert(`Renaming ${file.name}`);
@@ -167,3 +179,4 @@ export const createColumns = ({ onDelete }: ColumnProps): ColumnDef<DemoItem>[] 
     },
   },
 ];
+};

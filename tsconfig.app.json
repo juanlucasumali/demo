@@ -26,7 +26,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Electron specific */
+    "composite": true
   },
-  "include": ["src"]
+  "include": ["src/renderer/**/*", "src/types/**/*", "src/renderer/routeTree.gen.ts"],
+  "exclude": ["src/main/**/*", "src/preload/**/*"]
 }

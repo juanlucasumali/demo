@@ -6,11 +6,7 @@ import {
 } from "../../ui/sidebar"
 import { SidebarItem } from './SidebarItem'
 
-interface NavMainProps {
-  onNavigate: (path: string, folderId: string | null) => void;
-}
-
-export const NavMain: FC<NavMainProps> = ({ onNavigate }) => {
+export const NavMain: FC = () => {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Main</SidebarGroupLabel>
@@ -25,7 +21,6 @@ export const NavMain: FC<NavMainProps> = ({ onNavigate }) => {
             size: 0,
             parentId: null
           }}
-          onNavigate={onNavigate}
           isRoot
         />
       </SidebarMenu>

@@ -1,28 +1,20 @@
 import { FC } from 'react'
 import * as React from "react"
-import {
-  Headphones,
-} from "lucide-react"
-
-import { NavMain } from "./NavMain"
-// import { NavProjects } from "./NavProjects"
-// import { NavSecondary } from "./NavSecondary"
-// import { NavUser } from "./NavUser"
+import { Headphones } from "lucide-react"
+import { NavMain } from "../../components/dashboard/sidebar/NavMain"
 import {
   Sidebar as UISidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-} from "../../ui/sidebar"
+  SidebarMenuButton,
+} from "../../components/ui/sidebar"
 
-interface SidebarProps extends React.ComponentProps<typeof UISidebar> {
-  onNavigate: (path: string) => void;
-}
+interface SidebarProps extends React.ComponentProps<typeof UISidebar> {}
 
-export const Sidebar: FC<SidebarProps> = ({ onNavigate, ...props }) => {
+export const Sidebar: FC<SidebarProps> = (props) => {
   return (
     <UISidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -43,9 +35,7 @@ export const Sidebar: FC<SidebarProps> = ({ onNavigate, ...props }) => {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain onNavigate={onNavigate} />
-        {/* <NavProjects /> */}
-        {/* <NavSecondary onNavigate={onNavigate} className="mt-auto" /> */}
+        <NavMain />
       </SidebarContent>
       <SidebarFooter>
         {/* <NavUser /> */}

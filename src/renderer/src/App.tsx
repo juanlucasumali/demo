@@ -8,6 +8,7 @@ import { SignupPage } from './pages/SignupPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { DashboardLayout } from './pages/dashboard/DashboardLayout'
 import { dashboardRoutes } from './routes/dashboardRoutes'
+import { FoldersProvider } from './contexts/FoldersContext'
 
 const AppContent: FC = () => {
   const { session, loading } = useAuth()
@@ -60,7 +61,9 @@ const AppContent: FC = () => {
 const App: FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <FoldersProvider> 
+        <AppContent />
+      </FoldersProvider>
     </AuthProvider>
   )
 }

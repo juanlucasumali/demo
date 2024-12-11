@@ -1,5 +1,5 @@
 import { FC, useState } from 'react'
-import { ChevronRight, Folder, MoreHorizontal, Share, Trash2 } from "lucide-react"
+import { ChevronRight, Folder, MoreHorizontal, Share} from "lucide-react"
 import {
   Collapsible,
   CollapsibleContent,
@@ -13,44 +13,31 @@ import {
   useSidebar,
 } from "../../ui/sidebar"
 import { DemoItem } from '@renderer/types/files'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
-import { useItems } from '@renderer/hooks/useItems'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
 import { Skeleton } from '../../ui/skeleton'
 import { useNavigate } from 'react-router-dom'
+import { useFolders } from '@renderer/contexts/FoldersContext'
 
 interface SidebarItemProps {
   item: DemoItem;
-  onNavigate: (path: string, folderId: string | null) => void;
   isRoot?: boolean;
 }
 
-export const SidebarItem: FC<SidebarItemProps> = ({ item, onNavigate, isRoot = false }) => {
+export const SidebarItem: FC<SidebarItemProps> = ({ item, isRoot = false }) => {
   const { isMobile } = useSidebar();
-  const { getFolderContents } = useItems();
+  const { getFolderContents, setCurrentFolder } = useFolders();
   const [isExpanded, setIsExpanded] = useState(false);
   const [subFolders, setSubFolders] = useState<DemoItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   if (hasLoaded && folders) {
-  //     const currentSubFolders = folders
-  //       .filter(folder => folder.parentId === (isRoot ? null : item.id))
-  //       .sort((a, b) => {
-  //         // Sort by created_at in descending order (most recent first)
-  //         return new Date(b.dateUploaded).getTime() - new Date(a.dateUploaded).getTime();
-  //       });
-  //     setSubFolders(currentSubFolders);
-  //   }
-  // }, [folders]);
-
   const handleExpand = async () => {
     if (!hasLoaded) {
       setIsLoading(true);
       try {
         const loadedFolders = await getFolderContents(isRoot ? null : item.id);
-        setSubFolders(loadedFolders);
+        setSubFolders(loadedFolders.filter(item => item.type === 'folder'));
         setHasLoaded(true);
       } catch (error) {
         console.error('Error loading folders:', error);
@@ -62,12 +49,9 @@ export const SidebarItem: FC<SidebarItemProps> = ({ item, onNavigate, isRoot = f
   };
 
   const handleFolderClick = (folderId: string) => {
-    console.log(folderId)
-    if (folderId === "root") {
-      navigate(`/dashboard/files`);
-    } else {
-      navigate(`/dashboard/files/${folderId}`);
-    }
+    const targetFolderId = folderId === "root" ? null : folderId;
+    setCurrentFolder(targetFolderId);
+    navigate(targetFolderId ? `/dashboard/files/${targetFolderId}` : '/dashboard/files');
   };
 
   return (
@@ -97,7 +81,6 @@ export const SidebarItem: FC<SidebarItemProps> = ({ item, onNavigate, isRoot = f
                 <SidebarItem
                   key={folder.id}
                   item={folder}
-                  onNavigate={onNavigate}
                 />
               ))
             )}
@@ -124,11 +107,6 @@ export const SidebarItem: FC<SidebarItemProps> = ({ item, onNavigate, isRoot = f
               <DropdownMenuItem>
                 <Share className="text-muted-foreground" />
                 <span>Share Folder</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Trash2 className="text-muted-foreground" />
-                <span>Delete Folder</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

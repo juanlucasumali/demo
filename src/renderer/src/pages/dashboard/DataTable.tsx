@@ -29,7 +29,8 @@ import { Input } from "@renderer/components/ui/input";
 import { Button } from "@renderer/components/ui/button";
 import { audioFormats } from "@renderer/lib/files";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@renderer/components/ui/select";
-import { useFolders } from "@renderer/contexts/FoldersContext";
+import { DatabaseItem } from "@renderer/types/files";
+import { useFileSystem } from "@renderer/contexts/FileSystemContext";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -38,24 +39,23 @@ interface DataTableProps<TData, TValue> {
   onFilterChange: (format: string) => void;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends DatabaseItem, TValue>({
   columns,
   data,
   onDeleteSelected,
   onFilterChange,
 }: DataTableProps<TData, TValue>) {
-  const { navigateToFolder } = useFolders();
+  const { navigateToFolder } = useFileSystem();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
-    // Add handler for row clicks
-    const handleRowClick = (row: any) => {
-      if (row.type === 'folder') {
-        console.log("Row is a folder, navigating to", row)
-        navigateToFolder(row.id);
-      }
-    };
+  const handleRowClick = (row: DatabaseItem) => {
+    if (row.type === 'folder') {
+      // Navigate to that folder
+      navigateToFolder(row.id);
+    }
+  };
   
   const handleFilterChange = (value: string) => {
     if (onFilterChange) {
@@ -70,7 +70,6 @@ export function DataTable<TData, TValue>({
     }
   };  
 
-  // Add selection column
   const selectionColumn: ColumnDef<TData, any> = {
     id: "select",
     header: ({ table }) => (
@@ -194,23 +193,26 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row: any) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={row.original.type === 'folder' ? 'cursor-pointer hover:bg-secondary' : ''}
-                  onClick={() => handleRowClick(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const originalItem = row.original as DatabaseItem;
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={originalItem.type === 'folder' ? 'cursor-pointer hover:bg-secondary' : ''}
+                    onClick={() => handleRowClick(originalItem)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
                 <TableCell

@@ -1,7 +1,6 @@
 import { FC } from 'react'
 import * as React from "react"
 import { Headphones } from "lucide-react"
-import { NavMain } from "../../components/dashboard/sidebar/NavMain"
 import {
   Sidebar as UISidebar,
   SidebarContent,
@@ -10,7 +9,10 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from "../../components/ui/sidebar"
+import { SidebarItem } from './SidebarItem'
 
 interface SidebarProps extends React.ComponentProps<typeof UISidebar> {}
 
@@ -35,7 +37,24 @@ export const Sidebar: FC<SidebarProps> = (props) => {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain />
+        <SidebarGroup>
+        <SidebarGroupLabel>Main</SidebarGroupLabel>
+        <SidebarMenu>
+          <SidebarItem
+            item={{
+              id: 'root',
+              name: 'My Files',
+              type: 'folder',
+              format: '',
+              dateUploaded: '',
+              size: 0,
+              parentId: null,
+              filePath: null
+            }}
+            isRoot
+          />
+        </SidebarMenu>
+      </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         {/* <NavUser /> */}

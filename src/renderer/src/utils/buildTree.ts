@@ -1,7 +1,7 @@
-import { FileTreeItem, DemoItem } from '../types/files';
+import { FileTreeItem, DatabaseItem } from '../types/files';
 
 
-export function buildTree(items: DemoItem[]): FileTreeItem[] {
+export function buildTree(items: DatabaseItem[]): FileTreeItem[] {
   // Create a map for quick lookup of items by their ID
   const itemMap = new Map<string, FileTreeItem>();
   

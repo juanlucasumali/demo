@@ -17,7 +17,8 @@ interface FileSystemContextValue {
   uploadFile: (
     file: File,
     onProgress?: (progress: number) => void,
-    replaceExisting?: boolean
+    replaceExisting?: boolean,
+    newFileName?: string
   ) => Promise<void>;
   checkFileExists: (fileName: string) => Promise<boolean>;
   downloadFile: (file: DatabaseItem) => Promise<void>;
@@ -140,157 +141,221 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
   async function checkFileExists(fileName: string): Promise<boolean> {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return false;
-
+  
     try {
-      const { data: existingFiles } = await supabase
+      let query = supabase
         .from('items')
         .select('name')
         .eq('owner_id', user.id)
-        .eq('name', fileName)
-        .eq('parent_id', currentFolderId)
-        .single();
-
-      return !!existingFiles;
+        .eq('name', fileName);
+  
+      // Only add parent_id condition if it's not null
+      if (currentFolderId === null) {
+        query = query.is('parent_id', null);
+      } else {
+        query = query.eq('parent_id', currentFolderId);
+      }
+  
+      const { data, error } = await query;
+  
+      if (error) {
+        console.error('Error checking file existence:', error);
+        return false;
+      }
+  
+      return data && data.length > 0;
     } catch (error) {
       console.error('Error checking file existence:', error);
       return false;
     }
   }
-
+  
   async function uploadFile(
     file: File,
     onProgress?: (progress: number) => void,
-    replaceExisting: boolean = false
+    replaceExisting: boolean = false,
+    newFileName?: string
   ) {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('No user found');
-
+  
     try {
-      let finalFileName = file.name;
+      let finalFileName = newFileName ?? file.name;
+      
+      // Check if file exists only if not replacing
       if (!replaceExisting) {
-        const exists = await checkFileExists(file.name);
+        const exists = await checkFileExists(finalFileName);
         if (exists) {
           throw new Error('File already exists');
         }
       }
-
-      const sanitizedStorageFileName = `${Date.now()}_${file.name}`
-        .replace(/[^a-zA-Z0-9._\-\/]/g, '_')
+  
+      // Create a more sanitized file name for B2
+      const timestamp = Date.now();
+      const sanitizedFileName = finalFileName
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
         .replace(/_+/g, '_');
-
+      
+      const b2FileName = `${user.id}/${timestamp}_${sanitizedFileName}`;
+  
       if (replaceExisting) {
-        const { data: existingFile } = await supabase
+        let query = supabase
           .from('items')
           .select('file_path')
           .eq('owner_id', user.id)
-          .eq('name', file.name)
-          .eq('parent_id', currentFolderId)
-          .single();
-
-        if (existingFile) {
-          await supabase.storage
-            .from('files')
-            .remove([existingFile.file_path]);
-
-          await supabase
+          .eq('name', finalFileName);
+  
+        // Handle parent_id condition
+        if (currentFolderId === null) {
+          query = query.is('parent_id', null);
+        } else {
+          query = query.eq('parent_id', currentFolderId);
+        }
+  
+        const { data: existingFile, error } = await query;
+  
+        if (error) {
+          console.error('Error checking existing file:', error);
+        } else if (existingFile && existingFile[0]) {
+          try {
+            // Delete existing file from B2
+            await window.b2.deleteFile(existingFile[0].file_path);
+          } catch (error) {
+            console.warn('Error deleting existing file from B2:', error);
+            // Continue with upload even if delete fails
+          }
+  
+          // Delete from database
+          let deleteQuery = supabase
             .from('items')
             .delete()
             .eq('owner_id', user.id)
-            .eq('name', file.name)
-            .eq('parent_id', currentFolderId);
+            .eq('name', finalFileName);
+  
+          // Handle parent_id condition for delete
+          if (currentFolderId === null) {
+            deleteQuery = deleteQuery.is('parent_id', null);
+          } else {
+            deleteQuery = deleteQuery.eq('parent_id', currentFolderId);
+          }
+  
+          await deleteQuery;
         }
       }
-
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from('files')
-        .upload(sanitizedStorageFileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (storageError) throw storageError;
-
+  
+      // Convert File to ArrayBuffer
+      const buffer = await file.arrayBuffer();
+  
+      // Upload to B2
+      console.log('Uploading to B2:', { fileName: b2FileName, size: buffer.byteLength });
+      const uploadData = await window.b2.uploadFile(b2FileName, buffer);
+      console.log('B2 upload response:', uploadData);
+  
+      // Prepare database insert
+      const insertData = {
+        owner_id: user.id,
+        name: finalFileName,
+        file_path: uploadData.fileName,
+        format: file.type,
+        type: 'file',
+        size: file.size,
+        parent_id: currentFolderId
+      };
+  
+      // Save to database
       const { error: dbError } = await supabase
         .from('items')
-        .insert({
-          owner_id: user.id,
-          name: finalFileName,
-          file_path: storageData.path,
-          format: file.type,
-          type: 'file',
-          size: file.size,
-          parent_id: currentFolderId
-        });
-
-      if (dbError) throw dbError;
-
+        .insert([insertData]);
+  
+      if (dbError) {
+        console.error('Database error:', dbError);
+        // Try to clean up the uploaded file if database insert fails
+        try {
+          await window.b2.deleteFile(uploadData.file_path);
+        } catch (cleanupError) {
+          console.error('Error cleaning up B2 file after failed database insert:', cleanupError);
+        }
+        throw dbError;
+      }
+  
       onProgress?.(100);
       await refresh();
     } catch (error) {
-      throw error;
-    }
-  }
-
-  async function downloadFile(file: DatabaseItem) {
-    try {
-      const { data: fileData } = await supabase
-        .from('items')
-        .select('file_path')
-        .eq('id', file.id)
-        .single();
-
-      if (!fileData) throw new Error('File not found');
-
-      const { data, error } = await supabase.storage
-        .from('files')
-        .download(fileData.file_path);
-
-      if (error) throw error;
-
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async function deleteFile(file: DatabaseItem) {
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user) throw new Error('No user found');
-
-    try {
-      const { data: fileData } = await supabase
-        .from('items')
-        .select('file_path')
-        .eq('id', file.id)
-        .single();
-
-      if (!fileData) throw new Error('File not found');
-
-      if (fileData.file_path) {
-        const { error: storageError } = await supabase.storage
-          .from('files')
-          .remove([fileData.file_path]);
-
-        if (storageError) throw storageError;
+      console.error('Upload error:', error);
+      if (error instanceof Error) {
+        throw new Error(`Upload failed: ${error.message}`);
+      } else {
+        throw new Error('Upload failed with unknown error');
       }
-
-      const { error: dbError } = await supabase
-        .from('items')
-        .delete()
-        .eq('id', file.id);
-
-      if (dbError) throw dbError;
-
-      await refresh();
-    } catch (error) {
-      throw error;
     }
   }
+  
+    async function downloadFile(file: DatabaseItem) {
+      try {
+        const { data: fileData } = await supabase
+          .from('items')
+          .select('file_path')
+          .eq('id', file.id)
+          .single();
+
+        if (!fileData) throw new Error('File not found');
+
+        const data = await window.b2.downloadFile(fileData.file_path);
+        
+        const blob = new Blob([data]);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.log("error:", error)
+        throw error;
+      }
+    }
+
+    async function deleteFile(file: DatabaseItem) {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error('No user found');
+    
+      try {
+        const { data: fileData } = await supabase
+          .from('items')
+          .select('file_path')
+          .eq('id', file.id)
+          .single();
+    
+        if (!fileData) throw new Error('File not found');
+    
+        if (fileData.file_path) {
+          try {
+            console.log('Attempting to delete file from B2:', fileData.file_path);
+            await window.b2.deleteFile(fileData.file_path);
+            console.log('Successfully deleted file from B2');
+          } catch (error) {
+            console.error('Error deleting file from B2:', error);
+            // If the file doesn't exist in B2, we'll still continue to delete the database record
+            if (!(error instanceof Error && error.message.includes('not found'))) {
+              throw error;
+            }
+          }
+        }
+    
+        // Delete from database
+        const { error: dbError } = await supabase
+          .from('items')
+          .delete()
+          .eq('id', file.id);
+    
+        if (dbError) throw dbError;
+    
+        await refresh();
+      } catch (error) {
+        console.error('Error deleting file:', error);
+        throw error;
+      }
+    }
 
   const createLocalFolderStructure = async (basePath: string) => {
     const user = (await supabase.auth.getUser()).data.user;

@@ -43,10 +43,13 @@ const FileExplorer: React.FC = () => {
     setUploadProgress({});
   };
 
-  const handleUpload = async (file: File, replace: boolean = false) => {
+  const handleUpload = async (file: File, replace: boolean = false, newFileName?: string) => {
+    
+    const finalFileName = newFileName ?? file.name;
+    
     setUploadProgress((prev) => ({
       ...prev,
-      [file.name]: { progress: 0 }
+      [finalFileName]: { progress: 0 }
     }));
   
     try {
@@ -55,18 +58,19 @@ const FileExplorer: React.FC = () => {
         (progress) => {
           setUploadProgress((prev) => ({
             ...prev,
-            [file.name]: { ...prev[file.name], progress }
+            [finalFileName]: { ...prev[finalFileName], progress }
           }));
         },
-        replace
+        replace,
+        newFileName
       );
       await refresh();
     } catch (err) {
       console.error("Upload error:", err);
       setUploadProgress((prev) => ({
         ...prev,
-        [file.name]: { 
-          ...prev[file.name], 
+        [finalFileName]: { 
+          ...prev[finalFileName], 
           progress: -1,
           error: typeof err === 'object' && err !== null
             ? (err as any).message || JSON.stringify(err)
@@ -111,9 +115,20 @@ const FileExplorer: React.FC = () => {
     setFileExistsDialog({ show: false, fileName: '' });
   };
 
-  const handleKeepBoth = () => {
+  const handleKeepBoth = (newFileName: string) => {
     if (fileExistsDialog.file) {
-      handleUpload(fileExistsDialog.file, false);
+      // First update the uploadProgress state with the new filename
+      setUploadProgress((prev) => {
+        const newProgress = { ...prev };
+        // Copy the data from old key to new key
+        if (fileExistsDialog.fileName in newProgress) {
+          newProgress[newFileName] = { ...newProgress[fileExistsDialog.fileName] };
+          // Remove the old key
+          delete newProgress[fileExistsDialog.fileName];
+        }
+        return newProgress;
+      });
+      handleUpload(fileExistsDialog.file, true, newFileName);
     }
     setFileExistsDialog({ show: false, fileName: '' });
   };
@@ -247,7 +262,7 @@ const FileExplorer: React.FC = () => {
           isOpen={fileExistsDialog.show}
           fileName={fileExistsDialog.file?.name || ''}
           onReplace={handleReplace}
-          onKeepBoth={handleKeepBoth}
+          onKeepBoth={(newFileName) => handleKeepBoth(newFileName)}
           onCancel={() => setFileExistsDialog({ show: false, fileName: '', file: undefined })}
         />
       </div>

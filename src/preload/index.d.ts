@@ -27,5 +27,10 @@ declare global {
     api: {
       convertToMp3: (buffer: Buffer) => Promise<Buffer>;
     };
+    b2: {
+      uploadFile: (fileName: string, fileBuffer: ArrayBuffer) => Promise<any>;
+      downloadFile: (fileName: string) => Promise<ArrayBuffer>;
+      deleteFile: (fileName: string) => Promise<any>;
+    };
   }
 }

@@ -74,8 +74,7 @@ export default function VerifyEmail() {
             </h1>
             <p className="text-sm text-muted-foreground">
               Thank you for joining Demo! <br />
-              We've sent you a verification link to your email address. <br />
-              Please click the link to verify your account.
+              We've sent a verification email to your inbox. <br />
             </p>
           </div>
           <div className="space-y-2">

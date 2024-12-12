@@ -8,7 +8,15 @@ interface AuthState {
   isAuthenticated: boolean
   setUser: (user: User | null) => void
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<{ requiresEmailConfirmation: boolean }>
+  signUp: (
+    email: string, 
+    password: string, 
+    profile: {
+      username: string
+      displayName: string
+      profileImage: string | null
+    }
+  ) => Promise<{ requiresEmailConfirmation: boolean }>
   signOut: () => Promise<void>
   clearState: () => void
 }
@@ -61,13 +69,18 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true 
         })
       },
-      signUp: async (email, password) => {
+      signUp: async (email, password, profile) => {
         console.log('Signing up...')
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
+            data: {
+              username: profile.username,
+              display_name: profile.displayName,
+              profile_image: profile.profileImage
+            } as object // Type assertion to satisfy Supabase types
           }
         })
         if (error) throw error

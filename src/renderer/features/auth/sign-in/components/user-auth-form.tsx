@@ -3,9 +3,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
-// import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react'
 import { cn } from '@/renderer/lib/utils'
-import { supabase } from '@/renderer/lib/supabase'
 import { useAuth } from '@/renderer/stores/authStore'
 import { toast } from '@/renderer/hooks/use-toast'
 import {
@@ -40,7 +38,7 @@ const formSchema = z.object({
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { signIn } = useAuth()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,14 +51,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
     try {
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      })
-
-      if (error) throw error
-
-      setUser(authData.user)
+      await signIn(data.email, data.password)
+      
       toast({
         title: 'Success',
         description: 'Successfully logged in',
@@ -120,40 +112,6 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             <Button className='mt-2' loading={isLoading}>
               Login
             </Button>
-
-            {/* <div className='relative my-2'>
-              <div className='absolute inset-0 flex items-center'>
-                <span className='w-full border-t' />
-              </div>
-              <div className='relative flex justify-center text-xs uppercase'>
-                <span className='bg-background px-2 text-muted-foreground'>
-                  Or continue with
-                </span>
-              </div>
-            </div>
-
-            <div className='flex items-center gap-2'>
-              <Button
-                variant='outline'
-                className='w-full'
-                type='button'
-                loading={isLoading}
-                leftSection={<IconBrandGithub className='h-4 w-4' />}
-                onClick={handleGitHubSignIn}
-              >
-                GitHub
-              </Button>
-              <Button
-                variant='outline'
-                className='w-full'
-                type='button'
-                loading={isLoading}
-                leftSection={<IconBrandFacebook className='h-4 w-4' />}
-                onClick={handleFacebookSignIn}
-              >
-                Facebook
-              </Button>
-            </div> */}
           </div>
         </form>
       </Form>

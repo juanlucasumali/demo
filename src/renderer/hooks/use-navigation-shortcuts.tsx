@@ -1,10 +1,18 @@
-// src/renderer/hooks/use-navigation-shortcuts.ts
 import { useEffect } from 'react'
 import { navigation } from '../services/navigation'
+
+const authPaths = ['/sign-in', '/sign-up', '/verify', '/otp', '/forgot-password']
 
 export function useNavigationShortcuts() {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      const currentPath = navigation.getCurrentPath()
+      
+      // Disable shortcuts if we're on an auth page
+      if (authPaths.includes(currentPath)) {
+        return
+      }
+
       // Command/Control + [ = Back
       if ((event.metaKey || event.ctrlKey) && event.key === '[') {
         event.preventDefault()

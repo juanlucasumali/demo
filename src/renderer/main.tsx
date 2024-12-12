@@ -6,7 +6,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
-import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { RouterProvider, createRouter, createMemoryHistory } from '@tanstack/react-router'
 import { useAuthStore } from '@/renderer/stores/authStore'
 import { handleServerError } from '@/renderer/utils/handle-server-error'
 import { toast } from '@/renderer/hooks/use-toast'
@@ -14,6 +14,11 @@ import { ThemeProvider } from './context/theme-context'
 import './index.css'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
+
+// Create memory history
+const memoryHistory = createMemoryHistory({
+  initialEntries: ['/'], // Set initial route
+})
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,12 +80,13 @@ const queryClient = new QueryClient({
   }),
 })
 
-// Create a new router instance
-const router = createRouter({
+// Create router with memory history
+export const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,
+  history: memoryHistory,
 })
 
 // Register the router instance for type safety

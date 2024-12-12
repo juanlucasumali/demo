@@ -5,8 +5,10 @@ import { SearchProvider } from '@/renderer/context/search-context'
 import { SidebarProvider } from '@/renderer/components/ui/sidebar'
 import { AppSidebar } from '@/renderer/components/layout/app-sidebar'
 import SkipToMain from '@/renderer/components/skip-to-main'
+import { protectedLoader } from '@/renderer/lib/auth'
 
 export const Route = createFileRoute('/_authenticated')({
+  beforeLoad: protectedLoader,
   component: RouteComponent,
 })
 

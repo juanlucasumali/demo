@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import {
   BadgeCheck,
   Bell,
@@ -22,6 +23,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/renderer/components/ui/sidebar'
+import { useAuth } from '@/renderer/stores/authStore'
+import { toast } from '@/renderer/hooks/use-toast'
 
 export function NavUser({
   user,
@@ -33,6 +36,25 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const navigate = useNavigate()
+  const { signOut } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      toast({
+        title: 'Success',
+        description: 'Successfully logged out',
+      })
+      navigate({ to: '/sign-in' })
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to log out',
+      })
+    }
+  }
 
   return (
     <SidebarMenu>
@@ -95,8 +117,8 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AxiosError } from 'axios'
 import {
@@ -7,10 +7,11 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter, createMemoryHistory } from '@tanstack/react-router'
-import { useAuthStore } from '@/renderer/stores/authStore'
+import { useAuth, useAuthStore } from '@/renderer/stores/authStore'
 import { handleServerError } from '@/renderer/utils/handle-server-error'
 import { toast } from '@/renderer/hooks/use-toast'
 import { ThemeProvider } from './context/theme-context'
+import { supabase } from './lib/supabase'
 import './index.css'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
@@ -36,7 +37,7 @@ const queryClient = new QueryClient({
         )
       },
       refetchOnWindowFocus: import.meta.env.PROD,
-      staleTime: 10 * 1000, // 10s
+      staleTime: 10 * 1000,
     },
     mutations: {
       onError: (error) => {
@@ -54,14 +55,14 @@ const queryClient = new QueryClient({
     },
   },
   queryCache: new QueryCache({
-    onError: (error) => {
+    onError: async (error) => {
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
           toast({
             variant: 'destructive',
             title: 'Session expired!',
           })
-          useAuthStore.getState().auth.reset()
+          await useAuthStore.getState().signOut()
           const redirect = `${router.history.location.href}`
           router.navigate({ to: '/sign-in', search: { redirect } })
         }
@@ -96,17 +97,53 @@ declare module '@tanstack/react-router' {
   }
 }
 
+// App component to handle auth state
+function App() {
+  const { setUser, isAuthenticated } = useAuth()
+
+  useEffect(() => {
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log('Auth state changed:', { event: _event, session })
+      
+      if (session) {
+        setUser(session.user)
+        if (router.state.location.pathname.startsWith('/(auth)')) {
+          router.navigate({ to: '/dashboard' })
+        }
+      } else {
+        // No valid session
+        setUser(null)
+        if (router.state.location.pathname.startsWith('/_authenticated')) {
+          router.navigate({ to: '/sign-in' })
+        }
+      }
+    })
+
+    return () => {
+      console.log('Cleaning up auth subscription')
+      subscription.unsubscribe()
+    }
+  }, [setUser, isAuthenticated])
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
+        <RouterProvider router={router} />
+      </ThemeProvider>
+    </QueryClientProvider>
+  )
+}
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
-          <RouterProvider router={router} />
-        </ThemeProvider>
-      </QueryClientProvider>
+      <App />
     </StrictMode>
   )
 }

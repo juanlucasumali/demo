@@ -2,7 +2,7 @@ import { HTMLAttributes, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react'
+// import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react'
 import { cn } from '@/renderer/lib/utils'
 import {
   Form,
@@ -15,6 +15,9 @@ import {
 import { Input } from '@/renderer/components/ui/input'
 import { Button } from '@/renderer/components/button'
 import { PasswordInput } from '@/renderer/components/password-input'
+import { useAuth } from '@/renderer/stores/authStore'
+import { useNavigate } from '@tanstack/react-router'
+import { useToast } from '@/renderer/hooks/use-toast'
 
 type SignUpFormProps = HTMLAttributes<HTMLDivElement>
 
@@ -39,28 +42,50 @@ const formSchema = z
     path: ['confirmPassword'],
   })
 
-export function SignUpForm({ className, ...props }: SignUpFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
+  export function SignUpForm({ className, ...props }: SignUpFormProps) {
+    const [isLoading, setIsLoading] = useState(false)
+    const navigate = useNavigate()
+    const { signUp } = useAuth()
+    const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-    },
-  })
-
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-    // eslint-disable-next-line no-console
-    console.log(data)
-
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 3000)
-  }
-
+    const form = useForm<z.infer<typeof formSchema>>({
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+        email: '',
+        password: '',
+        confirmPassword: '',
+      },
+    })
+    
+    async function onSubmit(data: z.infer<typeof formSchema>) {
+      try {
+        setIsLoading(true)
+        const { requiresEmailConfirmation } = await signUp(data.email, data.password)
+        
+        if (requiresEmailConfirmation) {
+          toast({
+            title: 'Success',
+            description: 'Please check your email to verify your account.',
+          })
+          navigate({ to: '/verify' })
+        } else {
+          toast({
+            title: 'Account created',
+            description: 'Your account has been created successfully.',
+          })
+          navigate({ to: '/sign-in' })
+        }
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to create account',
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
   return (
     <div className={cn('grid gap-6', className)} {...props}>
       <Form {...form}>
@@ -86,7 +111,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 <FormItem className='space-y-1'>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder='********' {...field} />
+                    <PasswordInput placeholder='' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -99,7 +124,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 <FormItem className='space-y-1'>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder='********' {...field} />
+                    <PasswordInput placeholder='' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,7 +134,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               Create Account
             </Button>
 
-            <div className='relative my-2'>
+            {/* <div className='relative my-2'>
               <div className='absolute inset-0 flex items-center'>
                 <span className='w-full border-t' />
               </div>
@@ -139,7 +164,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               >
                 Facebook
               </Button>
-            </div>
+            </div> */}
           </div>
         </form>
       </Form>

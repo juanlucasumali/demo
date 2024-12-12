@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
-import SignIn from '@/renderer/features/auth/sign-in'
+import VerifyEmail from '@/renderer/features/auth/verify'
 import { publicOnlyLoader } from '@/renderer/lib/auth'
 
-export const Route = createFileRoute('/(auth)/sign-in')({
+export const Route = createFileRoute('/(auth)/verify-lazy')({
+  component: VerifyEmail,
   beforeLoad: publicOnlyLoader,
-  component: SignIn,
 })

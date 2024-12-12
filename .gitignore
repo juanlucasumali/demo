@@ -6,3 +6,5 @@ out
 .vscode
 .env
 .next
+build/cert/*
+!build/cert/.gitkeep

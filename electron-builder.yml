@@ -1,0 +1,32 @@
+appId: com.demo.Demo
+productName: Demo
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.app.json}'
+asarUnpack:
+  - resources/**
+
+afterSign: "build/notarize.js"
+
+# macOS Configuration
+mac:
+  icon: build/icon.icns
+  category: public.app-category.developer-tools
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  signIgnore: ["node_modules"]
+  identity: "Developer ID Application"
+  notarize: true 
+
+dmg:
+  artifactName: ${name}-${version}.${ext}
+  sign: true
+  writeUpdateInfo: false

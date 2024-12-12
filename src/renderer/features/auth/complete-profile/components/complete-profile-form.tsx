@@ -1,0 +1,276 @@
+import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { useToast } from '@/renderer/hooks/use-toast'
+import { supabase } from '@/renderer/lib/supabase'
+import { Input } from '@/renderer/components/ui/input'
+import { Button } from '@/renderer/components/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/renderer/components/ui/avatar'
+import { Label } from '@/renderer/components/ui/label'
+import { b2Service } from '@/renderer/services/b2'
+import { useAuth, useAuthStore } from '@/renderer/stores/authStore'
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
+const MAX_IMAGE_DIMENSIONS = 1000 // pixels
+
+export function CompleteProfileForm() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [profileImage, setProfileImage] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [username, setUsername] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [errors, setErrors] = useState({
+    username: '',
+    displayName: '',
+    profileImage: ''
+  })
+
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const { user } = useAuth()
+
+  const validateImageDimensions = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.src = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(img.src)
+        resolve(img.width <= MAX_IMAGE_DIMENSIONS && img.height <= MAX_IMAGE_DIMENSIONS)
+      }
+    })
+  }
+
+  const validateUsername = (username: string) => {
+    if (!username) return 'Username is required'
+    if (username.length < 3) return 'Username must be at least 3 characters'
+    if (username.length > 20) return 'Username must be less than 20 characters'
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores'
+    return ''
+  }
+
+  const validateDisplayName = (displayName: string): string => {
+    // Required check
+    if (!displayName) return 'Display name is required'
+
+    // Minimum length check (typically 2-3 characters)
+    if (displayName.length < 3) {
+      return 'Display name must be at least 3 characters long'
+    }
+    
+    // Maximum length check (commonly between 30-50 characters)
+    if (displayName.length > 50) {
+      return 'Display name must be less than 50 characters'
+    }
+  
+    // Check for valid characters (allowing letters, numbers, spaces, and some special characters)
+    const validCharactersRegex = /^[a-zA-Z0-9\s\-_.]+$/
+    if (!validCharactersRegex.test(displayName)) {
+      return 'Display name can only contain letters, numbers, spaces, and basic punctuation'
+    }
+  
+    // Unicode-aware letter check for first character
+    if (!/^[\p{L}]/u.test(displayName)) {
+      return 'Display name must start with a letter'
+    }
+  
+    return ''
+  }
+
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setErrors(prev => ({ ...prev, profileImage: '' }))
+
+      if (file.size > MAX_FILE_SIZE) {
+        setErrors(prev => ({ 
+          ...prev, 
+          profileImage: 'File size must be less than 5MB' 
+        }))
+        return
+      }
+
+      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        setErrors(prev => ({ 
+          ...prev, 
+          profileImage: 'File must be in JPG or PNG format' 
+        }))
+        return
+      }
+
+      const validDimensions = await validateImageDimensions(file)
+      if (!validDimensions) {
+        setErrors(prev => ({ 
+          ...prev, 
+          profileImage: `Image dimensions must not exceed ${MAX_IMAGE_DIMENSIONS}x${MAX_IMAGE_DIMENSIONS} pixels` 
+        }))
+        return
+      }
+
+      setProfileImage(file)
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!user?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'User not found. Please sign in again.'
+      })
+      navigate({ to: '/dashboard' })
+      return
+    }
+
+    const usernameError = validateUsername(username)
+    const displayNameError = validateDisplayName(displayName)
+
+    setErrors({
+      ...errors,
+      username: usernameError,
+      displayName: displayNameError
+    })
+
+    if (usernameError || displayNameError || errors.profileImage) {
+      return
+    }
+
+    try {
+      setIsLoading(true)
+
+      // Check username availability
+      const { data: usernameExists } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', username)
+        .single()
+
+      if (usernameExists) {
+        setErrors(prev => ({ ...prev, username: 'Username already taken' }))
+        return
+      }
+
+      // Upload image to B2 if exists
+      let profileImageUrl = null
+      if (profileImage) {
+        try {
+          const uploadResult = await b2Service.uploadFile(
+            profileImage,
+            user.id,
+            'image',
+            (hashProgress) => console.log(`Hashing: ${hashProgress}%`),
+            (uploadProgress) => console.log(`Uploading: ${uploadProgress}%`)
+          )
+          profileImageUrl = uploadResult.fileName
+        } catch (error) {
+          console.error('Failed to upload profile image:', error)
+          toast({
+            variant: 'destructive',
+            title: 'Warning',
+            description: 'Failed to upload profile picture, continuing without it'
+          })
+        }
+      }
+
+      // Create user profile
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          user_id: user.id,
+          username,
+          display_name: displayName,
+          email: user.email,
+          profile_image: profileImageUrl
+        })
+
+      if (profileError) throw profileError
+
+      toast({
+        title: 'Success',
+        description: 'Profile completed successfully'
+      })
+
+      const hasProfile = await useAuthStore.getState().checkProfile()
+
+      if (hasProfile) {
+        navigate({ to: '/dashboard' })
+      } else {
+        throw profileError
+      }
+
+    } catch (error) {
+      // Cleanup uploaded image if profile creation fails
+      if (profileImage && previewUrl) {
+        try {
+          await b2Service.deleteFile(profileImage.name)
+        } catch (cleanupError) {
+          console.error('Failed to cleanup uploaded image:', cleanupError)
+        }
+      }
+
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to complete profile'
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className='grid gap-4'>
+        <div className='flex flex-col items-center gap-4'>
+          <Avatar className='h-24 w-24'>
+            <AvatarImage src={previewUrl || ''} />
+            <AvatarFallback>
+              {displayName ? displayName[0].toUpperCase() : 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className='grid w-full gap-1.5'>
+            <Label htmlFor='picture'>Profile picture</Label>
+            <Input
+              id='picture'
+              type='file'
+              accept='image/*'
+              onChange={handleImageChange}
+            />
+            {errors.profileImage && (
+              <p className='text-sm text-destructive'>{errors.profileImage}</p>
+            )}
+          </div>
+        </div>
+
+        <div className='space-y-1'>
+          <Label>Username</Label>
+          <Input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          {errors.username && (
+            <p className='text-sm text-destructive'>{errors.username}</p>
+          )}
+        </div>
+
+        <div className='space-y-1'>
+          <Label>Display Name</Label>
+          <Input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+          {errors.displayName && (
+            <p className='text-sm text-destructive'>{errors.displayName}</p>
+          )}
+        </div>
+
+        <Button type='submit' loading={isLoading}>
+          Complete Profile
+        </Button>
+      </div>
+    </form>
+  )
+}

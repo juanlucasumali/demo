@@ -15,10 +15,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
-import { Route as authVerifyLazyImport } from './routes/(auth)/verify-lazy'
 import { Route as authVerifyImport } from './routes/(auth)/verify'
 import { Route as authSignInImport } from './routes/(auth)/sign-in'
 import { Route as authOtpImport } from './routes/(auth)/otp'
+import { Route as authCompleteProfileImport } from './routes/(auth)/complete-profile'
 import { Route as auth500Import } from './routes/(auth)/500'
 import { Route as AuthenticatedDashboardIndexImport } from './routes/_authenticated/dashboard/index'
 
@@ -156,12 +156,6 @@ const AuthenticatedSettingsRouteLazyRoute =
     import('./routes/_authenticated/settings/route.lazy').then((d) => d.Route),
   )
 
-const authVerifyLazyRoute = authVerifyLazyImport.update({
-  id: '/(auth)/verify-lazy',
-  path: '/verify-lazy',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const authVerifyRoute = authVerifyImport.update({
   id: '/(auth)/verify',
   path: '/verify',
@@ -177,6 +171,12 @@ const authSignInRoute = authSignInImport.update({
 const authOtpRoute = authOtpImport.update({
   id: '/(auth)/otp',
   path: '/otp',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const authCompleteProfileRoute = authCompleteProfileImport.update({
+  id: '/(auth)/complete-profile',
+  path: '/complete-profile',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -312,6 +312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof auth500Import
       parentRoute: typeof rootRoute
     }
+    '/(auth)/complete-profile': {
+      id: '/(auth)/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof authCompleteProfileImport
+      parentRoute: typeof rootRoute
+    }
     '/(auth)/otp': {
       id: '/(auth)/otp'
       path: '/otp'
@@ -331,13 +338,6 @@ declare module '@tanstack/react-router' {
       path: '/verify'
       fullPath: '/verify'
       preLoaderRoute: typeof authVerifyImport
-      parentRoute: typeof rootRoute
-    }
-    '/(auth)/verify-lazy': {
-      id: '/(auth)/verify-lazy'
-      path: '/verify-lazy'
-      fullPath: '/verify-lazy'
-      preLoaderRoute: typeof authVerifyLazyImport
       parentRoute: typeof rootRoute
     }
     '/_authenticated/settings': {
@@ -547,10 +547,10 @@ const AuthenticatedRouteRouteWithChildren =
 export interface FileRoutesByFullPath {
   '': typeof AuthenticatedRouteRouteWithChildren
   '/500': typeof errors500LazyRoute
+  '/complete-profile': typeof authCompleteProfileRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
   '/verify': typeof authVerifyRoute
-  '/verify-lazy': typeof authVerifyLazyRoute
   '/settings': typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   '/forgot-password': typeof authForgotPasswordLazyRoute
   '/sign-in-2': typeof authSignIn2LazyRoute
@@ -575,10 +575,10 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/500': typeof errors500LazyRoute
+  '/complete-profile': typeof authCompleteProfileRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
   '/verify': typeof authVerifyRoute
-  '/verify-lazy': typeof authVerifyLazyRoute
   '/forgot-password': typeof authForgotPasswordLazyRoute
   '/sign-in-2': typeof authSignIn2LazyRoute
   '/sign-up': typeof authSignUpLazyRoute
@@ -604,10 +604,10 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/(auth)/500': typeof auth500Route
+  '/(auth)/complete-profile': typeof authCompleteProfileRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/sign-in': typeof authSignInRoute
   '/(auth)/verify': typeof authVerifyRoute
-  '/(auth)/verify-lazy': typeof authVerifyLazyRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordLazyRoute
   '/(auth)/sign-in-2': typeof authSignIn2LazyRoute
@@ -636,10 +636,10 @@ export interface FileRouteTypes {
   fullPaths:
     | ''
     | '/500'
+    | '/complete-profile'
     | '/otp'
     | '/sign-in'
     | '/verify'
-    | '/verify-lazy'
     | '/settings'
     | '/forgot-password'
     | '/sign-in-2'
@@ -663,10 +663,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/500'
+    | '/complete-profile'
     | '/otp'
     | '/sign-in'
     | '/verify'
-    | '/verify-lazy'
     | '/forgot-password'
     | '/sign-in-2'
     | '/sign-up'
@@ -690,10 +690,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/(auth)/500'
+    | '/(auth)/complete-profile'
     | '/(auth)/otp'
     | '/(auth)/sign-in'
     | '/(auth)/verify'
-    | '/(auth)/verify-lazy'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
     | '/(auth)/sign-in-2'
@@ -721,10 +721,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   auth500Route: typeof auth500Route
+  authCompleteProfileRoute: typeof authCompleteProfileRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
   authVerifyRoute: typeof authVerifyRoute
-  authVerifyLazyRoute: typeof authVerifyLazyRoute
   authForgotPasswordLazyRoute: typeof authForgotPasswordLazyRoute
   authSignIn2LazyRoute: typeof authSignIn2LazyRoute
   authSignUpLazyRoute: typeof authSignUpLazyRoute
@@ -738,10 +738,10 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   auth500Route: auth500Route,
+  authCompleteProfileRoute: authCompleteProfileRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,
   authVerifyRoute: authVerifyRoute,
-  authVerifyLazyRoute: authVerifyLazyRoute,
   authForgotPasswordLazyRoute: authForgotPasswordLazyRoute,
   authSignIn2LazyRoute: authSignIn2LazyRoute,
   authSignUpLazyRoute: authSignUpLazyRoute,
@@ -764,10 +764,10 @@ export const routeTree = rootRoute
       "children": [
         "/_authenticated",
         "/(auth)/500",
+        "/(auth)/complete-profile",
         "/(auth)/otp",
         "/(auth)/sign-in",
         "/(auth)/verify",
-        "/(auth)/verify-lazy",
         "/(auth)/forgot-password",
         "/(auth)/sign-in-2",
         "/(auth)/sign-up",
@@ -794,6 +794,9 @@ export const routeTree = rootRoute
     "/(auth)/500": {
       "filePath": "(auth)/500.tsx"
     },
+    "/(auth)/complete-profile": {
+      "filePath": "(auth)/complete-profile.tsx"
+    },
     "/(auth)/otp": {
       "filePath": "(auth)/otp.tsx"
     },
@@ -802,9 +805,6 @@ export const routeTree = rootRoute
     },
     "/(auth)/verify": {
       "filePath": "(auth)/verify.tsx"
-    },
-    "/(auth)/verify-lazy": {
-      "filePath": "(auth)/verify-lazy.tsx"
     },
     "/_authenticated/settings": {
       "filePath": "_authenticated/settings/route.lazy.tsx",

@@ -6,6 +6,7 @@ import { supabase } from '@/renderer/lib/supabase'
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
+  hasProfile: boolean 
   setUser: (user: User | null) => void
   signIn: (email: string, password: string) => Promise<void>
   signUp: (
@@ -18,17 +19,20 @@ interface AuthState {
     }
   ) => Promise<{ requiresEmailConfirmation: boolean }>
   signOut: () => Promise<void>
+  checkProfile: () => Promise<boolean>
+  verifyAuth: () => Promise<{ isAuthenticated: boolean; hasProfile: boolean }>
   clearState: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
+      hasProfile: false,
       clearState: () => {
         console.log('Clearing auth state')
-        set({ user: null, isAuthenticated: false })
+        set({ user: null, isAuthenticated: false, hasProfile: false })
         localStorage.removeItem('auth-storage') // Forcefully clear persistent storage
       },
       setUser: async (user) => {
@@ -38,7 +42,7 @@ export const useAuthStore = create<AuthState>()(
         
         if (!session) {
           console.log('No valid session found, clearing state')
-          set({ user: null, isAuthenticated: false })
+          set({ user: null, isAuthenticated: false, hasProfile: false })
           localStorage.removeItem('auth-storage')
           return
         }
@@ -46,10 +50,64 @@ export const useAuthStore = create<AuthState>()(
         const isAuthenticated = !!user?.email_confirmed_at
         console.log('Email confirmed:', user?.email_confirmed_at)
         console.log('Setting authenticated:', isAuthenticated)
+        
+        // Check profile when setting user
+        const hasProfile = user ? await get().checkProfile() : false
+        console.log('Has profile:', hasProfile)
+
         set({ 
           user,
-          isAuthenticated
+          isAuthenticated,
+          hasProfile
         })
+      },
+      verifyAuth: async () => {
+        console.log("Verifying auth")
+
+        // Check session
+        const { data: { session } } = await supabase.auth.getSession()
+
+        console.log("Session:", session)
+        
+        if (!session) {
+          console.log("No session currently.")
+          set({ user: null, isAuthenticated: false, hasProfile: false })
+          return { isAuthenticated: false, hasProfile: false }
+        }
+
+        console.log("Verifying user...")
+
+        // Verify user
+        const currentUser = session.user
+        const isAuthenticated = !!currentUser?.email_confirmed_at
+
+        console.log("Checking profile...")
+
+        // Check profile
+        let hasProfile = false
+        if (currentUser) {
+          try {
+            const { data } = await supabase
+              .from('users')
+              .select('*')
+              .eq('user_id', currentUser.id)
+              .single()
+            hasProfile = !!data
+          } catch (error) {
+            console.error('Error checking profile:', error)
+          }
+        }
+
+        // Update state
+        set({
+          user: currentUser,
+          isAuthenticated,
+          hasProfile
+        })
+
+        console.log("Updating state:", currentUser, isAuthenticated, hasProfile)
+
+        return { isAuthenticated, hasProfile }
       },
       signIn: async (email, password) => {
         console.log('Signing in...')
@@ -103,12 +161,33 @@ export const useAuthStore = create<AuthState>()(
         })
         console.log('Sign out complete')
       },
+      checkProfile: async () => {
+        const user = get().user
+        if (!user) return false
+
+        try {
+          const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+
+          const hasProfile = !!data
+          console.log('Profile check result:', hasProfile)
+          set({ hasProfile })
+          return hasProfile
+        } catch (error) {
+          console.error('Error checking profile:', error)
+          return false
+        }
+      }
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated
+        isAuthenticated: state.isAuthenticated,
+        hasProfile: state.hasProfile
       })
     }
   )

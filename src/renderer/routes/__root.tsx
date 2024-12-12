@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
-import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
+import { createRootRouteWithContext, Outlet, useNavigate } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { Toaster } from '@/renderer/components/ui/toaster'
@@ -7,12 +7,37 @@ import GeneralError from '@/renderer/features/errors/general-error'
 import NotFoundError from '@/renderer/features/errors/not-found-error'
 // import { NavigationControls } from '../components/navigation-controls'
 import { useNavigationShortcuts } from '../hooks/use-navigation-shortcuts'
+import { useEffect } from 'react'
+import { useAuthStore } from '../stores/authStore'
+import { navigation } from '../services/navigation'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   component: () => {
     useNavigationShortcuts()
+    const navigate = useNavigate()
+
+    useEffect(() => {
+      const verifyAuthentication = async () => {
+        // Check if current route is an auth route
+        const currentPath = navigation.getCurrentPath()
+
+        const { verifyAuth } = useAuthStore.getState()
+        await verifyAuth()
+
+        const isAuthenticated = useAuthStore.getState().isAuthenticated
+        const hasProfile = useAuthStore.getState().hasProfile
+
+        if ((!isAuthenticated || !hasProfile) && currentPath !== '/sign-in') {
+          console.log("Current path:", currentPath)
+          console.log('Missing authentication or profile, redirecting to sign-in')
+          navigate({ to: '/sign-in' })
+        }
+      }
+      
+      verifyAuthentication()
+    }, [])
 
     return (
       <>

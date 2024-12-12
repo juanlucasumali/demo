@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { cn } from '@/renderer/lib/utils'
-import { useAuth } from '@/renderer/stores/authStore'
+import { useAuth, useAuthStore } from '@/renderer/stores/authStore'
 import { toast } from '@/renderer/hooks/use-toast'
 import {
   Form,
@@ -57,13 +57,38 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         title: 'Success',
         description: 'Successfully logged in',
       })
-      navigate({ to: '/dashboard' })
+
+      const hasProfile = await useAuthStore.getState().checkProfile()
+
+      if (hasProfile) {
+        navigate({ to: '/dashboard' })
+      } else {
+        navigate({ to: '/complete-profile' })
+      }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to sign in',
-      })
+      console.log("error:", error)
+      
+      // Check if it's an AuthApiError and specifically about email verification
+      if (
+        error instanceof Error && (
+          error.message.includes('Email not confirmed') ||
+          error.message.includes('provider_email_needs_verification')
+        )
+      ) {
+        toast({
+          title: 'Email Verification Required',
+          description: 'Please check your email for the verification link',
+          // Optional: You might want to use a different variant for this case
+          variant: 'default', // or 'warning' if you have that variant
+        })
+      } else {
+        // Default error toast for other errors
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to sign in',
+        })
+      }
     } finally {
       setIsLoading(false)
     }

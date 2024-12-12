@@ -1,25 +1,17 @@
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { Card } from '@/renderer/components/ui/card'
 import { Button } from '@/renderer/components/button'
 import { CheckCircle2 } from 'lucide-react'
 import AuthLayout from '../auth-layout'
 import { useAuth } from '@/renderer/stores/authStore'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/renderer/lib/supabase'
 import { useToast } from '@/renderer/hooks/use-toast'
 
 export default function VerifyEmail() {
-  const { user, isAuthenticated } = useAuth()
+  const { user } = useAuth()
   const [isResending, setIsResending] = useState(false)
-  const navigate = useNavigate()
   const { toast } = useToast();
-
-  useEffect(() => {
-    // If user becomes verified, redirect to dashboard
-    if (isAuthenticated) {
-      navigate({ to: '/dashboard' })
-    }
-  }, [isAuthenticated, navigate])
 
   const handleResendEmail = async () => {
     try {
@@ -42,23 +34,6 @@ export default function VerifyEmail() {
     } finally {
       setIsResending(false)
     }
-  }
-
-  if (!user) {
-    return (
-      <AuthLayout>
-        <Card className="p-6">
-          <div className="flex flex-col items-center space-y-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              No account found. Please sign up first.
-            </p>
-            <Link to="/sign-up">
-              <Button>Sign Up</Button>
-            </Link>
-          </div>
-        </Card>
-      </AuthLayout>
-    )
   }
 
   return (

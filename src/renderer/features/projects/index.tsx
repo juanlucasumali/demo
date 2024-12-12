@@ -19,33 +19,33 @@ import { Main } from '@/renderer/components/layout/main'
 import { ProfileDropdown } from '@/renderer/components/profile-dropdown'
 import { Search } from '@/renderer/components/search'
 import { ThemeSwitch } from '@/renderer/components/theme-switch'
-import { apps } from './data/apps'
+import { projects } from './data/projects'
 
-const appText = new Map<string, string>([
-  ['all', 'All Apps'],
+const projectText = new Map<string, string>([
+  ['all', 'All Projects'],
   ['connected', 'Connected'],
   ['notConnected', 'Not Connected'],
 ])
 
-export default function Apps() {
+export default function Projects() {
   const [sort, setSort] = useState('ascending')
-  const [appType, setAppType] = useState('all')
+  const [projectType, setProjectType] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
 
-  const filteredApps = apps
+  const filteredProjects = projects
     .sort((a, b) =>
       sort === 'ascending'
         ? a.name.localeCompare(b.name)
         : b.name.localeCompare(a.name)
     )
-    .filter((app) =>
-      appType === 'connected'
-        ? app.connected
-        : appType === 'notConnected'
-          ? !app.connected
+    .filter((project) =>
+      projectType === 'connected'
+        ? project.connected
+        : projectType === 'notConnected'
+          ? !project.connected
           : true
     )
-    .filter((app) => app.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((project) => project.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   return (
     <>
@@ -62,26 +62,26 @@ export default function Apps() {
       <Main fixed>
         <div>
           <h1 className='text-2xl font-bold tracking-tight'>
-            App Integrations
+            Project Integrations
           </h1>
           <p className='text-muted-foreground'>
-            Here&apos;s a list of your apps for the integration!
+            Here&apos;s a list of your projects for the integration!
           </p>
         </div>
         <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
           <div className='flex flex-col gap-4 sm:my-4 sm:flex-row'>
             <Input
-              placeholder='Filter apps...'
+              placeholder='Filter projects...'
               className='h-9 w-40 lg:w-[250px]'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <Select value={appType} onValueChange={setAppType}>
+            <Select value={projectType} onValueChange={setProjectType}>
               <SelectTrigger className='w-36'>
-                <SelectValue>{appText.get(appType)}</SelectValue>
+                <SelectValue>{projectText.get(projectType)}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>All Apps</SelectItem>
+                <SelectItem value='all'>All Projects</SelectItem>
                 <SelectItem value='connected'>Connected</SelectItem>
                 <SelectItem value='notConnected'>Not Connected</SelectItem>
               </SelectContent>
@@ -112,28 +112,28 @@ export default function Apps() {
         </div>
         <Separator className='shadow' />
         <ul className='faded-bottom no-scrollbar grid gap-4 overflow-auto pb-16 pt-4 md:grid-cols-2 lg:grid-cols-3'>
-          {filteredApps.map((app) => (
+          {filteredProjects.map((project) => (
             <li
-              key={app.name}
+              key={project.name}
               className='rounded-lg border p-4 hover:shadow-md'
             >
               <div className='mb-8 flex items-center justify-between'>
                 <div
                   className={`flex size-10 items-center justify-center rounded-lg bg-muted p-2`}
                 >
-                  {app.logo}
+                  {project.logo}
                 </div>
                 <Button
                   variant='outline'
                   size='sm'
-                  className={`${app.connected ? 'border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900' : ''}`}
+                  className={`${project.connected ? 'border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900' : ''}`}
                 >
-                  {app.connected ? 'Connected' : 'Connect'}
+                  {project.connected ? 'Connected' : 'Connect'}
                 </Button>
               </div>
               <div>
-                <h2 className='mb-1 font-semibold'>{app.name}</h2>
-                <p className='line-clamp-2 text-gray-500'>{app.desc}</p>
+                <h2 className='mb-1 font-semibold'>{project.name}</h2>
+                <p className='line-clamp-2 text-gray-500'>{project.desc}</p>
               </div>
             </li>
           ))}

@@ -8,3 +8,5 @@ out
 .next
 build/cert/*
 !build/cert/.gitkeep
+.branches
+.temp

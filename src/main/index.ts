@@ -11,7 +11,7 @@ function createWindow() {
     }
   })
 
-  // win.webContents.openDevTools();
+  win.webContents.openDevTools();
 
   // In development, load from dev server
   if (process.env.NODE_ENV === 'development') {

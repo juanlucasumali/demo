@@ -16,7 +16,7 @@ import {
   IconBrandZoom,
 } from '@tabler/icons-react'
 
-export const apps = [
+export const projects = [
   {
     name: 'Telegram',
     logo: <IconBrandTelegram />,

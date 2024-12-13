@@ -5,11 +5,12 @@ import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { Toaster } from '@/renderer/components/ui/toaster'
 import GeneralError from '@/renderer/features/errors/general-error'
 import NotFoundError from '@/renderer/features/errors/not-found-error'
-// import { NavigationControls } from '../components/navigation-controls'
 import { useNavigationShortcuts } from '../hooks/use-navigation-shortcuts'
 import { useEffect } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { navigation } from '../services/navigation'
+import { useNavigationStore } from '../stores/useNavigationStore'
+import { router } from '../main'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -17,6 +18,23 @@ export const Route = createRootRouteWithContext<{
   component: () => {
     useNavigationShortcuts()
     const navigate = useNavigate()
+    const { setLastVisitedPath } = useNavigationStore()
+
+    useEffect(() => {
+      // Track path changes
+      const currentPath = navigation.getCurrentPath()
+      setLastVisitedPath(currentPath)
+
+      // Subscribe to route changes
+      const unsubscribe = router.subscribe('onBeforeRouteMount', () => {
+        const newPath = navigation.getCurrentPath()
+        setLastVisitedPath(newPath)
+      })
+
+      return () => {
+        unsubscribe()
+      }
+    }, [])
 
     useEffect(() => {
       const verifyAuthentication = async () => {
@@ -44,7 +62,6 @@ export const Route = createRootRouteWithContext<{
       <>
         <Outlet />
         <Toaster />
-        {/* <NavigationControls /> */}
         {import.meta.env.MODE === 'development' && (
           <>
             <ReactQueryDevtools buttonPosition='bottom-left' />

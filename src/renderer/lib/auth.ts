@@ -1,6 +1,7 @@
 import { redirect } from '@tanstack/react-router'
 import { useAuthStore } from '@/renderer/stores/useAuthStore'
 import { navigation } from '../services/navigation'
+import { useNavigationStore } from '../stores/useNavigationStore'
 
 export async function protectedLoader() {
     const isAuthenticated = useAuthStore.getState().isAuthenticated
@@ -19,17 +20,18 @@ export async function protectedLoader() {
     }
   }
   
-  export async function publicOnlyLoader() {
-    const hasProfile = useAuthStore.getState().hasProfile
-    const isAuthenticated = useAuthStore.getState().isAuthenticated
-    const currentPath = navigation.getCurrentPath()
-    console.log("Current path:", currentPath)
-    console.log('Public route check:', { isAuthenticated, hasProfile })
-    if (hasProfile && isAuthenticated) {
-      console.log('Already has profile and is authenticated, redirecting to dashboard')
-      throw redirect({
-        to: '/dashboard',
-      })
-    } 
-  }
+export async function publicOnlyLoader() {
+  const hasProfile = useAuthStore.getState().hasProfile
+  const isAuthenticated = useAuthStore.getState().isAuthenticated
+  const lastVisitedPath = useNavigationStore.getState().getLastVisitedPath()
   
+  console.log("Last visited path:", lastVisitedPath)
+  console.log('Public route check:', { isAuthenticated, hasProfile })
+  
+  if (hasProfile && isAuthenticated) {
+    console.log('Already has profile and is authenticated, redirecting to last visited path')
+    throw redirect({
+      to: lastVisitedPath || '/dashboard', // Fallback to dashboard if no last path
+    })
+  } 
+}

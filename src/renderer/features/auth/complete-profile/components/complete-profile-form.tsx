@@ -8,12 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/renderer/components/ui/av
 import { Label } from '@/renderer/components/ui/label'
 import { b2Service } from '@/renderer/services/b2'
 import { useAuth, useAuthStore } from '@/renderer/stores/useAuthStore'
+import { validateDisplayName, validateUsername } from '@/renderer/lib/utils'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
 const MAX_IMAGE_DIMENSIONS = 1000 // pixels
 
 export function CompleteProfileForm() {
+  const { verifyAuth } = useAuthStore.getState()
   const [isLoading, setIsLoading] = useState(false)
   const [avatarPath, setAvatarPath] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -38,42 +40,6 @@ export function CompleteProfileForm() {
         resolve(img.width <= MAX_IMAGE_DIMENSIONS && img.height <= MAX_IMAGE_DIMENSIONS)
       }
     })
-  }
-
-  const validateUsername = (username: string) => {
-    if (!username) return 'Username is required'
-    if (username.length < 3) return 'Username must be at least 3 characters'
-    if (username.length > 20) return 'Username must be less than 20 characters'
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores'
-    return ''
-  }
-
-  const validateDisplayName = (displayName: string): string => {
-    // Required check
-    if (!displayName) return 'Display name is required'
-
-    // Minimum length check (typically 2-3 characters)
-    if (displayName.length < 3) {
-      return 'Display name must be at least 3 characters long'
-    }
-    
-    // Maximum length check (commonly between 30-50 characters)
-    if (displayName.length > 50) {
-      return 'Display name must be less than 50 characters'
-    }
-  
-    // Check for valid characters (allowing letters, numbers, spaces, and some special characters)
-    const validCharactersRegex = /^[a-zA-Z0-9\s\-_.]+$/
-    if (!validCharactersRegex.test(displayName)) {
-      return 'Display name can only contain letters, numbers, spaces, and basic punctuation'
-    }
-  
-    // Unicode-aware letter check for first character
-    if (!/^[\p{L}]/u.test(displayName)) {
-      return 'Display name must start with a letter'
-    }
-  
-    return ''
   }
 
   const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,6 +162,7 @@ export function CompleteProfileForm() {
       const hasProfile = await useAuthStore.getState().checkProfile()
 
       if (hasProfile) {
+        await verifyAuth()
         navigate({ to: '/dashboard' })
       } else {
         throw profileError

@@ -54,3 +54,39 @@ export const formatDate = (date: string) => {
     year: 'numeric'
   })
 }
+
+export const validateUsername = (username: string) => {
+  if (!username) return 'Username is required'
+  if (username.length < 3) return 'Username must be at least 3 characters'
+  if (username.length > 20) return 'Username must be less than 20 characters'
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores'
+  return ''
+}
+
+export const validateDisplayName = (displayName: string): string => {
+  // Required check
+  if (!displayName) return 'Display name is required'
+
+  // Minimum length check (typically 2-3 characters)
+  if (displayName.length < 3) {
+    return 'Display name must be at least 3 characters long'
+  }
+  
+  // Maximum length check (commonly between 30-50 characters)
+  if (displayName.length > 50) {
+    return 'Display name must be less than 50 characters'
+  }
+
+  // Check for valid characters (allowing letters, numbers, spaces, and some special characters)
+  const validCharactersRegex = /^[a-zA-Z0-9\s\-_.]+$/
+  if (!validCharactersRegex.test(displayName)) {
+    return 'Display name can only contain letters, numbers, spaces, and basic punctuation'
+  }
+
+  // Unicode-aware letter check for first character
+  if (!/^[\p{L}]/u.test(displayName)) {
+    return 'Display name must start with a letter'
+  }
+
+  return ''
+}

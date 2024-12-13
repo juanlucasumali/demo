@@ -12,9 +12,6 @@ files:
 asarUnpack:
   - resources/**
 
-afterSign: "build/notarize.js"
-
-# macOS Configuration
 mac:
   icon: build/icon.icns
   category: public.app-category.developer-tools
@@ -22,11 +19,16 @@ mac:
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
-  signIgnore: ["node_modules"]
-  identity: "Developer ID Application"
-  notarize: true 
+  signIgnore: []
+  identity: "Chao Tang (PYQ3YRX8CP)"  # Keep signing
+  notarize: false  # Disable automatic notarization
+  binaries: [
+    "Contents/Resources/app.asar.unpacked/node_modules/tsx/node_modules/@esbuild/darwin-arm64/bin/esbuild",
+    "Contents/Resources/app.asar.unpacked/node_modules/fsevents/fsevents.node"
+  ]
+
 
 dmg:
   artifactName: ${name}-${version}.${ext}
-  sign: true
+  sign: true  # Keep DMG signing
   writeUpdateInfo: false

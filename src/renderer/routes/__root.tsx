@@ -23,6 +23,7 @@ export const Route = createRootRouteWithContext<{
         // Check if current route is an auth route
         const currentPath = navigation.getCurrentPath()
 
+        console.log("Verifying auth from __root...")
         const { verifyAuth } = useAuthStore.getState()
         await verifyAuth()
 

@@ -2,12 +2,14 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/renderer/lib/supabase'
+import { UserProfile } from '../components/layout/types'
+import { mediaService } from '../services/b2'
 
 interface AuthState {
   user: User | null
+  userProfile: UserProfile | null
   isAuthenticated: boolean
   hasProfile: boolean 
-  setUser: (user: User | null) => void
   signIn: (email: string, password: string) => Promise<void>
   signUp: (
     email: string, 
@@ -22,92 +24,124 @@ interface AuthState {
   checkProfile: () => Promise<boolean>
   verifyAuth: () => Promise<{ isAuthenticated: boolean; hasProfile: boolean }>
   clearState: () => void
+  getUserProfile: () => Promise<UserProfile | null>
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      userProfile: null,
       isAuthenticated: false,
       hasProfile: false,
       clearState: () => {
         console.log('Clearing auth state')
-        set({ user: null, isAuthenticated: false, hasProfile: false })
+        set({ user: null, userProfile: null, isAuthenticated: false, hasProfile: false })
         localStorage.removeItem('auth-storage') // Forcefully clear persistent storage
-      },
-      setUser: async (user) => {
-        console.log('Setting user:', user)
-        // Verify the session is still valid
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!session) {
-          console.log('No valid session found, clearing state')
-          set({ user: null, isAuthenticated: false, hasProfile: false })
-          localStorage.removeItem('auth-storage')
-          return
-        }
-
-        const isAuthenticated = !!user?.email_confirmed_at
-        console.log('Email confirmed:', user?.email_confirmed_at)
-        console.log('Setting authenticated:', isAuthenticated)
-        
-        // Check profile when setting user
-        const hasProfile = user ? await get().checkProfile() : false
-        console.log('Has profile:', hasProfile)
-
-        set({ 
-          user,
-          isAuthenticated,
-          hasProfile
-        })
       },
       verifyAuth: async () => {
         console.log("Verifying auth")
-
+      
         // Check session
         const { data: { session } } = await supabase.auth.getSession()
-
+      
         console.log("Session:", session)
         
         if (!session) {
           console.log("No session currently.")
-          set({ user: null, isAuthenticated: false, hasProfile: false })
+          set({ 
+            user: null, 
+            userProfile: null, 
+            isAuthenticated: false, 
+            hasProfile: false 
+          })
           return { isAuthenticated: false, hasProfile: false }
         }
-
+      
         console.log("Verifying user...")
-
+      
         // Verify user
         const currentUser = session.user
         const isAuthenticated = !!currentUser?.email_confirmed_at
-
+      
         console.log("Checking profile...")
-
-        // Check profile
+      
+        // Check profile and get profile data
         let hasProfile = false
+        let userProfile = null
+        
         if (currentUser) {
           try {
-            const { data } = await supabase
+            const { data, error } = await supabase
               .from('users')
               .select('*')
               .eq('user_id', currentUser.id)
               .single()
-            hasProfile = !!data
+      
+            if (error) throw error
+      
+            if (data) {
+              hasProfile = true
+              userProfile = {
+                username: data.username,
+                email: data.email,
+                displayName: data.display_name,
+                localPath: data.localPath ?? null,
+                // Wait for the avatar URL
+                avatar: data.avatar_path ? await mediaService.getAvatarUrl(data.avatar_path) : null
+              }
+              console.log("Profile found:", userProfile)
+            }
           } catch (error) {
             console.error('Error checking profile:', error)
           }
         }
-
+      
         // Update state
         set({
           user: currentUser,
+          userProfile,
           isAuthenticated,
           hasProfile
         })
-
-        console.log("Updating state:", currentUser, isAuthenticated, hasProfile)
-
+      
+        console.log("Updating state:", {
+          user: currentUser,
+          userProfile,
+          isAuthenticated,
+          hasProfile
+        })
+      
         return { isAuthenticated, hasProfile }
+      },
+      getUserProfile: async () => {
+        const user = get().user
+        if (!user) return null
+      
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+      
+          if (error) throw error
+      
+          const profile = {
+            username: data.username,
+            email: data.email,
+            localPath: data.local_path ?? null,
+            displayName: data.display_name,
+            // Wait for the avatar URL
+            avatar: data.avatar_path ? await mediaService.getAvatarUrl(data.avatar_path) : null
+          }
+      
+          set({ userProfile: profile })
+          return profile
+        } catch (error) {
+          console.error('Error fetching user profile:', error)
+          return null
+        }
       },
       signIn: async (email, password) => {
         console.log('Signing in...')
@@ -137,7 +171,7 @@ export const useAuthStore = create<AuthState>()(
             data: {
               username: profile.username,
               display_name: profile.displayName,
-              avatar_path: profile.avatarPath
+              avatar_pathpty: profile.avatarPath
             } as object // Type assertion to satisfy Supabase types
           }
         })
@@ -157,7 +191,8 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem('auth-storage') // Clear storage on sign out
         set({ 
           user: null,
-          isAuthenticated: false 
+          userProfile: null,
+          isAuthenticated: false,
         })
         console.log('Sign out complete')
       },
@@ -186,6 +221,7 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
+        userProfile: state.userProfile,
         isAuthenticated: state.isAuthenticated,
         hasProfile: state.hasProfile
       })

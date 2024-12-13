@@ -6,6 +6,7 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
+  User as UserIcon,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/renderer/components/ui/avatar'
 import {
@@ -25,19 +26,14 @@ import {
 } from '@/renderer/components/ui/sidebar'
 import { useAuth } from '@/renderer/stores/authStore'
 import { toast } from '@/renderer/hooks/use-toast'
+import { Skeleton } from '@/renderer/components/ui/skeleton'
+import { useState } from 'react'
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
-}) {
+export function NavUser() {
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { signOut, userProfile } = useAuth()
+  const [imageError, setImageError] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -56,6 +52,29 @@ export function NavUser({
     }
   }
 
+  if (!userProfile) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <div className="flex items-center space-x-4 p-4">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[100px]" />
+              <Skeleton className="h-3 w-[80px]" />
+            </div>
+          </div>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
+
+  const initials = userProfile.displayName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -66,12 +85,25 @@ export function NavUser({
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
               <Avatar className='h-8 w-8 rounded-lg'>
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
+                {userProfile.avatar && !imageError ? (
+                  <AvatarImage 
+                    src={userProfile.avatar} 
+                    alt={userProfile.displayName}
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <AvatarFallback className='rounded-lg'>
+                    {initials || <UserIcon className="h-4 w-4" />}
+                  </AvatarFallback>
+                )}
               </Avatar>
               <div className='grid flex-1 text-left text-sm leading-tight'>
-                <span className='truncate font-semibold'>{user.name}</span>
-                <span className='truncate text-xs'>{user.email}</span>
+                <span className='truncate font-semibold'>
+                  {userProfile.displayName || userProfile.username}
+                </span>
+                <span className='truncate text-xs text-muted-foreground'>
+                  {userProfile.email}
+                </span>
               </div>
               <ChevronsUpDown className='ml-auto size-4' />
             </SidebarMenuButton>
@@ -85,34 +117,47 @@ export function NavUser({
             <DropdownMenuLabel className='p-0 font-normal'>
               <div className='flex items-center gap-2 px-1 py-1.5 text-left text-sm'>
                 <Avatar className='h-8 w-8 rounded-lg'>
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
+                  {userProfile.avatar && !imageError ? (
+                    <AvatarImage 
+                      src={userProfile.avatar} 
+                      alt={userProfile.displayName}
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <AvatarFallback className='rounded-lg'>
+                      {initials || <UserIcon className="h-4 w-4" />}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <div className='grid flex-1 text-left text-sm leading-tight'>
-                  <span className='truncate font-semibold'>{user.name}</span>
-                  <span className='truncate text-xs'>{user.email}</span>
+                  <span className='truncate font-semibold'>
+                    {userProfile.displayName || userProfile.username}
+                  </span>
+                  <span className='truncate text-xs text-muted-foreground'>
+                    {userProfile.email}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <Sparkles />
+                <Sparkles className="mr-2 h-4 w-4" />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <BadgeCheck />
+                <BadgeCheck className="mr-2 h-4 w-4" />
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <CreditCard />
+                <CreditCard className="mr-2 h-4 w-4" />
                 Billing
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Bell />
+                <Bell className="mr-2 h-4 w-4" />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>

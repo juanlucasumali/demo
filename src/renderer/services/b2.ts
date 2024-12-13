@@ -3,6 +3,20 @@ import { generateStoragePath } from '@/renderer/lib/utils'
 
 const CHUNK_SIZE = 2 * 1024 * 1024 // 2MB chunks
 
+export const mediaService = {
+  getAvatarUrl: async (avatarPath: string | null) => {
+    console.log("Getting avatarUrl from avatarPath:", avatarPath)
+    if (!avatarPath) {
+      console.log("No avatarPath found")
+      return null
+    } else {
+      const publicUrl = await b2Service.getPublicUrl(avatarPath)
+      console.log("publicUrl found:", publicUrl)
+      return publicUrl
+    }
+  }
+}
+
 async function calculateSha1(file: File): Promise<string> {
     // For files smaller than chunk size, use simple calculation
     if (file.size <= CHUNK_SIZE) {
@@ -108,6 +122,8 @@ async function calculateSha1(file: File): Promise<string> {
     private applicationKeyId = import.meta.env.VITE_B2_APPLICATION_KEY_ID
     private applicationKey = import.meta.env.VITE_B2_APPLICATION_KEY
     private authPromise: Promise<B2AuthResponse> | null = null
+    private urlCache: Map<string, { url: string, expiry: number }> = new Map()
+    private readonly CACHE_DURATION = 6 * 24 * 60 * 60 * 1000
   
     private constructor() {}
   
@@ -151,6 +167,31 @@ async function calculateSha1(file: File): Promise<string> {
       })()
   
       return this.authPromise
+    }
+
+    async getDownloadAuthorization(fileName: string) {
+      try {
+        const auth = await this.authorize()
+        
+        const response = await axios.post(
+          `${auth.apiUrl}/b2api/v2/b2_get_download_authorization`,
+          {
+            bucketId: this.bucketId,
+            fileNamePrefix: fileName,
+            validDurationInSeconds: 604800, // 7 days
+          },
+          {
+            headers: {
+              Authorization: auth.authorizationToken
+            }
+          }
+        )
+  
+        return response.data.authorizationToken
+      } catch (error) {
+        console.error('Error getting download authorization:', error)
+        throw error
+      }
     }
   
     private async getUploadUrl() {
@@ -219,10 +260,13 @@ async function calculateSha1(file: File): Promise<string> {
           }
         })
   
+        // Wait for the public URL to be generated
+        const url = await this.getPublicUrl(storagePath)
+  
         return {
           fileName: storagePath,
           fileId: response.data.fileId,
-          url: this.getPublicUrl(storagePath)
+          url
         }
       } catch (error) {
         console.error('B2 upload error:', error)
@@ -305,8 +349,52 @@ async function calculateSha1(file: File): Promise<string> {
       return error instanceof Error ? error : new Error('Unknown error occurred')
     }
   
-    getPublicUrl(fileName: string) {
-      return `https://f002.backblazeb2.com/file/${this.bucketName}/${encodeURIComponent(fileName)}`
+    async getPublicUrl(fileName: string) {
+      if (!fileName) return null
+  
+      // Check memory cache first (fastest)
+      const memoryCached = this.urlCache.get(fileName)
+      if (memoryCached && memoryCached.expiry > Date.now()) {
+        return memoryCached.url
+      }
+  
+      // Check localStorage cache second (slower but persistent)
+      const storageCached = localStorage.getItem(`b2_url_cache_${fileName}`)
+      if (storageCached) {
+        const { url, expiry } = JSON.parse(storageCached)
+        if (expiry > Date.now()) {
+          // Update memory cache
+          this.urlCache.set(fileName, { url, expiry })
+          return url
+        }
+        localStorage.removeItem(`b2_url_cache_${fileName}`)
+      }
+  
+      // Generate new URL if no cache hit
+      try {
+        console.log("No cache hit for avatarPath, generating new URL")
+        const auth = await this.authorize()
+        const downloadAuth = await this.getDownloadAuthorization(fileName)
+        
+        const segments = fileName.split('/').map(segment => encodeURIComponent(segment))
+        const encodedPath = segments.join('/')
+        
+        const baseUrl = auth.downloadUrl || 'https://f004.backblazeb2.com'
+        const url = `${baseUrl}/file/${this.bucketName}/${encodedPath}?Authorization=${downloadAuth}`
+        
+        // Cache the URL in both memory and localStorage
+        const expiry = Date.now() + this.CACHE_DURATION
+        this.urlCache.set(fileName, { url, expiry })
+        localStorage.setItem(
+          `b2_url_cache_${fileName}`,
+          JSON.stringify({ url, expiry })
+        )
+        
+        return url
+      } catch (error) {
+        console.error('Error generating authorized URL:', error)
+        throw error
+      }
     }
   }
   

@@ -39,6 +39,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const { signIn } = useAuth()
+  const { verifyAuth } = useAuthStore.getState()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,6 +62,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       const hasProfile = await useAuthStore.getState().checkProfile()
 
       if (hasProfile) {
+        await verifyAuth()
         navigate({ to: '/dashboard' })
       } else {
         navigate({ to: '/complete-profile' })

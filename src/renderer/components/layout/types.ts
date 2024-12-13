@@ -1,9 +1,11 @@
 import { LinkProps } from '@tanstack/react-router'
 
-interface User {
-  name: string
+export interface UserProfile {
+  username: string
+  displayName: string
   email: string
-  avatar: string
+  avatar: string | null
+  localPath: string | null
 }
 
 interface Team {
@@ -34,7 +36,6 @@ interface NavGroup {
 }
 
 interface SidebarData {
-  user: User
   teams: Team[]
   navGroups: NavGroup[]
 }

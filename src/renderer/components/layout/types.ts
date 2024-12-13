@@ -8,6 +8,19 @@ export interface UserProfile {
   localPath: string | null
 }
 
+export interface Project {
+  name: string;
+  logo: any;
+  connected: boolean;
+  desc: string;
+  dateCreated: string;
+  dateModified: string;
+  tags: {
+    name: string;
+    color: string;
+  }[];
+}
+
 interface Team {
   name: string
   logo: React.ElementType

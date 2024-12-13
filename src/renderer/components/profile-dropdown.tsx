@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/renderer/components/ui/dropdown-menu'
 import { Button } from '@/renderer/components/button'
-import { useAuth } from '@/renderer/stores/authStore'
+import { useAuth } from '@/renderer/stores/useAuthStore'
 import { toast } from '@/renderer/hooks/use-toast'
 import { Skeleton } from '@/renderer/components/ui/skeleton'
 

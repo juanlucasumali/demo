@@ -24,7 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/renderer/components/ui/sidebar'
-import { useAuth } from '@/renderer/stores/authStore'
+import { useAuth } from '@/renderer/stores/useAuthStore'
 import { toast } from '@/renderer/hooks/use-toast'
 import { Skeleton } from '@/renderer/components/ui/skeleton'
 import { useState } from 'react'

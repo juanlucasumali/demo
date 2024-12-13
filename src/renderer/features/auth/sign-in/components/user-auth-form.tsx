@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { cn } from '@/renderer/lib/utils'
-import { useAuth, useAuthStore } from '@/renderer/stores/authStore'
+import { useAuth, useAuthStore } from '@/renderer/stores/useAuthStore'
 import { toast } from '@/renderer/hooks/use-toast'
 import {
   Form,

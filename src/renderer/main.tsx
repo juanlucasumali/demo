@@ -7,7 +7,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter, createMemoryHistory } from '@tanstack/react-router'
-import { useAuthStore } from '@/renderer/stores/authStore'
+import { useAuthStore } from '@/renderer/stores/useAuthStore'
 import { handleServerError } from '@/renderer/utils/handle-server-error'
 import { toast } from '@/renderer/hooks/use-toast'
 import { ThemeProvider } from './context/theme-context'

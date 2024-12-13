@@ -1,5 +1,5 @@
 import { redirect } from '@tanstack/react-router'
-import { useAuthStore } from '@/renderer/stores/authStore'
+import { useAuthStore } from '@/renderer/stores/useAuthStore'
 import { navigation } from '../services/navigation'
 
 export async function protectedLoader() {

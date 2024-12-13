@@ -7,7 +7,7 @@ import { Button } from '@/renderer/components/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/renderer/components/ui/avatar'
 import { Label } from '@/renderer/components/ui/label'
 import { b2Service } from '@/renderer/services/b2'
-import { useAuth, useAuthStore } from '@/renderer/stores/authStore'
+import { useAuth, useAuthStore } from '@/renderer/stores/useAuthStore'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png']

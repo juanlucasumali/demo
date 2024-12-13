@@ -8,7 +8,7 @@ import NotFoundError from '@/renderer/features/errors/not-found-error'
 // import { NavigationControls } from '../components/navigation-controls'
 import { useNavigationShortcuts } from '../hooks/use-navigation-shortcuts'
 import { useEffect } from 'react'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore } from '../stores/useAuthStore'
 import { navigation } from '../services/navigation'
 
 export const Route = createRootRouteWithContext<{

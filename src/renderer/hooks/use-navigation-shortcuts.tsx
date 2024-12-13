@@ -1,12 +1,14 @@
 import { useEffect } from 'react'
-import { navigation } from '../services/navigation'
+import { useNavigationStore } from '../stores/useNavigationStore'
 
 const authPaths = ['/sign-in', '/sign-up', '/verify', '/otp', '/forgot-password']
 
 export function useNavigationShortcuts() {
+  const { getCurrentPath, goBack, goForward } = useNavigationStore()
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      const currentPath = navigation.getCurrentPath()
+      const currentPath = getCurrentPath()
       
       // Disable shortcuts if we're on an auth page
       if (authPaths.includes(currentPath)) {
@@ -16,26 +18,26 @@ export function useNavigationShortcuts() {
       // Command/Control + [ = Back
       if ((event.metaKey || event.ctrlKey) && event.key === '[') {
         event.preventDefault()
-        navigation.goBack()
+        goBack()
       }
       // Command/Control + ] = Forward
       if ((event.metaKey || event.ctrlKey) && event.key === ']') {
         event.preventDefault()
-        navigation.goForward()
+        goForward()
       }
       // Command/Control + Left Arrow = Back (alternative)
       if ((event.metaKey || event.ctrlKey) && event.key === 'ArrowLeft') {
         event.preventDefault()
-        navigation.goBack()
+        goBack()
       }
       // Command/Control + Right Arrow = Forward (alternative)
       if ((event.metaKey || event.ctrlKey) && event.key === 'ArrowRight') {
         event.preventDefault()
-        navigation.goForward()
+        goForward()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [goBack, goForward, getCurrentPath])
 }

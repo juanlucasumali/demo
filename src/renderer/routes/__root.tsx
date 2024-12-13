@@ -8,7 +8,6 @@ import NotFoundError from '@/renderer/features/errors/not-found-error'
 import { useNavigationShortcuts } from '../hooks/use-navigation-shortcuts'
 import { useEffect } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
-import { navigation } from '../services/navigation'
 import { useNavigationStore } from '../stores/useNavigationStore'
 import { router } from '../main'
 
@@ -18,16 +17,16 @@ export const Route = createRootRouteWithContext<{
   component: () => {
     useNavigationShortcuts()
     const navigate = useNavigate()
-    const { setLastVisitedPath } = useNavigationStore()
+    const { setLastVisitedPath, getCurrentPath } = useNavigationStore()
 
     useEffect(() => {
       // Track path changes
-      const currentPath = navigation.getCurrentPath()
+      const currentPath = getCurrentPath()
       setLastVisitedPath(currentPath)
 
       // Subscribe to route changes
       const unsubscribe = router.subscribe('onBeforeRouteMount', () => {
-        const newPath = navigation.getCurrentPath()
+        const newPath = getCurrentPath()
         setLastVisitedPath(newPath)
       })
 
@@ -38,8 +37,7 @@ export const Route = createRootRouteWithContext<{
 
     useEffect(() => {
       const verifyAuthentication = async () => {
-        // Check if current route is an auth route
-        const currentPath = navigation.getCurrentPath()
+        const currentPath = getCurrentPath()
 
         console.log("Verifying auth from __root...")
         const { verifyAuth } = useAuthStore.getState()

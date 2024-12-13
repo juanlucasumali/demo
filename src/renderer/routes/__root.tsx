@@ -6,10 +6,11 @@ import { Toaster } from '@/renderer/components/ui/toaster'
 import GeneralError from '@/renderer/features/errors/general-error'
 import NotFoundError from '@/renderer/features/errors/not-found-error'
 import { useNavigationShortcuts } from '../hooks/use-navigation-shortcuts'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useNavigationStore } from '../stores/useNavigationStore'
 import { router } from '../main'
+import { LoadingScreen } from '../components/loading-screen'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -18,6 +19,7 @@ export const Route = createRootRouteWithContext<{
     useNavigationShortcuts()
     const navigate = useNavigate()
     const { setLastVisitedPath, getCurrentPath } = useNavigationStore()
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
       // Track path changes
@@ -37,24 +39,35 @@ export const Route = createRootRouteWithContext<{
 
     useEffect(() => {
       const verifyAuthentication = async () => {
-        const currentPath = getCurrentPath()
+        try {
+          setIsLoading(true)
+          const currentPath = getCurrentPath()
 
-        console.log("Verifying auth from __root...")
-        const { verifyAuth } = useAuthStore.getState()
-        await verifyAuth()
+          console.log("Verifying auth from __root...")
+          const { verifyAuth } = useAuthStore.getState()
+          await verifyAuth()
 
-        const isAuthenticated = useAuthStore.getState().isAuthenticated
-        const hasProfile = useAuthStore.getState().hasProfile
+          const isAuthenticated = useAuthStore.getState().isAuthenticated
+          const hasProfile = useAuthStore.getState().hasProfile
 
-        if ((!isAuthenticated || !hasProfile) && currentPath !== '/sign-in') {
-          console.log("Current path:", currentPath)
-          console.log('Missing authentication or profile, redirecting to sign-in')
-          navigate({ to: '/sign-in' })
+          if ((!isAuthenticated || !hasProfile) && currentPath !== '/sign-in') {
+            console.log("Current path:", currentPath)
+            console.log('Missing authentication or profile, redirecting to sign-in')
+            navigate({ to: '/sign-in' })
+          }
+        } catch (error) {
+          console.error('Authentication verification failed:', error)
+        } finally {
+          setIsLoading(false)
         }
       }
       
       verifyAuthentication()
     }, [])
+
+    if (isLoading) {
+      return <LoadingScreen />
+    }
 
     return (
       <>

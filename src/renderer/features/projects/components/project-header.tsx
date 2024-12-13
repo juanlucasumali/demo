@@ -43,7 +43,7 @@ export const ProjectHeader = ({
   }
 
   return (
-    <div className='flex flex-col gap-4 sm:my-4 sm:flex-row'>
+    <div className='flex gap-4 sm:my-4'>
       <Input
         placeholder='Filter projects...'
         className='h-9 w-40 lg:w-[250px]'

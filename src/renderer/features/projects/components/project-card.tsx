@@ -1,9 +1,15 @@
-import { IconStar, IconStarFilled } from '@tabler/icons-react'
+import { IconStar, IconStarFilled, IconDots, IconShare, IconEdit } from '@tabler/icons-react'
 import { Badge } from "@/renderer/components/ui/badge"
 import { Separator } from "@/renderer/components/ui/separator"
-import { formatDate } from '@/renderer/lib/utils'
+import { formatDate, generateGradientStyle } from '@/renderer/lib/utils'
 import { Project } from '@/renderer/components/layout/types'
-import { getIconComponent } from '../data/projects'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/renderer/components/ui/dropdown-menu"
+import { useMemo } from 'react'
 
 interface ProjectCardProps {
   project: Project
@@ -20,29 +26,73 @@ export const ProjectCard = ({
   toggleStar,
   displayPreferences,
 }: ProjectCardProps) => {
+  const logoGradientStyle = useMemo(() => {
+    // if (project.logo) return {};
+    return generateGradientStyle(project.id);
+  }, [project.id, project.logo]);
+
   return (
     <li className='rounded-lg border p-4 hover:shadow-md cursor-pointer'>
       <div className='mb-8 flex items-center justify-between'>
         <div className='flex items-center gap-2'>
-          <div className={`flex size-10 items-center justify-center rounded-lg bg-muted p-2`}>
-            {getIconComponent(project.logo)}
+          <div 
+            className={`flex size-10 items-center justify-center rounded-lg p-2`}
+            style={logoGradientStyle}
+          >
+            {/* {getIconComponent(project.logo)} */}
           </div>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleStar(project.name)
-          }}
-          className='ml-2 text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-300'
-        >
-          {project.isStarred 
-            ? <IconStarFilled size={20} className="text-yellow-400" /> 
-            : <IconStar size={20} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="hover:bg-muted p-2 rounded-md"
+              >
+                <IconDots size={20} className="text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // Handle share action
+                  console.log('Share', project.name)
+                }}
+              >
+                <IconShare className="mr-2 h-4 w-4" />
+                <span>Share</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={( e) => {
+                  e.stopPropagation()
+                  // Handle edit action
+                  console.log('Edit', project.name)
+                }}
+              >
+                <IconEdit className="mr-2 h-4 w-4" />
+                <span>Edit details</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleStar(project.name)
+            }}
+            className='text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-300'
+          >
+            {project.isStarred 
+              ? <IconStarFilled size={20} className="text-yellow-400" /> 
+              : <IconStar size={20} />}
+          </button>
+        </div>
       </div>
+      {/* Rest of the component remains the same */}
       <div>
         <h2 className='mb-1 font-semibold'>{project.name}</h2>
-        <p className='line-clamp-2 text-gray-500 text-sm mb-4'>{project.desc}</p>
+        <p className='line-clamp-2 text-gray-500 text-sm mb-4'>{project.description}</p>
         
         {displayPreferences.tags && (
           <div className="overflow-x-auto no-scrollbar mb-4">

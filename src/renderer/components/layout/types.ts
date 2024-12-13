@@ -9,10 +9,10 @@ export interface UserProfile {
 }
 
 export interface Project {
+  id: string
   name: string;
-  logo: any;
-  connected: boolean;
-  desc: string;
+  logo: string | null;
+  description: string;
   dateCreated: string;
   dateModified: string;
   isStarred: boolean

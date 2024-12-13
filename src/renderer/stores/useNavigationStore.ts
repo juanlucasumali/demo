@@ -21,7 +21,8 @@ export const useNavigationStore = create<NavigationState>()(
         // Don't store auth-related paths
         if (!path.includes('sign-in') && 
             !path.includes('sign-up') && 
-            !path.includes('complete-profile')) {
+            !path.includes('complete-profile') && 
+            !path.includes('verify-email')) {
           set({ lastVisitedPath: path })
         }
       },

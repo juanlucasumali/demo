@@ -11,6 +11,7 @@ import { ProjectToolbar } from './components/project-toolbar'
 import { ProjectCard } from './components/project-card'
 import { Project } from '@/renderer/components/layout/types'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
+import { CreateProjectDialog } from './components/create-project-dialog'
 
 export default function Projects() {
   const {
@@ -34,15 +35,33 @@ export default function Projects() {
     new Set(projects.flatMap(project => project.tags.map(tag => tag.name)))
   ).sort()
 
-  const getSortedProjects = (a: Project, b: Project) => {
-    const sortingStrategies = {
-      ascending: () => a.name.localeCompare(b.name),
-      descending: () => b.name.localeCompare(a.name),
-      dateCreated: () => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime(),
-      dateModified: () => new Date(b.dateModified).getTime() - new Date(a.dateModified).getTime(),
-    }
-    return sortingStrategies[sortPreference as keyof typeof sortingStrategies]?.() || 0
-  }
+  const getFilteredAndSortedProjects = () => {
+    return projects
+      // First filter
+      .filter((project) => project.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter((project) => 
+        selectedTags.length === 0 || 
+        selectedTags.every(tag => project.tags.some(projectTag => projectTag.name === tag))
+      )
+      // Then sort
+      .sort((a, b) => {
+        // First priority: starred status
+        if (a.isStarred && !b.isStarred) return -1;
+        if (!a.isStarred && b.isStarred) return 1;
+        
+        // Second priority: selected sort preference
+        const sortingStrategies = {
+          ascending: () => a.name.localeCompare(b.name),
+          descending: () => b.name.localeCompare(a.name),
+          dateCreated: () => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime(),
+          dateModified: () => new Date(b.dateModified).getTime() - new Date(a.dateModified).getTime(),
+        }
+        return sortingStrategies[sortPreference as keyof typeof sortingStrategies]?.() || 0
+      });
+  };
+
+  const filteredProjects = getFilteredAndSortedProjects();
+
 
   // Add useEffect to initialize projects with dummy data
   useEffect(() => {
@@ -51,13 +70,11 @@ export default function Projects() {
     setProjects(dummyProjects) // Your dummy data from projects.ts
   }, [])
 
-  const filteredProjects = projects
-    .sort(getSortedProjects)
-    .filter((project) => project.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter((project) => 
-      selectedTags.length === 0 || 
-      selectedTags.every(tag => project.tags.some(projectTag => projectTag.name === tag))
-    )
+    const handleProjectCreate = (newProject: Partial<Project>) => {
+      // Handle the creation of the new project
+      console.log('New project:', newProject)
+      // You'll want to add this to your projects state/database
+    }
 
   console.log('Filtered projects:', filteredProjects) // Debug filtered results
 
@@ -72,10 +89,15 @@ export default function Projects() {
       </Header>
 
       <Main fixed>
+      <div className='mb-2 flex items-center justify-between space-y-2 flex-wrap gap-x-4'>
         <div>
           <h1 className='text-2xl font-bold tracking-tight'>Projects</h1>
           <p className='text-muted-foreground'>What will you create today?</p>
         </div>
+        <div className='flex items-center gap-2'>
+          <CreateProjectDialog onProjectCreate={handleProjectCreate} />
+        </div>
+      </div>
         
         <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
           <ProjectHeader

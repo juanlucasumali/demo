@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "display_name" "text",
     "email" "text",
     "local_path" "text",
-    "profile_image" "text"
+    "avatar_path" "text"
 );
 
 ALTER TABLE "public"."users" OWNER TO "postgres";

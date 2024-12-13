@@ -15,14 +15,14 @@ const MAX_IMAGE_DIMENSIONS = 1000 // pixels
 
 export function CompleteProfileForm() {
   const [isLoading, setIsLoading] = useState(false)
-  const [profileImage, setProfileImage] = useState<File | null>(null)
+  const [avatarPath, setAvatarPath] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [errors, setErrors] = useState({
     username: '',
     displayName: '',
-    profileImage: ''
+    avatarPath: ''
   })
 
   const navigate = useNavigate()
@@ -79,12 +79,12 @@ export function CompleteProfileForm() {
   const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      setErrors(prev => ({ ...prev, profileImage: '' }))
+      setErrors(prev => ({ ...prev, avatarPath: '' }))
 
       if (file.size > MAX_FILE_SIZE) {
         setErrors(prev => ({ 
           ...prev, 
-          profileImage: 'File size must be less than 5MB' 
+          avatarPath: 'File size must be less than 5MB' 
         }))
         return
       }
@@ -92,7 +92,7 @@ export function CompleteProfileForm() {
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         setErrors(prev => ({ 
           ...prev, 
-          profileImage: 'File must be in JPG or PNG format' 
+          avatarPath: 'File must be in JPG or PNG format' 
         }))
         return
       }
@@ -101,12 +101,12 @@ export function CompleteProfileForm() {
       if (!validDimensions) {
         setErrors(prev => ({ 
           ...prev, 
-          profileImage: `Image dimensions must not exceed ${MAX_IMAGE_DIMENSIONS}x${MAX_IMAGE_DIMENSIONS} pixels` 
+          avatarPath: `Image dimensions must not exceed ${MAX_IMAGE_DIMENSIONS}x${MAX_IMAGE_DIMENSIONS} pixels` 
         }))
         return
       }
 
-      setProfileImage(file)
+      setAvatarPath(file)
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
     }
@@ -134,7 +134,7 @@ export function CompleteProfileForm() {
       displayName: displayNameError
     })
 
-    if (usernameError || displayNameError || errors.profileImage) {
+    if (usernameError || displayNameError || errors.avatarPath) {
       return
     }
 
@@ -154,17 +154,17 @@ export function CompleteProfileForm() {
       }
 
       // Upload image to B2 if exists
-      let profileImageUrl = null
-      if (profileImage) {
+      let avatarPathUrl = null
+      if (avatarPath) {
         try {
           const uploadResult = await b2Service.uploadFile(
-            profileImage,
+            avatarPath,
             user.id,
             'image',
             (hashProgress) => console.log(`Hashing: ${hashProgress}%`),
             (uploadProgress) => console.log(`Uploading: ${uploadProgress}%`)
           )
-          profileImageUrl = uploadResult.fileName
+          avatarPathUrl = uploadResult.fileName
         } catch (error) {
           console.error('Failed to upload profile image:', error)
           toast({
@@ -183,7 +183,7 @@ export function CompleteProfileForm() {
           username,
           display_name: displayName,
           email: user.email,
-          profile_image: profileImageUrl
+          avatar_path: avatarPathUrl
         })
 
       if (profileError) throw profileError
@@ -203,9 +203,9 @@ export function CompleteProfileForm() {
 
     } catch (error) {
       // Cleanup uploaded image if profile creation fails
-      if (profileImage && previewUrl) {
+      if (avatarPath && previewUrl) {
         try {
-          await b2Service.deleteFile(profileImage.name)
+          await b2Service.deleteFile(avatarPath.name)
         } catch (cleanupError) {
           console.error('Failed to cleanup uploaded image:', cleanupError)
         }
@@ -239,8 +239,8 @@ export function CompleteProfileForm() {
               accept='image/*'
               onChange={handleImageChange}
             />
-            {errors.profileImage && (
-              <p className='text-sm text-destructive'>{errors.profileImage}</p>
+            {errors.avatarPath && (
+              <p className='text-sm text-destructive'>{errors.avatarPath}</p>
             )}
           </div>
         </div>

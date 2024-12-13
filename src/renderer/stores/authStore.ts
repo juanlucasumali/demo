@@ -15,7 +15,7 @@ interface AuthState {
     profile: {
       username: string
       displayName: string
-      profileImage: string | null
+      avatarPath: string | null
     }
   ) => Promise<{ requiresEmailConfirmation: boolean }>
   signOut: () => Promise<void>
@@ -137,7 +137,7 @@ export const useAuthStore = create<AuthState>()(
             data: {
               username: profile.username,
               display_name: profile.displayName,
-              profile_image: profile.profileImage
+              avatar_path: profile.avatarPath
             } as object // Type assertion to satisfy Supabase types
           }
         })

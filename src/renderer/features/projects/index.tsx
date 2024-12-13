@@ -62,7 +62,7 @@ export default function Projects() {
       <Main fixed>
         <div>
           <h1 className='text-2xl font-bold tracking-tight'>
-            Project Integrations
+            Projects
           </h1>
           <p className='text-muted-foreground'>
             Here&apos;s a list of your projects for the integration!

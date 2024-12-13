@@ -46,3 +46,11 @@ export function generateStoragePath({
       throw new Error(`Unsupported file type: ${fileType}`)
   }
 }
+
+export const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}

@@ -50,14 +50,14 @@ export const sidebarData: SidebarData = {
           icon: IconLayoutDashboard,
         },
         {
-          title: 'Tasks',
-          url: '/tasks',
-          icon: IconChecklist,
-        },
-        {
           title: 'Projects',
           url: '/projects',
           icon: IconPackages,
+        },
+        {
+          title: 'Tasks',
+          url: '/tasks',
+          icon: IconChecklist,
         },
         {
           title: 'Chats',

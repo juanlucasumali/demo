@@ -16,10 +16,13 @@ export interface Project {
   dateCreated: string;
   dateModified: string;
   isStarred: boolean
-  tags: {
-    name: string;
-    color: string;
-  }[];
+  tags: Tag[]
+}
+
+export interface Tag {
+  category: 'stage' | 'genre' | 'needs'
+  name: string
+  color: string
 }
 
 interface Team {

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Project } from '../components/layout/types'
+import { projects as dummyProjects } from '../features/projects/data/projects'
 
 interface ProjectsState {
   projects: Project[]
@@ -20,12 +21,19 @@ interface ProjectsState {
   setSortPreference: (sort: string) => void
   setSelectedTags: (tags: string[]) => void
   toggleStar: (projectName: string) => void
+  addProject: (project: Project) => void 
 }
 
 export const useProjectsStore = create<ProjectsState>()(
   persist(
     (set) => ({
-      projects: [],
+      projects: dummyProjects,
+      addProject: (project: Project) => 
+        set((state) => {
+          const newProjects = [...state.projects, project];
+          console.log('Adding project, new state:', newProjects);
+          return { projects: newProjects };
+        }),
       displayPreferences: {
         tags: true,
         dateCreated: false,
@@ -52,6 +60,9 @@ export const useProjectsStore = create<ProjectsState>()(
     }),
     {
       name: 'projects-storage',
+      onRehydrateStorage: () => (state) => {
+        console.log('Rehydrated state:', state);
+      },
     }
   )
 )

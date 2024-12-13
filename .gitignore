@@ -10,3 +10,5 @@ build/cert/*
 !build/cert/.gitkeep
 .branches
 .temp
+pnpm-lock.yaml
+.pnpm-store/

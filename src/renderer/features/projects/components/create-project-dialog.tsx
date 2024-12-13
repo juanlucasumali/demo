@@ -21,24 +21,13 @@ import * as z from "zod"
 import { IconDots, IconPlus, IconStar, IconStarFilled } from "@tabler/icons-react"
 import { Project, Tag } from "@/renderer/components/layout/types"
 import { Badge } from "@/renderer/components/ui/badge"
-import { formatDate } from "@/renderer/lib/utils"
+import { cn, formatDate } from "@/renderer/lib/utils"
 import { Separator } from "@/renderer/components/ui/separator"
 import { useState } from "react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/renderer/components/ui/popover"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/renderer/components/ui/accordion"
+import { PROJECT_TAGS, TagCategory } from "@/renderer/constants/project-tags"
+import { useProjectsStore } from "@/renderer/stores/useProjectsStore"
 
-const DEFAULT_TAG_COLOR = 'gray'
-
-const tagColorClasses = {
-  gray: 'bg-gray-500',
-  blue: 'bg-blue-500',
-  red: 'bg-red-500',
-  green: 'bg-green-500',
-  yellow: 'bg-yellow-500',
-  purple: 'bg-purple-500',
-  pink: 'bg-pink-500',
-  orange: 'bg-orange-500',
-  indigo: 'bg-indigo-500'
-} as const
 
 const tagBgClasses = {
   gray: 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300',
@@ -66,16 +55,26 @@ const formSchema = z.object({
 })
 
 interface CreateProjectDialogProps {
-  onProjectCreate: (project: Partial<Project>) => void
 }
 
-export function CreateProjectDialog({ onProjectCreate }: CreateProjectDialogProps) {
+export function CreateProjectDialog({ }: CreateProjectDialogProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const [isStarred, setIsStarred] = useState(false)
   const [tags, setTags] = useState<Tag[]>([])
+  const addProject = useProjectsStore((state) => state.addProject)
 
-  const tagColors = [
-    'gray', 'blue', 'red', 'green', 'yellow', 'purple', 'pink', 'orange', 'indigo'
-  ]
+  // Add reset function
+  const resetForm = () => {
+    form.reset()
+    setTags([])
+    setIsStarred(false)
+  }
+
+  // Handle dialog close
+  const handleClose = () => {
+    setIsOpen(false)
+    resetForm()
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,27 +83,36 @@ export function CreateProjectDialog({ onProjectCreate }: CreateProjectDialogProp
       description: "",
       tags: "",
     },
+    mode: "onChange", // Add this
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const newProject: Partial<Project> = {
+    const newProject: Project = {
+      id: crypto.randomUUID(),
       name: values.name,
       logo: null,
       description: values.description,
       isStarred: isStarred,
       dateCreated: new Date().toISOString(),
       dateModified: new Date().toISOString(),
-      tags: tags // Use the tags state directly
+      tags: tags
     }
   
-    onProjectCreate(newProject)
-    form.reset()
-    setTags([])
-    setIsStarred(false)
+    addProject(newProject)
+    console.log('New project added:', newProject) // Debug log
+    setIsOpen(false)
+    resetForm()
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open)
+    if (!open) {
+      resetForm()
+    }
   }
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="default" size="sm" className="gap-2">
           <IconPlus size={16} />
@@ -191,88 +199,98 @@ export function CreateProjectDialog({ onProjectCreate }: CreateProjectDialogProp
                 />
 
                 <div className="space-y-4 max-w-full">
-                  <FormField
-                      control={form.control}
-                      name="tags"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input 
-                              placeholder="Add tags (comma-separated)"
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e)
-                                const newTagNames = e.target.value.split(',')
-                                  .map(tag => tag.trim().toLowerCase())
-                                  .filter(tag => tag !== '')
-                                  .filter((tag, index, self) => self.indexOf(tag) === index)
-                                
-                                const newTags = newTagNames.map(tagName => {
-                                  const existingTag = tags.find(t => t.name === tagName)
-                                  return existingTag || {
-                                    name: tagName,
-                                    color: DEFAULT_TAG_COLOR // All new tags start as gray
+                  <Accordion type="single" collapsible className="w-full">
+                    {(Object.entries(PROJECT_TAGS) as [TagCategory, typeof PROJECT_TAGS[TagCategory]][]).map(([category, config]) => (
+                      <AccordionItem value={category} key={category}>
+                        <AccordionTrigger className="text-sm capitalize">
+                          {category}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="grid grid-cols-2 gap-2 p-2">
+                            {config.options.map((option) => (
+                              <Button
+                                key={option}
+                                type="button" // Add type="button"
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "justify-start",
+                                  tags.some(tag => tag.name === option && tag.category === category)
+                                    ? "border-primary" 
+                                    : ""
+                                )}
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  const newTags = [...tags]
+                                  const existingTagIndex = newTags.findIndex(
+                                    tag => tag.name === option && tag.category === category
+                                  )
+                              
+                                  if (existingTagIndex > -1) {
+                                    newTags.splice(existingTagIndex, 1)
+                                  } else {
+                                    if (!config.allowMultiple) {
+                                      const categoryIndex = newTags.findIndex(tag => tag.category === category)
+                                      if (categoryIndex > -1) {
+                                        newTags.splice(categoryIndex, 1)
+                                      }
+                                    }
+                                    newTags.push({
+                                      category,
+                                      name: option,
+                                      color: config.color
+                                    })
                                   }
-                                })
-                                setTags(newTags)
-                              }}
-                              className="max-w-full"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  {/* Then update the tags container */}
-                    {tags.length > 0 && (
-                      <div className="w-full overflow-x-auto no-scrollbar">
-                        <div className="flex gap-2 flex-nowrap" style={{ maxWidth: "400px" }}> {/* or slightly less than card width */}
-                          {tags.map((tag, index) => (
-                            <Popover key={index}>
-                              <PopoverTrigger>
-                                <Badge
-                                  variant="secondary"
-                                  className={`whitespace-nowrap flex-shrink-0 px-2 py-0.5 ${
-                                    tagBgClasses[tag.color as keyof typeof tagBgClasses]
-                                  } group`}
-                                >
-                                  <span className="">{tag.name}</span>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      e.preventDefault()
-                                      const newTags = [...tags]
-                                      newTags.splice(index, 1)
-                                      setTags(newTags)
-                                      form.setValue('tags', newTags.map(t => t.name).join(','))
-                                    }}
-                                    className="ml-1 opacity-0 group-hover:opacity-100 flex-shrink-0"
-                                  >
-                                    ×
-                                  </button>
-                                </Badge>
-                              </PopoverTrigger>
-                                <PopoverContent className="w-32 p-2">
-                                  <div className="grid grid-cols-4 gap-1">
-                                    {tagColors.map((color) => (
-                                      <button
-                                        key={color}
-                                        className={`w-6 h-6 rounded-md ${tagColorClasses[color as keyof typeof tagColorClasses]}`}
-                                        onClick={() => {
-                                          const newTags = [...tags]
-                                          newTags[index].color = color
-                                          setTags(newTags)
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
+                                  setTags(newTags)
+                                }}
+                              >
+                                {option}
+                              </Button>                            
                             ))}
                           </div>
-                        </div>
-                      )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+
+                  {/* Tags display */}
+                  {tags.length > 0 && (
+                    <div className="w-full overflow-x-auto no-scrollbar">
+                      <div className="flex gap-2 flex-nowrap" style={{ maxWidth: "400px" }}>
+                        {/* Sort tags by category order */}
+                        {tags
+                          .sort((a, b) => {
+                            const categoryOrder = ['stage', 'genre', 'needs']
+                            return categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category)
+                          })
+                          .map((tag, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className={`whitespace-nowrap flex-shrink-0 px-2 py-0.5 ${
+                                tagBgClasses[tag.color as keyof typeof tagBgClasses]
+                              } group`}
+                            >
+                              <span>{tag.name}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()  // Add this
+                                  e.preventDefault()
+                                  const newTags = [...tags]
+                                  newTags.splice(index, 1)
+                                  setTags(newTags)
+                                }}
+                                className="ml-1 opacity-0 group-hover:opacity-100 flex-shrink-0"
+                              >
+                                ×
+                              </button>
+                            </Badge>
+                          ))}
+                      </div>
                     </div>
+                  )}
+                </div>
 
                 <Separator className="my-3" />
 
@@ -286,9 +304,13 @@ export function CreateProjectDialog({ onProjectCreate }: CreateProjectDialogProp
             </div>
 
             <div className="flex justify-end gap-3">
-              <DialogTrigger asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogTrigger>
+              <Button 
+                variant="outline" 
+                type="button"
+                onClick={handleClose}
+              >
+                Cancel
+              </Button>
               <Button type="submit">
                 Create Project
               </Button>

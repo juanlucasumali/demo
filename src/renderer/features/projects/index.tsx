@@ -9,7 +9,6 @@ import { projects as dummyProjects } from './data/projects'
 import { ProjectHeader } from './components/project-header'
 import { ProjectToolbar } from './components/project-toolbar'
 import { ProjectCard } from './components/project-card'
-import { Project } from '@/renderer/components/layout/types'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
 import { CreateProjectDialog } from './components/create-project-dialog'
 
@@ -62,19 +61,16 @@ export default function Projects() {
 
   const filteredProjects = getFilteredAndSortedProjects();
 
+  useEffect(() => {
+    console.log('Projects updated:', projects)
+  }, [projects])
 
   // Add useEffect to initialize projects with dummy data
   useEffect(() => {
     const { setProjects } = useProjectsStore.getState()
-    console.log('Setting initial projects:', dummyProjects) // Debug initial data
-    setProjects(dummyProjects) // Your dummy data from projects.ts
+    console.log('Setting initial projects:', dummyProjects)
+    setProjects(dummyProjects)
   }, [])
-
-    const handleProjectCreate = (newProject: Partial<Project>) => {
-      // Handle the creation of the new project
-      console.log('New project:', newProject)
-      // You'll want to add this to your projects state/database
-    }
 
   console.log('Filtered projects:', filteredProjects) // Debug filtered results
 
@@ -95,7 +91,7 @@ export default function Projects() {
           <p className='text-muted-foreground'>What will you create today?</p>
         </div>
         <div className='flex items-center gap-2'>
-          <CreateProjectDialog onProjectCreate={handleProjectCreate} />
+          <CreateProjectDialog/>
         </div>
       </div>
         

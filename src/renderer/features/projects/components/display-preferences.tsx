@@ -12,25 +12,30 @@ import {
   PopoverTrigger,
 } from "@/renderer/components/ui/popover"
 
+interface DisplayPreferencesProps {
+  displayPreferences: {
+    tags: boolean
+    dateCreated: boolean
+    dateModified: boolean
+  }
+  setDisplayPreferences: (preferences: {
+    tags: boolean
+    dateCreated: boolean
+    dateModified: boolean
+  }) => void
+}
+
 export const DisplayPreferences = ({ 
   displayPreferences, 
   setDisplayPreferences 
-}: { 
-  displayPreferences: {
-    tags: boolean;
-    dateCreated: boolean;
-    dateModified: boolean;
-  };
-  setDisplayPreferences: React.Dispatch<React.SetStateAction<{
-    tags: boolean;
-    dateCreated: boolean;
-    dateModified: boolean;
-  }>>;
-}) => {
+}: DisplayPreferencesProps) => {
   const [open, setOpen] = useState(false)
 
   const handleCheckboxClick = (key: keyof typeof displayPreferences) => {
-    setDisplayPreferences(prev => ({ ...prev, [key]: !prev[key] }))
+    setDisplayPreferences({
+      ...displayPreferences,
+      [key]: !displayPreferences[key]
+    })
   }
 
   return (

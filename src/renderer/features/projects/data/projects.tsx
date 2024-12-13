@@ -19,8 +19,9 @@ import {
 export const projects = [
   {
     name: 'Telegram',
-    logo: <IconBrandTelegram />,
+    logo: 'telegram',
     connected: false,
+    isStarred: false,
     desc: 'Connect with Telegram for real-time communication.',
     dateCreated: '2023-12-15T10:30:00Z',
     dateModified: '2024-01-20T15:45:00Z',
@@ -31,8 +32,9 @@ export const projects = [
   },
   {
     name: 'Notion',
-    logo: <IconBrandNotion />,
+    logo: 'notion',
     connected: true,
+    isStarred: true,
     desc: 'Effortlessly sync Notion pages for seamless collaboration.',
     dateCreated: '2023-11-20T08:00:00Z',
     dateModified: '2024-02-01T11:20:00Z',
@@ -44,8 +46,9 @@ export const projects = [
   },
   {
     name: 'Figma',
-    logo: <IconBrandFigma />,
+    logo: 'figma',
     connected: true,
+    isStarred: true,
     desc: 'View and collaborate on Figma designs in one place.',
     dateCreated: '2023-10-05T14:15:00Z',
     dateModified: '2024-01-25T09:30:00Z',
@@ -56,8 +59,9 @@ export const projects = [
   },
   {
     name: 'Trello',
-    logo: <IconBrandTrello />,
+    logo: 'trello',
     connected: false,
+    isStarred: false,
     desc: 'Sync Trello cards for streamlined project management.',
     dateCreated: '2023-10-12T09:30:00Z',
     dateModified: '2024-01-18T14:25:00Z',
@@ -68,8 +72,9 @@ export const projects = [
   },
   {
     name: 'Slack',
-    logo: <IconBrandSlack />,
+    logo: 'slack',
     connected: false,
+    isStarred: true,
     desc: 'Integrate Slack for efficient team communication',
     dateCreated: '2023-11-05T11:45:00Z',
     dateModified: '2024-02-02T16:30:00Z',
@@ -80,8 +85,9 @@ export const projects = [
   },
   {
     name: 'Zoom',
-    logo: <IconBrandZoom />,
+    logo: 'zoom',
     connected: true,
+    isStarred: false,
     desc: 'Host Zoom meetings directly from the dashboard.',
     dateCreated: '2023-09-28T13:15:00Z',
     dateModified: '2024-01-30T10:45:00Z',
@@ -92,8 +98,9 @@ export const projects = [
   },
   {
     name: 'Stripe',
-    logo: <IconBrandStripe />,
+    logo: 'stripe',
     connected: false,
+    isStarred: true,
     desc: 'Easily manage Stripe transactions and payments.',
     dateCreated: '2023-12-03T15:20:00Z',
     dateModified: '2024-01-22T09:15:00Z',
@@ -104,8 +111,9 @@ export const projects = [
   },
   {
     name: 'Gmail',
-    logo: <IconBrandGmail />,
+    logo: 'gmail',
     connected: true,
+    isStarred: true,
     desc: 'Access and manage Gmail messages effortlessly.',
     dateCreated: '2023-10-18T08:45:00Z',
     dateModified: '2024-02-05T11:30:00Z',
@@ -116,8 +124,9 @@ export const projects = [
   },
   {
     name: 'Medium',
-    logo: <IconBrandMedium />,
+    logo: 'medium',
     connected: false,
+    isStarred: false,
     desc: 'Explore and share Medium stories on your dashboard.',
     dateCreated: '2023-11-22T14:10:00Z',
     dateModified: '2024-01-28T13:45:00Z',
@@ -128,8 +137,9 @@ export const projects = [
   },
   {
     name: 'Skype',
-    logo: <IconBrandSkype />,
+    logo: 'skype',
     connected: false,
+    isStarred: false,
     desc: 'Connect with Skype contacts seamlessly.',
     dateCreated: '2023-09-15T10:25:00Z',
     dateModified: '2024-01-20T15:30:00Z',
@@ -140,8 +150,9 @@ export const projects = [
   },
   {
     name: 'Docker',
-    logo: <IconBrandDocker />,
+    logo: 'docker',
     connected: false,
+    isStarred: false,
     desc: 'Effortlessly manage Docker containers on your dashboard.',
     dateCreated: '2023-12-08T16:40:00Z',
     dateModified: '2024-02-01T08:20:00Z',
@@ -152,8 +163,9 @@ export const projects = [
   },
   {
     name: 'GitHub',
-    logo: <IconBrandGithub />,
+    logo: 'github',
     connected: false,
+    isStarred: false,
     desc: 'Streamline code management with GitHub integration.',
     dateCreated: '2023-10-30T12:15:00Z',
     dateModified: '2024-01-25T14:50:00Z',
@@ -164,8 +176,9 @@ export const projects = [
   },
   {
     name: 'GitLab',
-    logo: <IconBrandGitlab />,
+    logo: 'gitlab',
     connected: false,
+    isStarred: false,
     desc: 'Efficiently manage code projects with GitLab integration.',
     dateCreated: '2023-11-14T09:55:00Z',
     dateModified: '2024-02-03T10:40:00Z',
@@ -176,8 +189,9 @@ export const projects = [
   },
   {
     name: 'Discord',
-    logo: <IconBrandDiscord />,
+    logo: 'discord',
     connected: false,
+    isStarred: false,
     desc: 'Connect with Discord for seamless team communication.',
     dateCreated: '2023-12-20T11:35:00Z',
     dateModified: '2024-01-15T16:05:00Z',
@@ -189,8 +203,9 @@ export const projects = [
   },
   {
     name: 'WhatsApp',
-    logo: <IconBrandWhatsapp />,
+    logo: 'whatsapp',
     connected: false,
+    isStarred: false,
     desc: 'Easily integrate WhatsApp for direct messaging.',
     dateCreated: '2023-09-01T16:45:00Z',
     dateModified: '2024-01-15T13:20:00Z',
@@ -200,3 +215,26 @@ export const projects = [
     ]
   },
 ]
+
+export const getIconComponent = (iconName: string) => {
+  const icons = {
+    telegram: IconBrandTelegram,
+    notion: IconBrandNotion,
+    figma: IconBrandFigma,
+    trello: IconBrandTrello,
+    slack: IconBrandSlack,
+    zoom: IconBrandZoom,
+    stripe: IconBrandStripe,
+    gmail: IconBrandGmail,
+    medium: IconBrandMedium,
+    skype: IconBrandSkype,
+    docker: IconBrandDocker,
+    github: IconBrandGithub,
+    gitlab: IconBrandGitlab,
+    discord: IconBrandDiscord,
+    whatsapp: IconBrandWhatsapp,
+  }
+  
+  const IconComponent = icons[iconName as keyof typeof icons]
+  return IconComponent ? <IconComponent /> : null
+}

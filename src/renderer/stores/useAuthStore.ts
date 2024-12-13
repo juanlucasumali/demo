@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/renderer/lib/supabase'
 import { UserProfile } from '../components/layout/types'
-import { mediaService } from '../services/b2'
+import { mediaService } from '../services/b2Service'
 
 interface AuthState {
   user: User | null

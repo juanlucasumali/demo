@@ -2,17 +2,11 @@ import { IconStar, IconStarFilled } from '@tabler/icons-react'
 import { Badge } from "@/renderer/components/ui/badge"
 import { Separator } from "@/renderer/components/ui/separator"
 import { formatDate } from '@/renderer/lib/utils'
+import { Project } from '@/renderer/components/layout/types'
+import { getIconComponent } from '../data/projects'
 
 interface ProjectCardProps {
-  project: {
-    name: string
-    desc: string
-    logo: React.ReactNode
-    tags: Array<{ name: string; color: string }>
-    dateCreated: string
-    dateModified: string
-  }
-  starredProjects: Set<string>
+  project: Project
   toggleStar: (projectName: string) => void
   displayPreferences: {
     tags: boolean
@@ -23,7 +17,6 @@ interface ProjectCardProps {
 
 export const ProjectCard = ({
   project,
-  starredProjects,
   toggleStar,
   displayPreferences,
 }: ProjectCardProps) => {
@@ -32,7 +25,7 @@ export const ProjectCard = ({
       <div className='mb-8 flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <div className={`flex size-10 items-center justify-center rounded-lg bg-muted p-2`}>
-            {project.logo}
+            {getIconComponent(project.logo)}
           </div>
         </div>
         <button
@@ -42,7 +35,7 @@ export const ProjectCard = ({
           }}
           className='ml-2 text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-300'
         >
-          {starredProjects.has(project.name) 
+          {project.isStarred 
             ? <IconStarFilled size={20} className="text-yellow-400" /> 
             : <IconStar size={20} />}
         </button>

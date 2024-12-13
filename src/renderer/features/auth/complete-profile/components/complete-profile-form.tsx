@@ -6,7 +6,7 @@ import { Input } from '@/renderer/components/ui/input'
 import { Button } from '@/renderer/components/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/renderer/components/ui/avatar'
 import { Label } from '@/renderer/components/ui/label'
-import { b2Service } from '@/renderer/services/b2'
+import { b2Service } from '@/renderer/services/b2Service'
 import { useAuth, useAuthStore } from '@/renderer/stores/useAuthStore'
 import { validateDisplayName, validateUsername } from '@/renderer/lib/utils'
 

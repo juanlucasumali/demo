@@ -15,6 +15,7 @@ export interface Project {
   desc: string;
   dateCreated: string;
   dateModified: string;
+  isStarred: boolean
   tags: {
     name: string;
     color: string;

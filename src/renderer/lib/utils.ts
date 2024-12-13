@@ -90,3 +90,9 @@ export const validateDisplayName = (displayName: string): string => {
 
   return ''
 }
+
+export const debug = {
+  log: (component: string, data: any) => {
+    console.log(`[${component}]`, data)
+  }
+}

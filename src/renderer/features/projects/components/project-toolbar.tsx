@@ -16,11 +16,11 @@ interface ProjectToolbarProps {
     dateCreated: boolean
     dateModified: boolean
   }
-  setDisplayPreferences: React.Dispatch<React.SetStateAction<{
+  setDisplayPreferences: (preferences: {
     tags: boolean
     dateCreated: boolean
     dateModified: boolean
-  }>>
+  }) => void 
 }
 
 export const ProjectToolbar = ({

@@ -23,11 +23,12 @@ import { Project, ProjectTag } from "@/renderer/components/layout/types"
 import { Badge } from "@/renderer/components/ui/badge"
 import { formatDate, generateGradientStyle } from "@/renderer/lib/utils"
 import { Separator } from "@/renderer/components/ui/separator"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/renderer/components/ui/accordion"
 import { PROJECT_TAGS, TagCategory } from "@/renderer/constants/project-tags"
 import { useProjectsStore } from "@/renderer/stores/useProjectsStore"
 import { Square, SquareCheck } from "lucide-react"
+import { useNavigationStore } from "@/renderer/stores/useNavigationStore"
 
 
 const tagBgClasses = {
@@ -64,6 +65,12 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   const [tags, setTags] = useState<ProjectTag[]>([])
   const [previewProjectId] = useState(crypto.randomUUID())
   const addProject = useProjectsStore((state) => state.addProject)
+  const { blockNavigation, unblockNavigation } = useNavigationStore()
+
+  useEffect(() => {
+    blockNavigation()
+    return () => unblockNavigation()
+  }, [])
 
   const logoGradientStyle = useMemo(() => {
     return generateGradientStyle(previewProjectId);
@@ -189,14 +196,14 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
                   render={({ field }) => (
                     <FormItem className="mb-4 shadow-none">
                       <FormControl className="shadow-none">
-                        <div className="relative">
+                        <div className="relative flex items-center">
                           <Input 
                             placeholder="Project description..."
                             maxLength={60}
-                            className="border-0 p-0 h-[24px] focus-visible:ring-0 text-sm text-gray-500 bg-transparent shadow-none"
+                            className="border-0 p-0 h-[24px] focus-visible:ring-0 text-sm text-gray-500 bg-transparent shadow-none flex-1 mr-[45px]" // Added flex-1 and mr-[45px]
                             {...field}
                           />
-                          <span className="absolute right-0 bottom-0 text-xs text-muted-foreground">
+                          <span className="absolute right-0 bottom-0 text-xs text-muted-foreground whitespace-nowrap">
                             {field.value.length}/60
                           </span>
                         </div>
@@ -205,6 +212,7 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
                     </FormItem>
                   )}
                 />
+
 
                 <div className="space-y-4 max-w-full">
                   <Accordion type="single" collapsible className="w-full">

@@ -4,6 +4,9 @@ import { router } from '../main'
 
 interface NavigationState {
   lastVisitedPath: string
+  isNavigationBlocked: boolean
+  blockNavigation: () => void
+  unblockNavigation: () => void
   setLastVisitedPath: (path: string) => void
   getLastVisitedPath: () => string
   navigate: (to: string, options?: { replace?: boolean }) => void
@@ -16,9 +19,12 @@ export const useNavigationStore = create<NavigationState>()(
   persist(
     (set, get) => ({
       lastVisitedPath: '/',
+      isNavigationBlocked: false,
+
+      blockNavigation: () => set({ isNavigationBlocked: true }),
+      unblockNavigation: () => set({ isNavigationBlocked: false }),
       
       setLastVisitedPath: (path: string) => {
-        // Don't store auth-related paths
         if (!path.includes('sign-in') && 
             !path.includes('sign-up') && 
             !path.includes('complete-profile') && 
@@ -30,36 +36,48 @@ export const useNavigationStore = create<NavigationState>()(
       getLastVisitedPath: () => get().lastVisitedPath,
       
       navigate: (to: string, options?: { replace?: boolean }) => {
+        if (get().isNavigationBlocked) {
+          // You could implement a confirmation dialog here
+          console.warn('Navigation is blocked')
+          return
+        }
         get().setLastVisitedPath(to)
         router.navigate({ to, replace: options?.replace })
       },
       
       goBack: () => {
+        if (get().isNavigationBlocked) {
+          console.warn('Navigation is blocked')
+          return
+        }
         router.history.back()
       },
       
       goForward: () => {
+        if (get().isNavigationBlocked) {
+          console.warn('Navigation is blocked')
+          return
+        }
         router.history.forward()
       },
       
-      getCurrentPath: () => {
-        return router.state.location.pathname
-      }
+      getCurrentPath: () => router.state.location.pathname
     }),
     {
       name: 'navigation-storage',
-      // Only persist the lastVisitedPath
       partialize: (state) => ({ lastVisitedPath: state.lastVisitedPath })
     }
   )
 )
 
-// Export a convenience function for direct navigation usage
+// Modified convenience object
 export const navigation = {
   navigate: (...args: Parameters<NavigationState['navigate']>) => 
     useNavigationStore.getState().navigate(...args),
   goBack: () => useNavigationStore.getState().goBack(),
   goForward: () => useNavigationStore.getState().goForward(),
   getCurrentPath: () => useNavigationStore.getState().getCurrentPath(),
-  getLastVisitedPath: () => useNavigationStore.getState().getLastVisitedPath()
+  getLastVisitedPath: () => useNavigationStore.getState().getLastVisitedPath(),
+  blockNavigation: () => useNavigationStore.getState().blockNavigation(),
+  unblockNavigation: () => useNavigationStore.getState().unblockNavigation()
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Separator } from '@/renderer/components/ui/separator'
 import { Header } from '@/renderer/components/layout/header'
 import { Main } from '@/renderer/components/layout/main'
@@ -8,8 +8,9 @@ import { ThemeSwitch } from '@/renderer/components/theme-switch'
 import { projects as dummyProjects } from './data/projects'
 import { ProjectHeader } from './components/project-header'
 import { ProjectToolbar } from './components/project-toolbar'
-import { ProjectCard } from './components/project-card'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
+import { useProjectFiltering } from '@/renderer/hooks/use-project-filtering'
+import { ProjectList } from './components/project-list'
 import { CreateProjectDialog } from './components/create-project-dialog'
 
 export default function Projects() {
@@ -24,67 +25,31 @@ export default function Projects() {
     setSelectedTags,
   } = useProjectsStore()
 
-  console.log('Projects from store:', projects) 
-  console.log('Current display preferences:', displayPreferences)
-  console.log('Current sort:', sortPreference)
-  
   const [searchTerm, setSearchTerm] = useState('')
 
-  const allTags = Array.from(
-    new Set(projects.flatMap(project => project.tags.map(tag => tag.name)))
-  ).sort()
+  const allTags = useMemo(() => 
+    Array.from(
+      new Set(projects.flatMap(project => project.tags.map(tag => tag.name)))
+    ).sort(),
+    [projects]
+  )
 
-  const getTagCategory = (tagWithCategory: string) => {
-    const [category, tag] = tagWithCategory.split(':')
-    return { category, tag }
-  }  
+  const { getFilteredAndSortedProjects } = useProjectFiltering({
+    projects,
+    searchTerm,
+    selectedTags,
+    sortPreference
+  })
 
-  const getFilteredAndSortedProjects = () => {
-    return projects
-      // First filter
-      .filter((project) => project.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      .filter((project) => 
-        selectedTags.length === 0 || 
-        selectedTags.every(tagWithCategory => {
-          const { category, tag } = getTagCategory(tagWithCategory)
-          return project.tags.some(
-            projectTag => 
-              projectTag.category === category && 
-              projectTag.name === tag
-          )
-        })
-      )
-      // Then sort
-      .sort((a, b) => {
-        // First priority: starred status
-        if (a.isStarred && !b.isStarred) return -1;
-        if (!a.isStarred && b.isStarred) return 1;
-        
-        // Second priority: selected sort preference
-        const sortingStrategies = {
-          ascending: () => a.name.localeCompare(b.name),
-          descending: () => b.name.localeCompare(a.name),
-          dateCreated: () => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime(),
-          dateModified: () => new Date(b.dateModified).getTime() - new Date(a.dateModified).getTime(),
-        }
-        return sortingStrategies[sortPreference as keyof typeof sortingStrategies]?.() || 0
-      });
-  };
+  const filteredProjects = useMemo(() => 
+    getFilteredAndSortedProjects(),
+    [projects, searchTerm, selectedTags, sortPreference]
+  )
 
-  const filteredProjects = getFilteredAndSortedProjects();
-
-  useEffect(() => {
-    console.log('Projects updated:', projects)
-  }, [projects])
-
-  // Add useEffect to initialize projects with dummy data
   useEffect(() => {
     const { setProjects } = useProjectsStore.getState()
-    console.log('Setting initial projects:', dummyProjects)
     setProjects(dummyProjects)
   }, [])
-
-  console.log('Filtered projects:', filteredProjects) // Debug filtered results
 
   return (
     <>
@@ -106,8 +71,7 @@ export default function Projects() {
           <CreateProjectDialog/>
         </div>
       </div>
-        
-        <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
+      <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
           <ProjectHeader
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -126,16 +90,11 @@ export default function Projects() {
 
         <Separator className='shadow' />
         
-        <ul className='faded-bottom no-scrollbar grid gap-4 overflow-auto pb-16 pt-4 md:grid-cols-2 lg:grid-cols-3'>
-        {filteredProjects.map((project) => (
-          <ProjectCard
-            key={project.name}
-            project={project}
-            toggleStar={toggleStar}
-            displayPreferences={displayPreferences}
-          />
-        ))}
-      </ul>
+        <ProjectList
+          projects={filteredProjects}
+          toggleStar={toggleStar}
+          displayPreferences={displayPreferences}
+        />
       </Main>
     </>
   )

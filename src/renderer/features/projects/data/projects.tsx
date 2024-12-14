@@ -9,7 +9,7 @@ export interface Tag {
 export interface Project {
   id: string;
   name: string;
-  logo: null;
+  logo: string | null;
   isStarred: boolean;
   description: string;
   dateCreated: string;

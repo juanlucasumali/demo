@@ -89,7 +89,7 @@ export const ProjectHeader = ({
 
             {/* Scrollable Content */}
             <ScrollArea className="flex-1 pl-4 pr-4">
-              <Accordion type="single" className="w-full">
+              <Accordion type="multiple" className="w-full">
                 {(Object.entries(PROJECT_TAGS) as [TagCategory, typeof PROJECT_TAGS[TagCategory]][]).map(([category, config]) => {
                   const filteredOptions = filterTags(config.options)
                   if (filteredOptions.length === 0) return null

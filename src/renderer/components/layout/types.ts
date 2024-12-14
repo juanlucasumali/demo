@@ -26,6 +26,12 @@ export interface ProjectTag {
   color: string
 }
 
+export interface DisplayPreferences {
+  tags: boolean
+  dateCreated: boolean
+  dateModified: boolean
+}
+
 interface Team {
   name: string
   logo: React.ElementType

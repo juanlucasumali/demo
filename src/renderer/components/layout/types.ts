@@ -1,4 +1,3 @@
-import { TagCategory } from '@/renderer/constants/project-tags'
 import { LinkProps } from '@tanstack/react-router'
 
 export interface UserProfile {
@@ -30,12 +29,68 @@ export type ProjectItem = {
   id: string
   name: string
   type: 'file' | 'folder'
-  size: number | null
-  lastModified: Date
-  createdBy: string
   starred: boolean
-  tags: string[]
+  description: string
+  fileFormat: string | null
+  size: number | null
+  duration: number | null
+  dateModified: Date
+  dateCreated: Date
+  createdBy: string
+  tags: string[] | null
 }
+
+export const PROJECT_TAGS = {
+  stage: {
+    color: 'green',
+    allowMultiple: false,
+    options: [
+      'Concept',
+      'Demo',
+      'In-Progress',
+      'Arrangement',
+      'Mixing',
+      'Mastering',
+      'Final',
+    ]
+  },
+  genre: {
+    color: 'blue',
+    allowMultiple: true,
+    options: [
+      'Hip-Hop',
+      'R&B',
+      'Pop',
+      'Electronic',
+      'Trap',
+      'Drill',
+      'Afrobeats',
+      'House',
+      'Rock',
+      'Alternative',
+      'Indie',
+      'Ambient',
+    ]
+  },
+  needs: {
+    color: 'purple',
+    allowMultiple: true,
+    options: [
+      'Vocals',
+      'Melody',
+      'Drums',
+      'Bass',
+      'Mixing',
+      'Mastering',
+      'Producer',
+      'Feedback',
+      'Instruments',
+      'Writing',
+    ]
+  }
+} as const
+
+export type TagCategory = keyof typeof PROJECT_TAGS
 
 export interface DisplayPreferences {
   tags: boolean

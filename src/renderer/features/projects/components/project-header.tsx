@@ -1,5 +1,5 @@
 import { Input } from '@/renderer/components/ui/input'
-import { Tag } from 'lucide-react'
+import { Circle, CircleDot, Square, SquareCheck, Tag } from 'lucide-react'
 import { Badge } from "@/renderer/components/ui/badge"
 import { Button } from "@/renderer/components/ui/button"
 import {
@@ -7,9 +7,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/renderer/components/ui/popover"
-import { Square, SquareCheck } from 'lucide-react'
 import { useState } from 'react'
-import { PROJECT_TAGS, TagCategory } from '@/renderer/constants/project-tags'
+import { PROJECT_TAGS, TagCategory } from "@/renderer/components/layout/types"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/renderer/components/ui/accordion"
 import { ScrollArea } from "@/renderer/components/ui/scroll-area"
 
@@ -31,12 +30,22 @@ export const ProjectHeader = ({
   const [searchTagTerm, setSearchTagTerm] = useState('')
 
   const toggleTag = (category: TagCategory, tag: string) => {
-    setSelectedTags(
-      selectedTags.includes(`${category}:${tag}`)
-        ? selectedTags.filter(t => t !== `${category}:${tag}`)
-        : [...selectedTags, `${category}:${tag}`]
-    )
-  }
+    if (category === 'stage') {
+      // For stage category, deselect current stage tag if exists and select new one
+      const newTags = selectedTags.filter(t => !t.startsWith('stage:'))
+      if (!selectedTags.includes(`${category}:${tag}`)) {
+        newTags.push(`${category}:${tag}`)
+      }
+      setSelectedTags(newTags)
+    } else {
+      // For other categories, maintain existing toggle behavior
+      setSelectedTags(
+        selectedTags.includes(`${category}:${tag}`)
+          ? selectedTags.filter(t => t !== `${category}:${tag}`)
+          : [...selectedTags, `${category}:${tag}`]
+      )
+    }
+  }  
 
   // Filter tags based on search term
   const filterTags = (options: readonly string[]) => {
@@ -122,10 +131,20 @@ export const ProjectHeader = ({
                               onClick={() => toggleTag(category, option)}
                             >
                               <div className="flex items-center gap-2">
-                                {selectedTags.includes(`${category}:${option}`) ? (
-                                  <SquareCheck className="h-4 w-4" />
+                                {category === 'stage' ? (
+                                  // Use Circle icons for stage category
+                                  selectedTags.includes(`${category}:${option}`) ? (
+                                    <CircleDot className="h-4 w-4" />
+                                  ) : (
+                                    <Circle className="h-4 w-4" />
+                                  )
                                 ) : (
-                                  <Square className="h-4 w-4" />
+                                  // Use Square icons for other categories
+                                  selectedTags.includes(`${category}:${option}`) ? (
+                                    <SquareCheck className="h-4 w-4" />
+                                  ) : (
+                                    <Square className="h-4 w-4" />
+                                  )
                                 )}
                                 <span className="truncate">{option}</span>
                               </div>

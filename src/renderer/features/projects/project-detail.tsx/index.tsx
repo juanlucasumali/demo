@@ -1,22 +1,27 @@
-import { useEffect, useState } from 'react'
 import { useNavigationStore } from '@/renderer/stores/useNavigationStore'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
-import { Project, ProjectItem } from '@/renderer/components/layout/types'
+import { Project } from '@/renderer/components/layout/types'
+import { useState, useEffect } from 'react'
+import { IconDownload, IconPlus } from '@tabler/icons-react'
+import useDialogState from '@/renderer/hooks/use-dialog-state'
+import { toast } from '@/renderer/hooks/use-toast'
+import { Button } from '@/renderer/components/ui/button'
+import { ConfirmDialog } from '@/renderer/components/confirm-dialog'
 import { Main } from '@/renderer/components/layout/main'
-import { Separator } from '@/renderer/components/ui/separator'
-import { AppHeader } from '@/renderer/components/layout/app-header'
+import { TasksImportDialog } from '../../tasks/components/tasks-import-dialog'
+import { TasksMutateDrawer } from '../../tasks/components/tasks-mutate-drawer'
+import TasksContextProvider, { TasksDialogType } from '../../tasks/context/tasks-context'
+import { Task } from '../../tasks/data/schema'
+import { tasks } from '../../tasks/data/tasks'
+import { DataTable } from '../../tasks/components/data-table'
+import { columns } from '../../tasks/components/columns'
 import { PageHeader } from '@/renderer/components/layout/page-header'
-import ProjectDetailContextProvider, { ProjectDetailDialogType } from './context/project-detail-context'
-import { DataTable } from './components/data-table'
-import { dummyProjectItems } from '@/renderer/components/layout/data/project-item-data'
-import { columns } from './components/columns'
+import { AppHeader } from '@/renderer/components/layout/app-header'
 
 export default function ProjectDetail() {
   const { getCurrentPath } = useNavigationStore()
   const { projects } = useProjectsStore()
   const [project, setProject] = useState<Project | null>(null)
-  const [currentItem, setCurrentItem] = useState<ProjectItem | null>(null)
-  const [open, setOpen] = useState<ProjectDetailDialogType | null>(null)
 
   useEffect(() => {
     const path = getCurrentPath()
@@ -25,107 +30,108 @@ export default function ProjectDetail() {
     setProject(foundProject || null)
   }, [getCurrentPath, projects])
 
+  // Local states
+  const [currentRow, setCurrentRow] = useState<Task | null>(null)
+  const [open, setOpen] = useDialogState<TasksDialogType>(null)
+
   if (!project) {
     return <div>Project not found</div>
   }
 
   return (
-    <>
-      <ProjectDetailContextProvider 
-        value={{ 
-          open, 
-          setOpen, 
-          currentItem, 
-          setCurrentItem 
-        }}
-      >
-        <AppHeader />
-        <Main fixed>
-          <div className='mb-2 flex items-center justify-between space-y-2 flex-wrap gap-x-4'>
-            <PageHeader
-              title={project.name}
-              description={project.description}
-              projectId={project.id}
-            />
-            <div className='flex items-center gap-2'>
-              {/* <UploadFileDialog/> */}
-              {/* <CreateFolderDialog/> */}
-            </div>
+    <TasksContextProvider value={{ open, setOpen, currentRow, setCurrentRow }}>
+      {/* ===== Top Heading ===== */}
+      <AppHeader />
+      <Main>
+        <div className='mb-2 flex items-center justify-between space-y-2 flex-wrap gap-x-4'>
+          <PageHeader
+            title={project.name}
+            description={project.description}
+            projectId={project.id}
+          />
+          <div className='flex gap-2'>
+            <Button
+              variant='outline'
+              className='space-x-1'
+              onClick={() => setOpen('import')}
+            >
+              <span>Import</span> <IconDownload size={18} />
+            </Button>
+            <Button className='space-x-1' onClick={() => setOpen('create')}>
+              <span>Create</span> <IconPlus size={18} />
+            </Button>
           </div>
-
-          <div className='-mx-4 flex-1 overflow-auto px-4 py-1'>
-            <DataTable 
-              data={dummyProjectItems} 
-              columns={columns} 
-              />
-          </div>
-          
-          <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
-            {/* <ProjectDetailHeader
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              selectedTags={selectedTags}
-              setSelectedTags={setSelectedTags}
-              allTags={allTags}
-            /> */}
-            
-            {/* <ProjectDetailToolbar
-              sort={sortPreference}
-              setSort={setSortPreference}
-              displayPreferences={displayPreferences}
-              setDisplayPreferences={setDisplayPreferences}
-            /> */}
-          </div>
-
-          <Separator className='shadow' />
-          
-          {/* <ProjectDetailTable
-            projects={filteredProjects}
-            toggleStar={toggleStar}
-            displayPreferences={displayPreferences}
-          /> */}
-        </Main>
-      </ProjectDetailContextProvider>
-    </>
-  )
-
-  // Commented out return statement
-  /*
-  return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigation.goBack()}
-            className="hover:bg-gray-100 p-2 rounded-full"
-          >
-            <IconArrowLeft size={20} />
-          </button>
-          <h1 className="text-2xl font-bold">{project.name}</h1>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              // Handle edit
-            }}
-          >
-            <IconEdit className="mr-2" size={16} />
-            Edit
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              // Handle share
-            }}
-          >
-            <IconShare className="mr-2" size={16} />
-            Share
-          </Button>
+        <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0'>
+          <DataTable data={tasks} columns={columns} />
         </div>
-      </div>
-    </div>
+      </Main>
+
+      <TasksMutateDrawer
+        key='task-create'
+        open={open === 'create'}
+        onOpenChange={() => setOpen('create')}
+      />
+
+      <TasksImportDialog
+        key='tasks-import'
+        open={open === 'import'}
+        onOpenChange={() => setOpen('import')}
+      />
+
+      {currentRow && (
+        <>
+          <TasksMutateDrawer
+            key={`task-update-${currentRow.id}`}
+            open={open === 'update'}
+            onOpenChange={() => {
+              setOpen('update')
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+            }}
+            currentRow={currentRow}
+          />
+
+          <ConfirmDialog
+            key='task-delete'
+            destructive
+            open={open === 'delete'}
+            onOpenChange={() => {
+              setOpen('delete')
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+            }}
+            handleConfirm={() => {
+              setOpen(null)
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+              toast({
+                title: 'The following task has been deleted:',
+                description: (
+                  <pre className='mt-2 w-[340px] rounded-md bg-slate-950 p-4'>
+                    <code className='text-white'>
+                      {JSON.stringify(currentRow, null, 2)}
+                    </code>
+                  </pre>
+                ),
+              })
+            }}
+            className='max-w-md'
+            title={`Delete this task: ${currentRow.id} ?`}
+            desc={
+              <>
+                You are about to delete a task with the ID{' '}
+                <strong>{currentRow.id}</strong>. <br />
+                This action cannot be undone.
+              </>
+            }
+            confirmText='Delete'
+          />
+        </>
+      )}
+    </TasksContextProvider>
   )
-  */
 }

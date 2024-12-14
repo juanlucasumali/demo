@@ -21,12 +21,16 @@ export function PageHeader({
   }, [projectId])
 
   return (
-    <div className="flex items-center gap-4"> {/* Changed gap-3 to gap-4 */}
+    <div className="flex items-center gap-4">
+      {/* This div will always maintain its size and position */}
       <div 
-        className="flex size-10 items-center justify-center rounded-xl"
-        style={logoGradientStyle}
+        className={`
+          flex size-10 items-center justify-center rounded-xl
+          ${projectId ? '' : 'bg-muted'} // Optional: add a background for when neither icon nor gradient is present
+        `}
+        style={projectId ? logoGradientStyle : undefined}
       >
-        {Icon && <Icon size={24} className="" />} {/* Changed size from 28 to 24 */}
+        {Icon && <Icon size={24} />}
       </div>
       <div className="flex flex-col gap-0.5">
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>

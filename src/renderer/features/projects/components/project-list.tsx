@@ -1,5 +1,4 @@
-import { DisplayPreferences } from "@/renderer/components/layout/types"
-import { Project } from "../../../components/layout/data/projects-data"
+import { DisplayPreferences, Project } from "@/renderer/components/layout/types"
 import { ProjectCard } from "./project-card"
 
 interface ProjectListProps {

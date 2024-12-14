@@ -19,15 +19,14 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { IconDots, IconPlus, IconStar, IconStarFilled } from "@tabler/icons-react"
-import { Project, ProjectTag } from "@/renderer/components/layout/types"
+import { Project, PROJECT_TAGS, ProjectTag, TagCategory } from "@/renderer/components/layout/types"
 import { Badge } from "@/renderer/components/ui/badge"
 import { formatDate, generateGradientStyle } from "@/renderer/lib/utils"
 import { Separator } from "@/renderer/components/ui/separator"
 import { useMemo, useState } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/renderer/components/ui/accordion"
-import { PROJECT_TAGS, TagCategory } from "@/renderer/constants/project-tags"
 import { useProjectsStore } from "@/renderer/stores/useProjectsStore"
-import { Square, SquareCheck } from "lucide-react"
+import { Circle, CircleDot, Square, SquareCheck } from "lucide-react"
 import { useNavigationStore } from "@/renderer/stores/useNavigationStore"
 
 
@@ -117,9 +116,9 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
     setIsOpen(open)
     if (!open) {
       resetForm()
+      unblockNavigation()
     } else {
       blockNavigation()
-      return () => unblockNavigation()
     }
   }
 
@@ -265,14 +264,24 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
                                   setTags(newTags)
                                 }}
                               >
-                                <div className="flex items-center gap-2">
-                                  {tags.some(tag => tag.name === option && tag.category === category) ? (
+                              <div className="flex items-center gap-2">
+                                {category === 'stage' ? (
+                                  // Use Circle icons for stage category
+                                  tags.some(tag => tag.name === option && tag.category === category) ? (
+                                    <CircleDot className="h-4 w-4" />
+                                  ) : (
+                                    <Circle className="h-4 w-4" />
+                                  )
+                                ) : (
+                                  // Use Square icons for other categories
+                                  tags.some(tag => tag.name === option && tag.category === category) ? (
                                     <SquareCheck className="h-4 w-4" />
                                   ) : (
                                     <Square className="h-4 w-4" />
-                                  )}
-                                  <span className="truncate">{option}</span>
-                                </div>
+                                  )
+                                )}
+                                <span className="truncate">{option}</span>
+                              </div>
                               </Button>
                             ))}
                           </div>

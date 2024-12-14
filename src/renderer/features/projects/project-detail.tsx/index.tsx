@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useNavigationStore } from '@/renderer/stores/useNavigationStore'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
-import { Project } from '@/renderer/components/layout/types'
+import { Project, ProjectItem } from '@/renderer/components/layout/types'
 import { Main } from '@/renderer/components/layout/main'
 import { Separator } from '@/renderer/components/ui/separator'
 import { AppHeader } from '@/renderer/components/layout/app-header'
 import { PageHeader } from '@/renderer/components/layout/page-header'
+import ProjectDetailContextProvider, { ProjectDetailDialogType } from './context/project-detail-context'
+import { DataTable } from './components/data-table'
+import { dummyProjectItems } from '@/renderer/components/layout/data/project-item-data'
+import { columns } from './components/columns'
 
 export default function ProjectDetail() {
   const { getCurrentPath } = useNavigationStore()
   const { projects } = useProjectsStore()
   const [project, setProject] = useState<Project | null>(null)
+  const [currentItem, setCurrentItem] = useState<ProjectItem | null>(null)
+  const [open, setOpen] = useState<ProjectDetailDialogType | null>(null)
 
   useEffect(() => {
     const path = getCurrentPath()
@@ -25,45 +31,61 @@ export default function ProjectDetail() {
 
   return (
     <>
-      <AppHeader />
-      <Main fixed>
-        <div className='mb-2 flex items-center justify-between space-y-2 flex-wrap gap-x-4'>
-          <PageHeader
-            title={project.name}
-            description={project.description}
-            projectId={project.id}
-          />
-          <div className='flex items-center gap-2'>
-            {/* <UploadFileDialog/> */}
-            {/* <CreateFolderDialog/> */}
+      <ProjectDetailContextProvider 
+        value={{ 
+          open, 
+          setOpen, 
+          currentItem, 
+          setCurrentItem 
+        }}
+      >
+        <AppHeader />
+        <Main fixed>
+          <div className='mb-2 flex items-center justify-between space-y-2 flex-wrap gap-x-4'>
+            <PageHeader
+              title={project.name}
+              description={project.description}
+              projectId={project.id}
+            />
+            <div className='flex items-center gap-2'>
+              {/* <UploadFileDialog/> */}
+              {/* <CreateFolderDialog/> */}
+            </div>
           </div>
-        </div>
-        
-        <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
-          {/* <ProjectDetailHeader
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedTags={selectedTags}
-            setSelectedTags={setSelectedTags}
-            allTags={allTags}
-          /> */}
-          
-          {/* <ProjectDetailToolbar
-            sort={sortPreference}
-            setSort={setSortPreference}
-            displayPreferences={displayPreferences}
-            setDisplayPreferences={setDisplayPreferences}
-          /> */}
-        </div>
 
-        <Separator className='shadow' />
-        
-        {/* <ProjectDetailTable
-          projects={filteredProjects}
-          toggleStar={toggleStar}
-          displayPreferences={displayPreferences}
-        /> */}
-      </Main>
+          <div className='-mx-4 flex-1 overflow-auto px-4 py-1'>
+            <DataTable 
+              data={dummyProjectItems} 
+              columns={columns} 
+              />
+          </div>
+          
+          <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
+            {/* <ProjectDetailHeader
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedTags={selectedTags}
+              setSelectedTags={setSelectedTags}
+              allTags={allTags}
+            /> */}
+            
+            {/* <ProjectDetailToolbar
+              sort={sortPreference}
+              setSort={setSortPreference}
+              displayPreferences={displayPreferences}
+              setDisplayPreferences={setDisplayPreferences}
+            /> */}
+          </div>
+
+          <Separator className='shadow' />
+          
+          {/* <ProjectDetailTable
+            projects={filteredProjects}
+            toggleStar={toggleStar}
+            displayPreferences={displayPreferences}
+          /> */}
+        </Main>
+      </ProjectDetailContextProvider>
     </>
   )
 

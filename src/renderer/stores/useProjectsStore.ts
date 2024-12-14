@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Project } from '../components/layout/types'
-import { projects as dummyProjects } from '../features/projects/data/projects'
+import { projects as dummyProjects } from '../components/layout/data/projects-data'
 
 interface ProjectsState {
   projects: Project[]

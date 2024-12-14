@@ -26,6 +26,17 @@ export interface ProjectTag {
   color: string
 }
 
+export type ProjectItem = {
+  id: string
+  name: string
+  type: 'file' | 'folder'
+  size: number | null
+  lastModified: Date
+  createdBy: string
+  starred: boolean
+  tags: string[]
+}
+
 export interface DisplayPreferences {
   tags: boolean
   dateCreated: boolean

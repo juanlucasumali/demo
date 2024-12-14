@@ -1,5 +1,5 @@
 import { Project } from '../components/layout/types'
-import { projects } from '../features/projects/data/projects'
+import { projects } from '../components/layout/data/projects-data'
 
 export const projectsService = {
   getProjects: async (): Promise<Project[]> => {

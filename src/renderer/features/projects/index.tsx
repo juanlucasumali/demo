@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Separator } from '@/renderer/components/ui/separator'
 import { Main } from '@/renderer/components/layout/main'
-import { projects as dummyProjects } from './data/projects'
+import { projects as dummyProjects } from '../../components/layout/data/projects-data'
 import { ProjectHeader } from './components/project-header'
 import { ProjectToolbar } from './components/project-toolbar'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'

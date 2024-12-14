@@ -3,19 +3,15 @@ import { Tag } from 'lucide-react'
 import { Badge } from "@/renderer/components/ui/badge"
 import { Button } from "@/renderer/components/ui/button"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/renderer/components/ui/command"
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/renderer/components/ui/popover"
 import { Square, SquareCheck } from 'lucide-react'
 import { useState } from 'react'
+import { PROJECT_TAGS, TagCategory } from '@/renderer/constants/project-tags'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/renderer/components/ui/accordion"
+import { ScrollArea } from "@/renderer/components/ui/scroll-area"
 
 interface ProjectHeaderProps {
   searchTerm: string
@@ -30,16 +26,30 @@ export const ProjectHeader = ({
   setSearchTerm,
   selectedTags,
   setSelectedTags,
-  allTags,
 }: ProjectHeaderProps) => {
   const [openTagFilter, setOpenTagFilter] = useState(false)
+  const [searchTagTerm, setSearchTagTerm] = useState('')
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = (category: TagCategory, tag: string) => {
     setSelectedTags(
-      selectedTags.includes(tag)
-        ? selectedTags.filter(t => t !== tag)
-        : [...selectedTags, tag]
+      selectedTags.includes(`${category}:${tag}`)
+        ? selectedTags.filter(t => t !== `${category}:${tag}`)
+        : [...selectedTags, `${category}:${tag}`]
     )
+  }
+
+  // Filter tags based on search term
+  const filterTags = (options: readonly string[]) => {
+    return [...options].filter(tag => 
+      tag.toLowerCase().includes(searchTagTerm.toLowerCase())
+    )
+  }
+
+  // Count selected tags by category
+  const getSelectedTagsCount = (category: TagCategory) => {
+    return PROJECT_TAGS[category].options.filter(tag => 
+      selectedTags.includes(`${category}:${tag}`)
+    ).length
   }
 
   return (
@@ -65,40 +75,84 @@ export const ProjectHeader = ({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0" align="start">
-          <Command className="max-h-[300px]">
-            <CommandInput placeholder="Search tags..." />
-            <CommandEmpty>No tags found.</CommandEmpty>
+        <PopoverContent className="w-[300px] p-0" align="start">
+          <div className="flex flex-col h-[400px]">
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-10 bg-background p-4 border-b">
+              <Input
+                placeholder="Search tags..."
+                value={searchTagTerm}
+                onChange={(e) => setSearchTagTerm(e.target.value)}
+                className="h-8"
+              />
+            </div>
+
+            {/* Scrollable Content */}
+            <ScrollArea className="flex-1 pl-4 pr-4">
+              <Accordion type="single" className="w-full">
+                {(Object.entries(PROJECT_TAGS) as [TagCategory, typeof PROJECT_TAGS[TagCategory]][]).map(([category, config]) => {
+                  const filteredOptions = filterTags(config.options)
+                  if (filteredOptions.length === 0) return null
+                  
+                  return (
+                    <AccordionItem value={category} key={category}>
+                      <AccordionTrigger className="text-sm hover:no-underline">
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize">{category}</span>
+                          <Badge 
+                            variant="secondary" 
+                            className={`bg-${config.color}-100 text-${config.color}-700 ${
+                              getSelectedTagsCount(category) === 0 ? 'invisible' : ''
+                            }`}
+                          >
+                            {getSelectedTagsCount(category)}
+                          </Badge>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-2 gap-1 p-1">
+                          {filteredOptions.map((option) => (
+                            <Button
+                              key={option}
+                              variant="ghost"
+                              size="sm"
+                              className={`justify-start ${
+                                selectedTags.includes(`${category}:${option}`) 
+                              }`}
+                              onClick={() => toggleTag(category, option)}
+                            >
+                              <div className="flex items-center gap-2">
+                                {selectedTags.includes(`${category}:${option}`) ? (
+                                  <SquareCheck className="h-4 w-4" />
+                                ) : (
+                                  <Square className="h-4 w-4" />
+                                )}
+                                <span className="truncate">{option}</span>
+                              </div>
+                            </Button>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )
+                })}
+              </Accordion>
+            </ScrollArea>
+
+            {/* Sticky Footer - Only shown when tags are selected */}
             {selectedTags.length > 0 && (
-              <div className="border-b border-border px-2 py-1.5">
+              <div className="sticky bottom-0 z-10 bg-background p-2 border-t">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-full justify-start text-sm"
+                  className="h-8 w-full justify-center text-sm"
                   onClick={() => setSelectedTags([])}
                 >
                   Clear all tags
                 </Button>
               </div>
             )}
-            <CommandGroup className="overflow-auto max-h-[225px]">
-              {allTags.map(tag => (
-                <CommandItem
-                  key={tag}
-                  onSelect={() => toggleTag(tag)}
-                >
-                  <div className="flex items-center gap-2 flex-1">
-                    {selectedTags.includes(tag) ? (
-                      <SquareCheck className="h-4 w-4" />
-                    ) : (
-                      <Square className="h-4 w-4" />
-                    )}
-                    {tag}
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

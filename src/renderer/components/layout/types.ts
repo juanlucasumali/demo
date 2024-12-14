@@ -1,3 +1,4 @@
+import { TagCategory } from '@/renderer/constants/project-tags'
 import { LinkProps } from '@tanstack/react-router'
 
 export interface UserProfile {
@@ -16,11 +17,11 @@ export interface Project {
   dateCreated: string;
   dateModified: string;
   isStarred: boolean
-  tags: Tag[]
+  tags: ProjectTag[]
 }
 
-export interface Tag {
-  category: 'stage' | 'genre' | 'needs'
+export interface ProjectTag {
+  category: TagCategory
   name: string
   color: string
 }

@@ -19,14 +19,15 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { IconDots, IconPlus, IconStar, IconStarFilled } from "@tabler/icons-react"
-import { Project, Tag } from "@/renderer/components/layout/types"
+import { Project, ProjectTag } from "@/renderer/components/layout/types"
 import { Badge } from "@/renderer/components/ui/badge"
-import { cn, formatDate } from "@/renderer/lib/utils"
+import { formatDate, generateGradientStyle } from "@/renderer/lib/utils"
 import { Separator } from "@/renderer/components/ui/separator"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/renderer/components/ui/accordion"
 import { PROJECT_TAGS, TagCategory } from "@/renderer/constants/project-tags"
 import { useProjectsStore } from "@/renderer/stores/useProjectsStore"
+import { Square, SquareCheck } from "lucide-react"
 
 
 const tagBgClasses = {
@@ -60,8 +61,13 @@ interface CreateProjectDialogProps {
 export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isStarred, setIsStarred] = useState(false)
-  const [tags, setTags] = useState<Tag[]>([])
+  const [tags, setTags] = useState<ProjectTag[]>([])
+  const [previewProjectId] = useState(crypto.randomUUID())
   const addProject = useProjectsStore((state) => state.addProject)
+
+  const logoGradientStyle = useMemo(() => {
+    return generateGradientStyle(previewProjectId);
+  }, [previewProjectId]);
 
   // Add reset function
   const resetForm = () => {
@@ -88,7 +94,7 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newProject: Project = {
-      id: crypto.randomUUID(),
+      id: previewProjectId,
       name: values.name,
       logo: null,
       description: values.description,
@@ -133,8 +139,10 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
             <div className="rounded-lg border p-4 hover:shadow-md transition-shadow w-[450px]"> {/* or whatever width matches your design */}
               <div className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 p-2 text-white">
-                    📁
+                  <div 
+                    className="flex size-10 items-center justify-center rounded-lg p-2 text-white"
+                    style={logoGradientStyle}
+                  >
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -202,23 +210,28 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
                   <Accordion type="single" collapsible className="w-full">
                     {(Object.entries(PROJECT_TAGS) as [TagCategory, typeof PROJECT_TAGS[TagCategory]][]).map(([category, config]) => (
                       <AccordionItem value={category} key={category}>
-                        <AccordionTrigger className="text-sm capitalize">
-                          {category}
+                        <AccordionTrigger className="text-sm hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <span className="capitalize">{category}</span>
+                            <Badge 
+                              variant="secondary" 
+                              className={`bg-${config.color}-100 text-${config.color}-700 ${
+                                tags.filter(tag => tag.category === category).length === 0 ? 'invisible' : ''
+                              }`}
+                            >
+                              {tags.filter(tag => tag.category === category).length}
+                            </Badge>
+                          </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          <div className="grid grid-cols-2 gap-2 p-2">
+                          <div className="grid grid-cols-2 gap-1 p-1">
                             {config.options.map((option) => (
                               <Button
                                 key={option}
-                                type="button" // Add type="button"
-                                variant="outline"
+                                type="button"
+                                variant="ghost"
                                 size="sm"
-                                className={cn(
-                                  "justify-start",
-                                  tags.some(tag => tag.name === option && tag.category === category)
-                                    ? "border-primary" 
-                                    : ""
-                                )}
+                                className="justify-start"
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
@@ -245,14 +258,22 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
                                   setTags(newTags)
                                 }}
                               >
-                                {option}
-                              </Button>                            
+                                <div className="flex items-center gap-2">
+                                  {tags.some(tag => tag.name === option && tag.category === category) ? (
+                                    <SquareCheck className="h-4 w-4" />
+                                  ) : (
+                                    <Square className="h-4 w-4" />
+                                  )}
+                                  <span className="truncate">{option}</span>
+                                </div>
+                              </Button>
                             ))}
                           </div>
                         </AccordionContent>
                       </AccordionItem>
                     ))}
                   </Accordion>
+
 
                   {/* Tags display */}
                   {tags.length > 0 && (

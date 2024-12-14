@@ -1,6 +1,6 @@
 export const PROJECT_TAGS = {
   stage: {
-    color: 'blue',
+    color: 'green',
     allowMultiple: false,
     options: [
       'Concept',
@@ -13,7 +13,7 @@ export const PROJECT_TAGS = {
     ]
   },
   genre: {
-    color: 'purple',
+    color: 'blue',
     allowMultiple: true,
     options: [
       'Hip-Hop',
@@ -31,7 +31,7 @@ export const PROJECT_TAGS = {
     ]
   },
   needs: {
-    color: 'green',
+    color: 'purple',
     allowMultiple: true,
     options: [
       'Vocals',

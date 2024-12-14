@@ -27,11 +27,11 @@ export const projects: Project[] = [
     dateCreated: '2024-01-15T10:30:00Z',
     dateModified: '2024-02-20T15:45:00Z',
     tags: [
-      { category: 'stage', name: 'In-Progress', color: 'blue' },
-      { category: 'genre', name: 'R&B', color: 'purple' },
-      { category: 'genre', name: 'Electronic', color: 'purple' },
-      { category: 'needs', name: 'Vocals', color: 'green' },
-      { category: 'needs', name: 'Mixing', color: 'green' }
+      { category: 'stage', name: 'In-Progress', color: 'green' },
+      { category: 'genre', name: 'R&B', color: 'blue' },
+      { category: 'genre', name: 'Electronic', color: 'blue' },
+      { category: 'needs', name: 'Vocals', color: 'purple' },
+      { category: 'needs', name: 'Mixing', color: 'purple' }
     ]
   },
   {
@@ -43,11 +43,11 @@ export const projects: Project[] = [
     dateCreated: '2024-01-20T08:00:00Z',
     dateModified: '2024-02-01T11:20:00Z',
     tags: [
-      { category: 'stage', name: 'Demo', color: 'blue' },
-      { category: 'genre', name: 'Trap', color: 'purple' },
-      { category: 'genre', name: 'Drill', color: 'purple' },
-      { category: 'needs', name: 'Melody', color: 'green' },
-      { category: 'needs', name: 'Bass', color: 'green' }
+      { category: 'stage', name: 'Demo', color: 'green' },
+      { category: 'genre', name: 'Trap', color: 'blue' },
+      { category: 'genre', name: 'Drill', color: 'blue' },
+      { category: 'needs', name: 'Melody', color: 'purple' },
+      { category: 'needs', name: 'Bass', color: 'purple' }
     ]
   },
   {
@@ -59,10 +59,10 @@ export const projects: Project[] = [
     dateCreated: '2024-01-05T14:15:00Z',
     dateModified: '2024-02-25T09:30:00Z',
     tags: [
-      { category: 'stage', name: 'Arrangement', color: 'blue' },
-      { category: 'genre', name: 'Ambient', color: 'purple' },
-      { category: 'genre', name: 'Indie', color: 'purple' },
-      { category: 'needs', name: 'Mastering', color: 'green' }
+      { category: 'stage', name: 'Arrangement', color: 'green' },
+      { category: 'genre', name: 'Ambient', color: 'blue' },
+      { category: 'genre', name: 'Indie', color: 'blue' },
+      { category: 'needs', name: 'Mastering', color: 'purple' }
     ]
   },
   {
@@ -74,11 +74,11 @@ export const projects: Project[] = [
     dateCreated: '2024-01-12T09:30:00Z',
     dateModified: '2024-02-18T14:25:00Z',
     tags: [
-      { category: 'stage', name: 'Mixing', color: 'blue' },
-      { category: 'genre', name: 'Afrobeats', color: 'purple' },
-      { category: 'genre', name: 'House', color: 'purple' },
-      { category: 'needs', name: 'Vocals', color: 'green' },
-      { category: 'needs', name: 'Producer', color: 'green' }
+      { category: 'stage', name: 'Mixing', color: 'green' },
+      { category: 'genre', name: 'Afrobeats', color: 'blue' },
+      { category: 'genre', name: 'House', color: 'blue' },
+      { category: 'needs', name: 'Vocals', color: 'purple' },
+      { category: 'needs', name: 'Producer', color: 'purple' }
     ]
   },
   {
@@ -90,10 +90,10 @@ export const projects: Project[] = [
     dateCreated: '2024-01-05T11:45:00Z',
     dateModified: '2024-02-02T16:30:00Z',
     tags: [
-      { category: 'stage', name: 'Final', color: 'blue' },
-      { category: 'genre', name: 'R&B', color: 'purple' },
-      { category: 'genre', name: 'Alternative', color: 'purple' },
-      { category: 'needs', name: 'Mastering', color: 'green' }
+      { category: 'stage', name: 'Final', color: 'green' },
+      { category: 'genre', name: 'R&B', color: 'blue' },
+      { category: 'genre', name: 'Alternative', color: 'blue' },
+      { category: 'needs', name: 'Mastering', color: 'purple' }
     ]
   }
 ]

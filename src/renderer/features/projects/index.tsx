@@ -34,13 +34,25 @@ export default function Projects() {
     new Set(projects.flatMap(project => project.tags.map(tag => tag.name)))
   ).sort()
 
+  const getTagCategory = (tagWithCategory: string) => {
+    const [category, tag] = tagWithCategory.split(':')
+    return { category, tag }
+  }  
+
   const getFilteredAndSortedProjects = () => {
     return projects
       // First filter
       .filter((project) => project.name.toLowerCase().includes(searchTerm.toLowerCase()))
       .filter((project) => 
         selectedTags.length === 0 || 
-        selectedTags.every(tag => project.tags.some(projectTag => projectTag.name === tag))
+        selectedTags.every(tagWithCategory => {
+          const { category, tag } = getTagCategory(tagWithCategory)
+          return project.tags.some(
+            projectTag => 
+              projectTag.category === category && 
+              projectTag.name === tag
+          )
+        })
       )
       // Then sort
       .sort((a, b) => {

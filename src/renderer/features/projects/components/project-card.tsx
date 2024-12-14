@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/renderer/components/ui/dropdown-menu"
 import { useMemo } from 'react'
+import { navigation } from '@/renderer/stores/useNavigationStore'
 
 interface ProjectCardProps {
   project: Project
@@ -31,8 +32,15 @@ export const ProjectCard = ({
     return generateGradientStyle(project.id);
   }, [project.id, project.logo]);
 
+  const handleClick = () => {
+    navigation.navigate(`/projects/${project.id}`)
+  }
+
   return (
-    <li className='rounded-lg border p-4 hover:shadow-md cursor-pointer'>
+    <li 
+    className='rounded-lg border p-4 hover:shadow-md cursor-pointer'
+    onClick={handleClick}
+      >
       <div className='mb-8 flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <div 

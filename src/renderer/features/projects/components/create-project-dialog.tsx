@@ -68,8 +68,10 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   const { blockNavigation, unblockNavigation } = useNavigationStore()
 
   useEffect(() => {
-    blockNavigation()
-    return () => unblockNavigation()
+    if (isOpen) {
+      blockNavigation()
+      return () => unblockNavigation()
+    }
   }, [])
 
   const logoGradientStyle = useMemo(() => {

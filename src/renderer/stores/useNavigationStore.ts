@@ -5,6 +5,7 @@ import { router } from '../main'
 interface NavigationState {
   lastVisitedPath: string
   isNavigationBlocked: boolean
+  isSidebarOpen: boolean // New state
   blockNavigation: () => void
   unblockNavigation: () => void
   setLastVisitedPath: (path: string) => void
@@ -13,6 +14,8 @@ interface NavigationState {
   goBack: () => void
   goForward: () => void
   getCurrentPath: () => string
+  toggleSidebar: () => void // New method
+  setSidebarOpen: (open: boolean) => void  // Fixed: added return type
 }
 
 export const useNavigationStore = create<NavigationState>()(
@@ -20,9 +23,13 @@ export const useNavigationStore = create<NavigationState>()(
     (set, get) => ({
       lastVisitedPath: '/',
       isNavigationBlocked: false,
+      isSidebarOpen: true, // Default state
 
       blockNavigation: () => set({ isNavigationBlocked: true }),
       unblockNavigation: () => set({ isNavigationBlocked: false }),
+      
+      toggleSidebar: () => set(state => ({ isSidebarOpen: !state.isSidebarOpen })),
+      setSidebarOpen: (open: boolean) => set({ isSidebarOpen: open }),
       
       setLastVisitedPath: (path: string) => {
         if (!path.includes('sign-in') && 
@@ -37,7 +44,6 @@ export const useNavigationStore = create<NavigationState>()(
       
       navigate: (to: string, options?: { replace?: boolean }) => {
         if (get().isNavigationBlocked) {
-          // You could implement a confirmation dialog here
           console.warn('Navigation is blocked')
           return
         }
@@ -65,7 +71,10 @@ export const useNavigationStore = create<NavigationState>()(
     }),
     {
       name: 'navigation-storage',
-      partialize: (state) => ({ lastVisitedPath: state.lastVisitedPath })
+      partialize: (state) => ({ 
+        lastVisitedPath: state.lastVisitedPath,
+        isSidebarOpen: state.isSidebarOpen // Add to persisted state
+      })
     }
   )
 )
@@ -79,5 +88,8 @@ export const navigation = {
   getCurrentPath: () => useNavigationStore.getState().getCurrentPath(),
   getLastVisitedPath: () => useNavigationStore.getState().getLastVisitedPath(),
   blockNavigation: () => useNavigationStore.getState().blockNavigation(),
-  unblockNavigation: () => useNavigationStore.getState().unblockNavigation()
+  unblockNavigation: () => useNavigationStore.getState().unblockNavigation(),
+  toggleSidebar: () => useNavigationStore.getState().toggleSidebar(),
+  setSidebarOpen: (open: boolean) => useNavigationStore.getState().setSidebarOpen(open),
+  isSidebarOpen: () => useNavigationStore.getState().isSidebarOpen
 }

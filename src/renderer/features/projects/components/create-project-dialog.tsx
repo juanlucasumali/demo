@@ -23,7 +23,7 @@ import { Project, ProjectTag } from "@/renderer/components/layout/types"
 import { Badge } from "@/renderer/components/ui/badge"
 import { formatDate, generateGradientStyle } from "@/renderer/lib/utils"
 import { Separator } from "@/renderer/components/ui/separator"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/renderer/components/ui/accordion"
 import { PROJECT_TAGS, TagCategory } from "@/renderer/constants/project-tags"
 import { useProjectsStore } from "@/renderer/stores/useProjectsStore"
@@ -66,13 +66,6 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   const [previewProjectId] = useState(crypto.randomUUID())
   const addProject = useProjectsStore((state) => state.addProject)
   const { blockNavigation, unblockNavigation } = useNavigationStore()
-
-  useEffect(() => {
-    if (isOpen) {
-      blockNavigation()
-      return () => unblockNavigation()
-    }
-  }, [])
 
   const logoGradientStyle = useMemo(() => {
     return generateGradientStyle(previewProjectId);
@@ -120,9 +113,13 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   }
 
   const handleOpenChange = (open: boolean) => {
+    console.log("Handling open change!")
     setIsOpen(open)
     if (!open) {
       resetForm()
+    } else {
+      blockNavigation()
+      return () => unblockNavigation()
     }
   }
 

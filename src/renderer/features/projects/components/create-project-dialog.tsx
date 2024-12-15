@@ -28,6 +28,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useProjectsStore } from "@/renderer/stores/useProjectsStore"
 import { Circle, CircleDot, Square, SquareCheck } from "lucide-react"
 import { useNavigationStore } from "@/renderer/stores/useNavigationStore"
+import { useAuthStore } from "@/renderer/stores/useAuthStore"
+import { useToast } from "@/renderer/hooks/use-toast"
 
 
 const tagBgClasses = {
@@ -65,6 +67,9 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   const [previewProjectId] = useState(crypto.randomUUID())
   const addProject = useProjectsStore((state) => state.addProject)
   const { blockNavigation, unblockNavigation } = useNavigationStore()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { user } = useAuthStore()
+  const { toast } = useToast()
 
   const iconGradientStyle = useMemo(() => {
     return generateGradientStyle(previewProjectId);
@@ -79,6 +84,7 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
 
   // Handle dialog close
   const handleClose = () => {
+    unblockNavigation()
     setIsOpen(false)
     resetForm()
   }
@@ -94,22 +100,36 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const newProject: Project = {
-      id: previewProjectId,
-      ownerId: '',
-      name: values.name,
-      icon: null,
-      description: values.description,
-      isStarred: isStarred,
-      createdAt: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      tags: tags
-    }
+    try {
+      setIsSubmitting(true)
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create a project",
+          variant: "destructive"
+        })
+        return
+      }
   
-    addProject(newProject)
-    console.log('New project added:', newProject) // Debug log
-    setIsOpen(false)
-    resetForm()
+      const newProject: Project = {
+        owner_id: user.id,
+        name: values.name,
+        icon: null,
+        description: values.description,
+        is_starred: isStarred,
+        tags: tags
+      }
+  
+      addProject(newProject)
+    } catch (error) {
+      unblockNavigation()
+      console.error('Error creating project:', error)
+      // Show error message
+    } finally {
+      handleClose()
+      setIsSubmitting(false)
+    }
   }
 
   const handleOpenChange = (open: boolean) => {

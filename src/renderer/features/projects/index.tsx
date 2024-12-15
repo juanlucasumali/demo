@@ -13,6 +13,7 @@ import { IconPackages } from '@tabler/icons-react'
 import { Alert, AlertDescription } from '@/renderer/components/ui/alert' // From shadcn
 import { Loader2 } from 'lucide-react'
 import { supabase } from '@/renderer/lib/supabase'
+import { ProjectListSkeleton } from '@/renderer/components/skeletons'
 
 export default function Projects() {
   const {
@@ -118,9 +119,7 @@ export default function Projects() {
         <Separator className='shadow' />
         
         {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 size="lg" />
-          </div>
+          <ProjectListSkeleton />
         ) : error ? (
           <Alert variant="destructive" className="my-4">
             <AlertDescription>

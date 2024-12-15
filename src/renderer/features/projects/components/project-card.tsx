@@ -1,4 +1,4 @@
-import { IconStar, IconStarFilled, IconDots, IconShare, IconEdit } from '@tabler/icons-react'
+import { IconStar, IconStarFilled, IconDots, IconShare, IconEdit, IconTrash } from '@tabler/icons-react'
 import { Badge } from "@/renderer/components/ui/badge"
 import { Separator } from "@/renderer/components/ui/separator"
 import { formatDate, generateGradientStyle } from '@/renderer/lib/utils'
@@ -7,10 +7,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/renderer/components/ui/dropdown-menu"
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { navigation } from '@/renderer/stores/useNavigationStore'
+import { useToast } from '@/renderer/hooks/use-toast'
+import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/renderer/components/ui/alert-dialog'
 
 interface ProjectCardProps {
   project: Project
@@ -27,6 +31,10 @@ export const ProjectCard = ({
   toggleStar,
   displayPreferences,
 }: ProjectCardProps) => {
+  const { toast } = useToast()
+  const projects = useProjectsStore()
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
   const iconGradientStyle = useMemo(() => {
     // if (project.icon) return {};
     return generateGradientStyle(project.id);
@@ -34,6 +42,24 @@ export const ProjectCard = ({
 
   const handleClick = () => {
     navigation.navigate(`/projects/${project.id}`)
+  }
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    try {
+      await projects.deleteProject(project.id)
+      toast({
+        title: "Project deleted",
+        description: `${project.name} has been successfully deleted.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -80,6 +106,17 @@ export const ProjectCard = ({
               >
                 <IconEdit className="mr-2 h-4 w-4" />
                 <span>Edit details</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowDeleteDialog(true)
+                }}
+                className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+              >
+                <IconTrash className="mr-2 h-4 w-4" />
+                <span>Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -145,6 +182,26 @@ export const ProjectCard = ({
             </div>
           )}
         </div>
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the project
+              "{project.name}" and all of its data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </li>
   )

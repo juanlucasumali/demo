@@ -1,4 +1,4 @@
-import { IconStar, IconStarFilled, IconDots, IconShare, IconEdit, IconTrash } from '@tabler/icons-react'
+import { IconStar, IconStarFilled, IconDots, IconTrash, IconPencil, IconShare } from '@tabler/icons-react'
 import { Badge } from "@/renderer/components/ui/badge"
 import { Separator } from "@/renderer/components/ui/separator"
 import { formatDate, generateGradientStyle } from '@/renderer/lib/utils'
@@ -24,12 +24,14 @@ interface ProjectCardProps {
     createdAt: boolean
     lastModified: boolean
   }
+  onEditClick: (project: Project) => void
 }
 
 export const ProjectCard = ({
   project,
   toggleStar,
   displayPreferences,
+  onEditClick,
 }: ProjectCardProps) => {
   const { toast } = useToast()
   const projects = useProjectsStore()
@@ -67,10 +69,10 @@ export const ProjectCard = ({
     className='rounded-lg border p-4 hover:shadow-md cursor-pointer'
     onClick={handleClick}
       >
-      <div className='mb-4 flex items-center justify-between'>
+      <div className='mb-8 flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <div 
-            className={`flex size-6 items-center justify-center rounded-lg p-2`}
+            className={`flex size-10 items-center justify-center rounded-lg p-2`}
             style={iconGradientStyle}
           >
             {/* {getIconComponent(project.icon)} */}
@@ -98,14 +100,13 @@ export const ProjectCard = ({
                 <span>Share</span>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={( e) => {
-                  e.stopPropagation()
-                  // Handle edit action
-                  console.log('Edit', project.name)
-                }}
+                  onClick={(e) => {
+                      e.stopPropagation()
+                      onEditClick(project)
+                  }}
               >
-                <IconEdit className="mr-2 h-4 w-4" />
-                <span>Edit details</span>
+                  <IconPencil className="mr-2 h-4 w-4" />
+                  <span>Edit</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

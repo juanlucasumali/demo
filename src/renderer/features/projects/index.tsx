@@ -10,8 +10,7 @@ import { CreateProjectDialog } from './components/create-project-dialog'
 import { AppHeader } from '@/renderer/components/layout/app-header'
 import { PageHeader } from '@/renderer/components/layout/page-header'
 import { IconPackages } from '@tabler/icons-react'
-import { Alert, AlertDescription } from '@/renderer/components/ui/alert' // From shadcn
-import { Loader2 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
 import { supabase } from '@/renderer/lib/supabase'
 import { ProjectListSkeleton } from '@/renderer/components/skeletons'
 
@@ -95,7 +94,7 @@ export default function Projects() {
             icon={IconPackages}
           />
           <div className='flex items-center gap-2'>
-            <CreateProjectDialog/>
+            <CreateProjectDialog mode={'create'}/>
           </div>
         </div>
 
@@ -118,7 +117,7 @@ export default function Projects() {
 
         <Separator className='shadow' />
         
-        {isLoading ? (
+        {isLoading && projects.length === 0 ? (
           <ProjectListSkeleton />
         ) : error ? (
           <Alert variant="destructive" className="my-4">

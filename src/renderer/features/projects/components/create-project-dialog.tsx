@@ -23,7 +23,7 @@ import { Project, PROJECT_TAGS, ProjectTag, TagCategory } from "@/renderer/compo
 import { Badge } from "@/renderer/components/ui/badge"
 import { formatDate, generateGradientStyle } from "@/renderer/lib/utils"
 import { Separator } from "@/renderer/components/ui/separator"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/renderer/components/ui/accordion"
 import { useProjectsStore } from "@/renderer/stores/useProjectsStore"
 import { Circle, CircleDot, Square, SquareCheck } from "lucide-react"
@@ -58,21 +58,35 @@ const formSchema = z.object({
 })
 
 interface CreateProjectDialogProps {
+  mode?: 'create' | 'edit'
+  project?: Project
+  trigger?: React.ReactNode // Optional custom trigger
+  isOpen?: boolean
+  onClose?: () => void
 }
 
-export function CreateProjectDialog({ }: CreateProjectDialogProps) {
-  const [isOpen, setIsOpen] = useState(false)
+export function CreateProjectDialog({ mode, project, trigger, isOpen: controlledIsOpen, onClose }: CreateProjectDialogProps) {
   const [isStarred, setIsStarred] = useState(false)
   const [tags, setTags] = useState<ProjectTag[]>([])
   const [previewProjectId] = useState(crypto.randomUUID())
-  const addProject = useProjectsStore((state) => state.addProject)
   const { blockNavigation, unblockNavigation } = useNavigationStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { user } = useAuthStore()
   const { toast } = useToast()
+  const addProject = useProjectsStore((state) => state.addProject)
+  const updateProject = useProjectsStore((state) => state.updateProject)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
+  const isOpen = controlledIsOpen ?? internalIsOpen
+
+  useEffect(() => {
+    if (project) {
+      setIsStarred(project.is_starred)
+      setTags(project.tags)
+    }
+  }, [project, mode]);
 
   const iconGradientStyle = useMemo(() => {
-    return generateGradientStyle(previewProjectId);
+    return generateGradientStyle(project?.id ?? previewProjectId);
   }, [previewProjectId]);
 
   // Add reset function
@@ -85,60 +99,89 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   // Handle dialog close
   const handleClose = () => {
     unblockNavigation()
-    setIsOpen(false)
+    if (onClose) {
+      onClose()
+    } else {
+      setInternalIsOpen(false)
+    }
     resetForm()
   }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: project?.name ?? "",
+      description: project?.description ?? "",
       tags: "",
     },
     mode: "onChange", // Add this
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsSubmitting(true)
       
       if (!user) {
         toast({
           title: "Error",
-          description: "You must be logged in to create a project",
+          description: "You must be logged in to perform this action",
           variant: "destructive"
         })
         return
       }
-  
-      const newProject: Project = {
+
+      const projectData = {
         owner_id: user.id,
         name: values.name,
         icon: null,
         description: values.description,
         is_starred: isStarred,
-        tags: tags
+        tags: tags,
+        last_modified: new Date().toISOString()
       }
-  
-      addProject(newProject)
-    } catch (error) {
-      unblockNavigation()
-      console.error('Error creating project:', error)
-      // Show error message
-    } finally {
+
+      if (mode === 'edit' && project) {
+        await updateProject(project.id, projectData)
+        toast({
+          title: "Success",
+          description: "Project updated successfully",
+        })
+      } else {
+        await addProject(projectData)
+        toast({
+          title: "Success",
+          description: "Project created successfully",
+        })
+      }
+      
       handleClose()
+    } catch (error) {
+      console.error('Error handling project:', error)
+      toast({
+        title: "Error",
+        description: `Failed to ${mode} project`,
+        variant: "destructive"
+      })
+    } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleOpenChange = (open: boolean) => {
-    console.log("Handling open change!")
-    setIsOpen(open)
+    const handleOpenChange = (open: boolean) => {
+    if (onClose && !open) {
+      onClose()
+    } else {
+      setInternalIsOpen(open)
+    }
+
     if (!open) {
       resetForm()
       unblockNavigation()
     } else {
+      if (project) {
+        setIsStarred(project.is_starred)
+        setTags(project.tags)
+      }
       blockNavigation()
     }
   }
@@ -146,16 +189,22 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="default" size="sm" className="gap-2">
-          <IconPlus size={16} />
-          <span>New Project</span>
-        </Button>
+        {trigger ?? (
+          <Button variant="default" size="sm" className="gap-2">
+            <IconPlus size={16} />
+            <span>{mode === 'create' ? 'New Project' : 'Edit Project'}</span>
+          </Button>
+          )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>
+            {mode === 'create' ? 'Create New Project' : 'Edit Project'}
+          </DialogTitle>
           <DialogDescription>
-            Add a new project to your workspace. Fill in the details below.
+            {mode === 'create' 
+              ? 'Add a new project to your workspace. Fill in the details below.'
+              : 'Update your project details below.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -163,10 +212,10 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Preview Card */}
             <div className="rounded-lg border p-4 hover:shadow-md transition-shadow w-[450px]"> {/* or whatever width matches your design */}
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div 
-                    className="flex size-6 items-center justify-center rounded-lg p-2 text-white"
+                    className="flex size-10 items-center justify-center rounded-lg p-2 text-white"
                     style={iconGradientStyle}
                   >
                   </div>
@@ -354,9 +403,20 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
 
                 <div className="text-sm text-muted-foreground space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Created:</span>
-                    <span className="text-xs">{formatDate(new Date().toISOString())}</span>
+                  <span className="text-xs text-muted-foreground">Created:</span>
+                    <span className="text-xs">
+                      {mode === 'edit' && project 
+                        ? formatDate(project.created_at)
+                        : formatDate(new Date().toISOString())
+                      }
+                    </span>
                   </div>
+                  {mode === 'edit' && project?.last_modified && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Modified:</span>
+                      <span className="text-xs">{formatDate(project.last_modified)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -370,7 +430,7 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
                 Cancel
               </Button>
               <Button type="submit">
-                Create Project
+                {mode === 'create' ? 'Create Project' : 'Save Changes'}
               </Button>
             </div>
           </form>

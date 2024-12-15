@@ -30,6 +30,7 @@ export const ProjectHeader = ({
   const [searchTagTerm, setSearchTagTerm] = useState('')
 
   const toggleTag = (category: TagCategory, tag: string) => {
+    
     if (category === 'stage') {
       // For stage category, deselect current stage tag if exists and select new one
       const newTags = selectedTags.filter(t => !t.startsWith('stage:'))
@@ -39,13 +40,12 @@ export const ProjectHeader = ({
       setSelectedTags(newTags)
     } else {
       // For other categories, maintain existing toggle behavior
-      setSelectedTags(
-        selectedTags.includes(`${category}:${tag}`)
-          ? selectedTags.filter(t => t !== `${category}:${tag}`)
-          : [...selectedTags, `${category}:${tag}`]
-      )
+      const newTags = selectedTags.includes(`${category}:${tag}`)
+        ? selectedTags.filter(t => t !== `${category}:${tag}`)
+        : [...selectedTags, `${category}:${tag}`]
+      setSelectedTags(newTags)
     }
-  }  
+  }
 
   // Filter tags based on search term
   const filterTags = (options: readonly string[]) => {

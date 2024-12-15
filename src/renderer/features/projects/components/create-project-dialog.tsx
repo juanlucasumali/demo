@@ -143,10 +143,10 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Preview Card */}
             <div className="rounded-lg border p-4 hover:shadow-md transition-shadow w-[450px]"> {/* or whatever width matches your design */}
-              <div className="mb-8 flex items-center justify-between">
+              <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div 
-                    className="flex size-10 items-center justify-center rounded-lg p-2 text-white"
+                    className="flex size-6 items-center justify-center rounded-lg p-2 text-white"
                     style={iconGradientStyle}
                   >
                   </div>

@@ -3,7 +3,7 @@ import { ProjectCard } from "./project-card"
 
 interface ProjectListProps {
     projects: Project[]
-    toggleStar: (id: string) => void
+    toggleStar: (id: string, currentValue: boolean) => Promise<void>
     displayPreferences: DisplayPreferences
   }
   

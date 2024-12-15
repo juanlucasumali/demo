@@ -69,11 +69,11 @@ CREATE TABLE IF NOT EXISTS "public"."projects" (
     "name" "text" NOT NULL,
     "icon" "text",
     "description" "text",
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "last_modified" timestamp with time zone DEFAULT "now"(),
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "last_modified" timestamp with time zone DEFAULT "now"() NOT NULL,
     "is_starred" boolean DEFAULT false NOT NULL,
     "tags" "jsonb",
-    "owner_id" "uuid" DEFAULT "gen_random_uuid"()
+    "owner_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL
 );
 
 ALTER TABLE "public"."projects" OWNER TO "postgres";

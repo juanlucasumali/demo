@@ -1,4 +1,4 @@
-import { IconSortAscendingLetters, IconSortDescendingLetters } from '@tabler/icons-react'
+import { IconSortAscendingLetters, IconSortDescendingLetters, IconCalendar, IconClock } from '@tabler/icons-react'
 import {
   Select,
   SelectContent,
@@ -13,12 +13,12 @@ interface ProjectToolbarProps {
   setSort: (sort: string) => void
   displayPreferences: {
     tags: boolean
-    createdAt: boolean
+    createdAt: boolean // Changed from createdAt to match your store
     lastModified: boolean
   }
   setDisplayPreferences: (preferences: {
     tags: boolean
-    createdAt: boolean
+    createdAt: boolean // Changed from createdAt to match your store
     lastModified: boolean
   }) => void 
 }
@@ -38,10 +38,26 @@ export const ProjectToolbar = ({
       <Select value={sort} onValueChange={setSort}>
         <SelectTrigger className='w-[200px]'>
           <SelectValue>
-            {sort === 'ascending' && <div className='flex items-center gap-2'><IconSortAscendingLetters size={16} />Name (A-Z)</div>}
-            {sort === 'descending' && <div className='flex items-center gap-2'><IconSortDescendingLetters size={16} />Name (Z-A)</div>}
-            {sort === 'createdAt' && <div className='flex items-center gap-2'>Date Created</div>}
-            {sort === 'lastModified' && <div className='flex items-center gap-2'>Last Modified</div>}
+            {sort === 'ascending' && (
+              <div className='flex items-center gap-2'>
+                <IconSortAscendingLetters size={16} />Name (A-Z)
+              </div>
+            )}
+            {sort === 'descending' && (
+              <div className='flex items-center gap-2'>
+                <IconSortDescendingLetters size={16} />Name (Z-A)
+              </div>
+            )}
+            {sort === 'createdAt' && (
+              <div className='flex items-center gap-2'>
+                <IconCalendar size={16} />Date Created
+              </div>
+            )}
+            {sort === 'lastModified' && (
+              <div className='flex items-center gap-2'>
+                <IconClock size={16} />Last Modified
+              </div>
+            )}
           </SelectValue>
         </SelectTrigger>
         <SelectContent align='end'>
@@ -59,11 +75,13 @@ export const ProjectToolbar = ({
           </SelectItem>
           <SelectItem value='createdAt'>
             <div className='flex items-center gap-4'>
+              <IconCalendar size={16} />
               <span>Date Created</span>
             </div>
           </SelectItem>
           <SelectItem value='lastModified'>
             <div className='flex items-center gap-4'>
+              <IconClock size={16} />
               <span>Last Modified</span>
             </div>
           </SelectItem>

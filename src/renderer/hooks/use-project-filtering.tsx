@@ -1,5 +1,6 @@
 import { Project } from "../components/layout/types"
 
+
 interface UseProjectFilteringProps {
   projects: Project[]
   searchTerm: string
@@ -7,51 +8,63 @@ interface UseProjectFilteringProps {
   sortPreference: string
 }
 
-export const useProjectFiltering = ({
+export function useProjectFiltering({
   projects,
   searchTerm,
   selectedTags,
-  sortPreference
-}: UseProjectFilteringProps) => {
-  const getTagCategory = (tagWithCategory: string) => {
-    const [category, tag] = tagWithCategory.split(':')
-    return { category, tag }
-  }
-
-  const filterProjects = (projects: Project[]) => {
-    return projects
-      .filter((project) => project.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      .filter((project) => 
-        selectedTags.length === 0 || 
-        selectedTags.every(tagWithCategory => {
-          const { category, tag } = getTagCategory(tagWithCategory)
-          return project.tags.some(
-            projectTag => 
-              projectTag.category === category && 
-              projectTag.name === tag
-          )
-        })
-      )
-  }
-
-  const sortProjects = (filteredProjects: Project[]) => {
-    return filteredProjects.sort((a, b) => {
-      if (a.isStarred && !b.isStarred) return -1
-      if (!a.isStarred && b.isStarred) return 1
-      
-      const sortingStrategies = {
-        ascending: () => a.name.localeCompare(b.name),
-        descending: () => b.name.localeCompare(a.name),
-        createdAt: () => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        lastModified: () => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime(),
-      }
-      return sortingStrategies[sortPreference as keyof typeof sortingStrategies]?.() || 0
-    })
-  }
-
+  sortPreference,
+}: UseProjectFilteringProps) {
   const getFilteredAndSortedProjects = () => {
-    const filtered = filterProjects(projects)
-    return sortProjects(filtered)
+    let filtered = [...projects]
+
+    // Filter by search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      filtered = filtered.filter(project => 
+        project.name?.toLowerCase().includes(searchLower) ||
+        project.description?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Filter by selected tags
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(project => {
+        const projectTags = project.tags.map(tag => tag.name)
+        
+        const matches = selectedTags.every(selectedTag => {
+          // Split the tag into category and value
+          const [category, value] = selectedTag.split(':')
+          
+          // Check if the project has this tag
+          const hasTag = projectTags.includes(value)
+          return hasTag
+        })
+        
+        return matches
+      })
+    }
+
+    // Sort function for each preference
+    const sortFunctions = {
+      ascending: (a: Project, b: Project) => (a.name || '').localeCompare(b.name || ''),
+      descending: (a: Project, b: Project) => (b.name || '').localeCompare(a.name || ''),
+      dateCreated: (a: Project, b: Project) => 
+        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+      lastModified: (a: Project, b: Project) => 
+        new Date(b.last_modified || 0).getTime() - new Date(a.last_modified || 0).getTime(),
+    }
+
+    // First, separate starred and non-starred projects
+    const starredProjects = filtered.filter(project => project.is_starred)
+    const nonStarredProjects = filtered.filter(project => !project.is_starred)
+
+    // Sort each group separately
+    const sortFn = sortFunctions[sortPreference as keyof typeof sortFunctions] || sortFunctions.lastModified
+    starredProjects.sort(sortFn)
+    nonStarredProjects.sort(sortFn)
+
+    // Combine the groups back together
+    return [...starredProjects, ...nonStarredProjects]
   }
 
   return { getFilteredAndSortedProjects }

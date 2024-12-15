@@ -14,7 +14,7 @@ import { navigation } from '@/renderer/stores/useNavigationStore'
 
 interface ProjectCardProps {
   project: Project
-  toggleStar: (projectName: string) => void
+  toggleStar: (id: string, currentValue: boolean) => Promise<void>
   displayPreferences: {
     tags: boolean
     createdAt: boolean
@@ -41,10 +41,10 @@ export const ProjectCard = ({
     className='rounded-lg border p-4 hover:shadow-md cursor-pointer'
     onClick={handleClick}
       >
-      <div className='mb-8 flex items-center justify-between'>
+      <div className='mb-4 flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <div 
-            className={`flex size-10 items-center justify-center rounded-lg p-2`}
+            className={`flex size-6 items-center justify-center rounded-lg p-2`}
             style={iconGradientStyle}
           >
             {/* {getIconComponent(project.icon)} */}
@@ -87,11 +87,11 @@ export const ProjectCard = ({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              toggleStar(project.name)
+              toggleStar(project.id, project.is_starred)
             }}
             className='text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-300'
           >
-            {project.isStarred 
+            {project.is_starred 
               ? <IconStarFilled size={20} className="text-yellow-400" /> 
               : <IconStar size={20} />}
           </button>
@@ -135,13 +135,13 @@ export const ProjectCard = ({
           {displayPreferences.createdAt && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Created:</span>
-              <span className="text-xs">{formatDate(project.createdAt)}</span>
+              <span className="text-xs">{formatDate(project.created_at)}</span>
             </div>
           )}
           {displayPreferences.lastModified && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Modified:</span>
-              <span className="text-xs">{formatDate(project.lastModified)}</span>
+              <span className="text-xs">{formatDate(project.last_modified)}</span>
             </div>
           )}
         </div>

@@ -79,13 +79,6 @@ export const useNavigationStore = create<NavigationState>()(
         // If parts[0] is 'projects', then parts[1] is the projectId
         const projectId = parts[0] === 'projects' ? parts[1] : null
         const folderId = parts[2] || null
-      
-        console.log("PARSING PATHIDS:", {
-          path,
-          parts,
-          projectId,
-          folderId
-        })
         
         set({ 
           currentProjectId: projectId, 

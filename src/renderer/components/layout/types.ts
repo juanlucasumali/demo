@@ -1,4 +1,5 @@
 import { LinkProps } from '@tanstack/react-router'
+import { Database } from 'supabase/database.types'
 
 export interface UserProfile {
   username: string
@@ -8,15 +9,7 @@ export interface UserProfile {
   localPath: string | null
 }
 
-export interface Project {
-  id: string
-  ownerId: string
-  name: string;
-  icon: string | null;
-  description: string;
-  createdAt: string;
-  lastModified: string;
-  isStarred: boolean
+export type Project = Database['public']['Tables']['projects']['Row'] & {
   tags: ProjectTag[]
 }
 

@@ -68,36 +68,36 @@ export type Database = {
       }
       projects: {
         Row: {
-          created_at: string | null
+          created_at: string
           description: string | null
           icon: string | null
           id: string
           is_starred: boolean
-          last_modified: string | null
+          last_modified: string
           name: string
-          owner_id: string | null
+          owner_id: string
           tags: Json | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           icon?: string | null
           id?: string
           is_starred?: boolean
-          last_modified?: string | null
+          last_modified?: string
           name: string
-          owner_id?: string | null
+          owner_id?: string
           tags?: Json | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           icon?: string | null
           id?: string
           is_starred?: boolean
-          last_modified?: string | null
+          last_modified?: string
           name?: string
-          owner_id?: string | null
+          owner_id?: string
           tags?: Json | null
         }
         Relationships: [

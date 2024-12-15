@@ -8,15 +8,15 @@ import { toast } from '@/renderer/hooks/use-toast'
 import { Button } from '@/renderer/components/ui/button'
 import { ConfirmDialog } from '@/renderer/components/confirm-dialog'
 import { Main } from '@/renderer/components/layout/main'
-import { TasksImportDialog } from '../../tasks/components/tasks-import-dialog'
-import { TasksMutateDrawer } from '../../tasks/components/tasks-mutate-drawer'
-import TasksContextProvider, { TasksDialogType } from '../../tasks/context/tasks-context'
-import { Task } from '../../tasks/data/schema'
-import { tasks } from '../../tasks/data/tasks'
+import { UploadDialog } from '../../tasks/components/tasks-import-dialog'
+import { ProjectItemMutateDrawer } from '../../tasks/components/tasks-mutate-drawer'
+import TasksContextProvider, { ProjectDetailDialogType } from '../../tasks/context/tasks-context'
 import { DataTable } from '../../tasks/components/data-table'
 import { columns } from '../../tasks/components/columns'
 import { PageHeader } from '@/renderer/components/layout/page-header'
 import { AppHeader } from '@/renderer/components/layout/app-header'
+import { dummyProjectItems } from '@/renderer/components/layout/data/project-item-data'
+import { ProjectItem } from '../../tasks/data/schema'
 
 export default function ProjectDetail() {
   const { getCurrentPath } = useNavigationStore()
@@ -31,8 +31,9 @@ export default function ProjectDetail() {
   }, [getCurrentPath, projects])
 
   // Local states
-  const [currentRow, setCurrentRow] = useState<Task | null>(null)
-  const [open, setOpen] = useDialogState<TasksDialogType>(null)
+  const [currentRow, setCurrentRow] = useState<ProjectItem | null>(null)
+  const [open, setOpen] = useDialogState<ProjectDetailDialogType>(null)
+  const [type, setType] = useDialogState<"file" | "folder">(null)
 
   if (!project) {
     return <div>Project not found</div>
@@ -42,6 +43,8 @@ export default function ProjectDetail() {
     <TasksContextProvider value={{ open, setOpen, currentRow, setCurrentRow }}>
       {/* ===== Top Heading ===== */}
       <AppHeader />
+
+      {/* ===== Main ===== */}
       <Main>
         <div className='mb-2 flex items-center justify-between space-y-2 flex-wrap gap-x-4'>
           <PageHeader
@@ -53,7 +56,7 @@ export default function ProjectDetail() {
             <Button
               variant='outline'
               className='space-x-1'
-              onClick={() => setOpen('import')}
+              onClick={() => setOpen('upload')}
             >
               <span>Import</span> <IconDownload size={18} />
             </Button>
@@ -63,25 +66,28 @@ export default function ProjectDetail() {
           </div>
         </div>
         <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0'>
-          <DataTable data={tasks} columns={columns} />
+          <DataTable data={dummyProjectItems} columns={columns} />
         </div>
       </Main>
 
-      <TasksMutateDrawer
+      {/* ===== Dialogs ===== */}
+
+      <ProjectItemMutateDrawer
         key='task-create'
         open={open === 'create'}
         onOpenChange={() => setOpen('create')}
+        type={type ?? 'file'}
       />
 
-      <TasksImportDialog
+      <UploadDialog
         key='tasks-import'
-        open={open === 'import'}
-        onOpenChange={() => setOpen('import')}
+        open={open === 'upload'}
+        onOpenChange={() => setOpen('upload')}
       />
 
       {currentRow && (
         <>
-          <TasksMutateDrawer
+          <ProjectItemMutateDrawer
             key={`task-update-${currentRow.id}`}
             open={open === 'update'}
             onOpenChange={() => {
@@ -90,7 +96,8 @@ export default function ProjectDetail() {
                 setCurrentRow(null)
               }, 500)
             }}
-            currentRow={currentRow}
+            currentItem={currentRow}
+            type={type ?? 'file'}
           />
 
           <ConfirmDialog

@@ -8,7 +8,7 @@ interface ProjectsState {
   displayPreferences: {
     tags: boolean
     dateCreated: boolean
-    dateModified: boolean
+    lastModified: boolean
   }
   sortPreference: string
   selectedTags: string[]
@@ -16,7 +16,7 @@ interface ProjectsState {
   setDisplayPreferences: (preferences: {
     tags: boolean
     dateCreated: boolean
-    dateModified: boolean
+    lastModified: boolean
   }) => void
   setSortPreference: (sort: string) => void
   setSelectedTags: (tags: string[]) => void
@@ -37,9 +37,9 @@ export const useProjectsStore = create<ProjectsState>()(
       displayPreferences: {
         tags: true,
         dateCreated: false,
-        dateModified: false,
+        lastModified: false,
       },
-      sortPreference: 'dateModified',
+      sortPreference: 'lastModified',
       selectedTags: [],
       
       setProjects: (projects: Project[]) => set({ projects }),

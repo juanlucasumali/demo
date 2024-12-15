@@ -43,7 +43,7 @@ export const useProjectFiltering = ({
         ascending: () => a.name.localeCompare(b.name),
         descending: () => b.name.localeCompare(a.name),
         dateCreated: () => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime(),
-        dateModified: () => new Date(b.dateModified).getTime() - new Date(a.dateModified).getTime(),
+        lastModified: () => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime(),
       }
       return sortingStrategies[sortPreference as keyof typeof sortingStrategies]?.() || 0
     })

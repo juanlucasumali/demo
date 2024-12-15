@@ -18,7 +18,7 @@ interface ProjectCardProps {
   displayPreferences: {
     tags: boolean
     dateCreated: boolean
-    dateModified: boolean
+    lastModified: boolean
   }
 }
 
@@ -127,7 +127,7 @@ export const ProjectCard = ({
           </div>
         )}
 
-        {(displayPreferences.dateCreated || displayPreferences.dateModified) && (
+        {(displayPreferences.dateCreated || displayPreferences.lastModified) && (
           <Separator className="my-3" />
         )}
 
@@ -138,10 +138,10 @@ export const ProjectCard = ({
               <span className="text-xs">{formatDate(project.dateCreated)}</span>
             </div>
           )}
-          {displayPreferences.dateModified && (
+          {displayPreferences.lastModified && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Modified:</span>
-              <span className="text-xs">{formatDate(project.dateModified)}</span>
+              <span className="text-xs">{formatDate(project.lastModified)}</span>
             </div>
           )}
         </div>

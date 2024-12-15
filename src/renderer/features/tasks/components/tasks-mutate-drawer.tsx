@@ -12,7 +12,6 @@ import {
   FormMessage,
 } from '@/renderer/components/ui/form'
 import { Input } from '@/renderer/components/ui/input'
-import { RadioGroup, RadioGroupItem } from '@/renderer/components/ui/radio-group'
 import {
   Sheet,
   SheetClose,
@@ -22,45 +21,68 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/renderer/components/ui/sheet'
-import { SelectDropdown } from '@/renderer/components/select-dropdown'
-import { Task } from '../data/schema'
+import { ProjectItem } from '../data/schema'
+import { useState } from 'react'
+import { Badge } from '@/renderer/components/ui/badge'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  currentRow?: Task
+  currentItem?: ProjectItem
+  type: 'file' | 'folder'
 }
 
 const formSchema = z.object({
-  title: z.string().min(1, 'Title is required.'),
-  status: z.string().min(1, 'Please select a status.'),
-  label: z.string().min(1, 'Please select a label.'),
-  priority: z.string().min(1, 'Please choose a priority.'),
+  name: z.string().min(1, 'Name is required.'),
+  tags: z.array(z.string()).nullable(),
 })
-type TasksForm = z.infer<typeof formSchema>
 
-export function TasksMutateDrawer({ open, onOpenChange, currentRow }: Props) {
-  const isUpdate = !!currentRow
+type ProjectItemForm = z.infer<typeof formSchema>
 
-  const form = useForm<TasksForm>({
+export function ProjectItemMutateDrawer({ 
+  open, 
+  onOpenChange, 
+  currentItem,
+  type 
+}: Props) {
+  const isUpdate = !!currentItem
+
+  const form = useForm<ProjectItemForm>({
     resolver: zodResolver(formSchema),
-    defaultValues: currentRow ?? {
-      title: '',
-      status: '',
-      label: '',
-      priority: '',
-    },
+    defaultValues: currentItem 
+      ? { 
+          name: currentItem.name,
+          tags: currentItem.tags 
+        }
+      : {
+          name: '',
+          tags: null
+        },
   })
 
-  const onSubmit = (data: TasksForm) => {
+  const onSubmit = (data: ProjectItemForm) => {
+    // Create new ProjectItem
+    const newItem: Partial<ProjectItem> = {
+      name: data.name,
+      type: type,
+      tags: data.tags,
+      lastModified: new Date(),
+      dateCreated: new Date(),
+      owner: 'Current User', // Get from auth context
+      starred: false,
+      fileFormat: type === 'file' ? 'unknown' : null,
+      size: null,
+      duration: null,
+    }
+
     // do something with the form data
     onOpenChange(false)
     form.reset()
     toast({
-      title: 'You submitted the following values:',
+      title: `${isUpdate ? 'Updated' : 'Created'} ${type} successfully`,
       description: (
         <pre className='mt-2 w-[340px] rounded-md bg-slate-950 p-4'>
-          <code className='text-white'>{JSON.stringify(data, null, 2)}</code>
+          <code className='text-white'>{JSON.stringify(newItem, null, 2)}</code>
         </pre>
       ),
     })
@@ -76,124 +98,51 @@ export function TasksMutateDrawer({ open, onOpenChange, currentRow }: Props) {
     >
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>{isUpdate ? 'Update' : 'Create'} Task</SheetTitle>
+          <SheetTitle>
+            {isUpdate ? 'Rename' : 'Create'} {type}
+          </SheetTitle>
           <SheetDescription>
             {isUpdate
-              ? 'Update the task by providing necessary info.'
-              : 'Add a new task by providing necessary info.'}
+              ? `Rename the ${type} by providing a new name.`
+              : `Create a new ${type} by providing necessary info.`}
             Click save when you&apos;re done.
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
           <form
-            id='tasks-form'
+            id='project-item-form'
             onSubmit={form.handleSubmit(onSubmit)}
             className='space-y-5 flex-1'
           >
             <FormField
               control={form.control}
-              name='title'
+              name='name'
               render={({ field }) => (
                 <FormItem className='space-y-1'>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder='Enter a title' />
+                    <Input 
+                      {...field} 
+                      placeholder={`Enter ${type} name`}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name='status'
+              name='tags'
               render={({ field }) => (
                 <FormItem className='space-y-1'>
-                  <FormLabel>Status</FormLabel>
-                  <SelectDropdown
-                    defaultValue={field.value}
-                    onValueChange={field.onChange}
-                    placeholder='Select dropdown'
-                    items={[
-                      { label: 'In Progress', value: 'in progress' },
-                      { label: 'Backlog', value: 'backlog' },
-                      { label: 'Todo', value: 'todo' },
-                      { label: 'Canceled', value: 'canceled' },
-                      { label: 'Done', value: 'done' },
-                    ]}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='label'
-              render={({ field }) => (
-                <FormItem className='space-y-3 relative'>
-                  <FormLabel>Label</FormLabel>
+                  <FormLabel>Tags</FormLabel>
                   <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className='flex flex-col space-y-1'
-                    >
-                      <FormItem className='flex items-center space-x-3 space-y-0'>
-                        <FormControl>
-                          <RadioGroupItem value='documentation' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>
-                          Documentation
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className='flex items-center space-x-3 space-y-0'>
-                        <FormControl>
-                          <RadioGroupItem value='feature' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>Feature</FormLabel>
-                      </FormItem>
-                      <FormItem className='flex items-center space-x-3 space-y-0'>
-                        <FormControl>
-                          <RadioGroupItem value='bug' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>Bug</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='priority'
-              render={({ field }) => (
-                <FormItem className='space-y-3 relative'>
-                  <FormLabel>Priority</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className='flex flex-col space-y-1'
-                    >
-                      <FormItem className='flex items-center space-x-3 space-y-0'>
-                        <FormControl>
-                          <RadioGroupItem value='high' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>High</FormLabel>
-                      </FormItem>
-                      <FormItem className='flex items-center space-x-3 space-y-0'>
-                        <FormControl>
-                          <RadioGroupItem value='medium' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>Medium</FormLabel>
-                      </FormItem>
-                      <FormItem className='flex items-center space-x-3 space-y-0'>
-                        <FormControl>
-                          <RadioGroupItem value='low' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>Low</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
+                    <TagInput
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      placeholder="Add tags..."
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -203,13 +152,66 @@ export function TasksMutateDrawer({ open, onOpenChange, currentRow }: Props) {
         </Form>
         <SheetFooter className='gap-2'>
           <SheetClose asChild>
-            <Button variant='outline'>Close</Button>
+            <Button variant='outline'>Cancel</Button>
           </SheetClose>
-          <Button form='tasks-form' type='submit'>
-            Save changes
+          <Button form='project-item-form' type='submit'>
+            {isUpdate ? 'Update' : 'Create'}
           </Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
+  )
+}
+
+// TagInput component (create this in a separate file)
+interface TagInputProps {
+  value: string[]
+  onChange: (value: string[]) => void
+  placeholder?: string
+}
+
+export function TagInput({ value, onChange, placeholder }: TagInputProps) {
+  const [inputValue, setInputValue] = useState('')
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && inputValue) {
+      e.preventDefault()
+      onChange([...value, inputValue])
+      setInputValue('')
+    }
+  }
+
+  const removeTag = (tagToRemove: string) => {
+    onChange(value.filter(tag => tag !== tagToRemove))
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2 p-2 border rounded-md">
+      {value?.map(tag => (
+        <Badge 
+          key={tag} 
+          variant="secondary"
+          className="gap-1"
+        >
+          {tag}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-4 w-4 p-0"
+            onClick={() => removeTag(tag)}
+          >
+            ×
+          </Button>
+        </Badge>
+      ))}
+      <Input
+        type="text"
+        value={inputValue}
+        onChange={e => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        className="border-none shadow-none"
+      />
+    </div>
   )
 }

@@ -14,7 +14,7 @@ export interface Project {
   logo: string | null;
   description: string;
   dateCreated: string;
-  dateModified: string;
+  lastModified: string;
   isStarred: boolean
   tags: ProjectTag[]
 }
@@ -34,9 +34,9 @@ export type ProjectItem = {
   fileFormat: string | null
   size: number | null
   duration: number | null
-  dateModified: Date
+  lastModified: Date
   dateCreated: Date
-  createdBy: string
+  owner: string
   tags: string[] | null
 }
 
@@ -95,7 +95,7 @@ export type TagCategory = keyof typeof PROJECT_TAGS
 export interface DisplayPreferences {
   tags: boolean
   dateCreated: boolean
-  dateModified: boolean
+  lastModified: boolean
 }
 
 interface Team {

@@ -1,35 +1,40 @@
 import React from 'react'
-import { Task } from '../data/schema'
+import { ProjectItem } from '../data/schema'
 
-export type TasksDialogType = 'create' | 'update' | 'delete' | 'import'
+// Update dialog types to match project item operations
+export type ProjectDetailDialogType = 'rename' | 'delete' | 'move' | 'share' | 'upload' | 'create' | 'update'
 
-interface TasksContextType {
-  open: TasksDialogType | null
-  setOpen: (str: TasksDialogType | null) => void
-  currentRow: Task | null
-  setCurrentRow: React.Dispatch<React.SetStateAction<Task | null>>
+interface ProjectDetailContextType {
+  open: ProjectDetailDialogType | null
+  setOpen: (type: ProjectDetailDialogType | null) => void
+  currentRow: ProjectItem | null
+  setCurrentRow: React.Dispatch<React.SetStateAction<ProjectItem | null>>
 }
 
-const TasksContext = React.createContext<TasksContextType | null>(null)
+const ProjectDetailContext = React.createContext<ProjectDetailContextType | null>(null)
 
 interface Props {
   children: React.ReactNode
-  value: TasksContextType
+  value: ProjectDetailContextType
 }
 
-export default function TasksContextProvider({ children, value }: Props) {
-  return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>
+export default function ProjectDetailContextProvider({ children, value }: Props) {
+  return (
+    <ProjectDetailContext.Provider value={value}>
+      {children}
+    </ProjectDetailContext.Provider>
+  )
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useTasksContext = () => {
-  const tasksContext = React.useContext(TasksContext)
+export const useProjectDetailContext = () => {
+  const projectDetailContext = React.useContext(ProjectDetailContext)
 
-  if (!tasksContext) {
+  if (!projectDetailContext) {
     throw new Error(
-      'useTasksContext has to be used within <TasksContext.Provider>'
+      'useProjectDetailContext has to be used within <ProjectDetailContext.Provider>'
     )
   }
 
-  return tasksContext
+  return projectDetailContext
 }

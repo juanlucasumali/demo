@@ -101,7 +101,7 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
       description: values.description,
       isStarred: isStarred,
       dateCreated: new Date().toISOString(),
-      dateModified: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
       tags: tags
     }
   

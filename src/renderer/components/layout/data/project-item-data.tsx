@@ -10,9 +10,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: null,
     size: null,
     duration: null,
-    dateModified: new Date('2024-01-15'),
+    lastModified: new Date('2024-01-15'),
     dateCreated: new Date('2024-01-10'),
-    createdBy: 'Producer_X',
+    owner: 'Producer_X',
     tags: ['trap', 'beats', '2024']
   },
   {
@@ -24,9 +24,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'wav',
     size: 1024 * 1024 * 15, // 15MB
     duration: 180, // 3 minutes in seconds
-    dateModified: new Date('2024-01-16'),
+    lastModified: new Date('2024-01-16'),
     dateCreated: new Date('2024-01-16'),
-    createdBy: 'MelodyMaker',
+    owner: 'MelodyMaker',
     tags: ['melody', 'dark', '140bpm']
   },
   {
@@ -38,9 +38,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'mp3',
     size: 1024 * 1024 * 8, // 8MB
     duration: 240, // 4 minutes in seconds
-    dateModified: new Date('2024-01-14'),
+    lastModified: new Date('2024-01-14'),
     dateCreated: new Date('2024-01-12'),
-    createdBy: 'DrumMaster',
+    owner: 'DrumMaster',
     tags: ['drums', 'drill', 'stem']
   },
   {
@@ -52,9 +52,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: null,
     size: null,
     duration: null,
-    dateModified: new Date('2024-01-13'),
+    lastModified: new Date('2024-01-13'),
     dateCreated: new Date('2024-01-01'),
-    createdBy: 'SoulProducer',
+    owner: 'SoulProducer',
     tags: ['rnb', 'soul']
   },
   {
@@ -66,9 +66,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'wav',
     size: 1024 * 1024 * 5, // 5MB
     duration: 120, // 2 minutes in seconds
-    dateModified: new Date('2024-01-17'),
+    lastModified: new Date('2024-01-17'),
     dateCreated: new Date('2024-01-17'),
-    createdBy: 'BassKing',
+    owner: 'BassKing',
     tags: ['808', 'bass', 'Fmin']
   },
   {
@@ -80,9 +80,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'flac',
     size: 1024 * 1024 * 20, // 20MB
     duration: 145, // 2:25 minutes in seconds
-    dateModified: new Date('2024-01-15'),
+    lastModified: new Date('2024-01-15'),
     dateCreated: new Date('2024-01-15'),
-    createdBy: 'GuitarHero',
+    owner: 'GuitarHero',
     tags: ['guitar', 'melody', 'clean']
   },
   {
@@ -94,9 +94,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: null,
     size: null,
     duration: null,
-    dateModified: new Date('2024-01-16'),
+    lastModified: new Date('2024-01-16'),
     dateCreated: new Date('2024-01-01'),
-    createdBy: 'SampleMaster',
+    owner: 'SampleMaster',
     tags: ['samples', 'library']
   },
   {
@@ -108,9 +108,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'wav',
     size: 1024 * 1024 * 25, // 25MB
     duration: 200, // 3:20 minutes in seconds
-    dateModified: new Date('2024-01-18'),
+    lastModified: new Date('2024-01-18'),
     dateCreated: new Date('2024-01-18'),
-    createdBy: 'VocalProcessor',
+    owner: 'VocalProcessor',
     tags: ['vocals', 'processed', 'stem']
   },
   // ... (previous items remain the same, adding these new ones)
@@ -123,9 +123,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'wav',
     size: 1024 * 1024 * 12, // 12MB
     duration: 165, // 2:45 minutes in seconds
-    dateModified: new Date('2024-01-19'),
+    lastModified: new Date('2024-01-19'),
     dateCreated: new Date('2024-01-15'),
-    createdBy: 'KazooKid2004',
+    owner: 'KazooKid2004',
     tags: ['kazoo', 'trap', 'why-does-this-work', 'fire']
   },
   {
@@ -137,9 +137,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'midi',
     size: 1024 * 24, // 24KB
     duration: 90, // 1:30 minutes in seconds
-    dateModified: new Date('2024-01-20'),
+    lastModified: new Date('2024-01-20'),
     dateCreated: new Date('2024-01-20'),
-    createdBy: 'MeowMixer',
+    owner: 'MeowMixer',
     tags: ['cat', 'piano', 'accidental-fire', 'midi']
   },
   {
@@ -151,9 +151,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'mp3',
     size: 1024 * 1024 * 10, // 10MB
     duration: 185, // 3:05 minutes in seconds
-    dateModified: new Date('2024-01-21'),
+    lastModified: new Date('2024-01-21'),
     dateCreated: new Date('2024-01-21'),
-    createdBy: 'CookieCrunkBeats',
+    owner: 'CookieCrunkBeats',
     tags: ['cozy', 'wholesome', 'grandma-core']
   },
   {
@@ -165,9 +165,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: null,
     size: null,
     duration: null,
-    dateModified: new Date('2024-01-22'),
+    lastModified: new Date('2024-01-22'),
     dateCreated: new Date('2024-01-20'),
-    createdBy: 'RetailRhythms',
+    owner: 'RetailRhythms',
     tags: ['field-recording', 'walmart-core', 'experimental']
   },
   {
@@ -179,9 +179,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'flac',
     size: 1024 * 1024 * 30, // 30MB
     duration: 240, // 4:00 minutes in seconds
-    dateModified: new Date('2024-01-23'),
+    lastModified: new Date('2024-01-23'),
     dateCreated: new Date('2024-01-20'),
-    createdBy: 'BlockBuster',
+    owner: 'BlockBuster',
     tags: ['minecraft', 'meme', 'actually-fire', 'gaming']
   },
   {
@@ -193,9 +193,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'wav',
     size: 1024 * 1024 * 2, // 2MB
     duration: 30, // 30 seconds
-    dateModified: new Date('2024-01-24'),
+    lastModified: new Date('2024-01-24'),
     dateCreated: new Date('2024-01-24'),
-    createdBy: 'ToasterTunes',
+    owner: 'ToasterTunes',
     tags: ['breakfast-beats', '808', 'kitchen-samples']
   },
   {
@@ -207,9 +207,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: null,
     size: null,
     duration: null,
-    dateModified: new Date('2024-01-25'),
+    lastModified: new Date('2024-01-25'),
     dateCreated: new Date('2024-01-01'),
-    createdBy: 'WeirdFlexButOK',
+    owner: 'WeirdFlexButOK',
     tags: ['experimental', 'weird', 'successful-fails']
   },
   {
@@ -221,9 +221,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'wav',
     size: 1024 * 1024 * 18, // 18MB
     duration: 210, // 3:30 minutes in seconds
-    dateModified: new Date('2024-01-26'),
+    lastModified: new Date('2024-01-26'),
     dateCreated: new Date('2024-01-25'),
-    createdBy: 'ChickenChef',
+    owner: 'ChickenChef',
     tags: ['drill', 'rubber-chicken', 'why-did-i-make-this']
   },
   {
@@ -235,9 +235,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'mp3',
     size: 1024 * 1024 * 8, // 8MB
     duration: 150, // 2:30 minutes in seconds
-    dateModified: new Date('2024-01-27'),
+    lastModified: new Date('2024-01-27'),
     dateCreated: new Date('2024-01-27'),
-    createdBy: 'DiscordianBeats',
+    owner: 'DiscordianBeats',
     tags: ['discord', 'notification', 'touch-grass']
   },
   {
@@ -249,9 +249,9 @@ export const dummyProjectItems: ProjectItem[] = [
     fileFormat: 'wav',
     size: 1024 * 1024 * 22, // 22MB
     duration: 195, // 3:15 minutes in seconds
-    dateModified: new Date('2024-01-28'),
+    lastModified: new Date('2024-01-28'),
     dateCreated: new Date('2024-01-28'),
-    createdBy: 'WhisperTrap',
+    owner: 'WhisperTrap',
     tags: ['asmr', 'trap', 'weird-flex']
   }
 ]

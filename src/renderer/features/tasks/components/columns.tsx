@@ -1,12 +1,12 @@
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/renderer/components/ui/badge'
 import { Checkbox } from '@/renderer/components/ui/checkbox'
-import { labels, priorities, statuses } from '../data/data'
-import { Task } from '../data/schema'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { DataTableRowActions } from './data-table-row-actions'
+import { File, Folder } from 'lucide-react'
+import { ProjectItem } from '@/renderer/components/layout/types'
 
-export const columns: ColumnDef<Task>[] = [
+export const columns: ColumnDef<ProjectItem>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -32,85 +32,86 @@ export const columns: ColumnDef<Task>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'id',
+    accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Task' />
-    ),
-    cell: ({ row }) => <div className='w-[80px]'>{row.getValue('id')}</div>,
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'title',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Title' />
+      <DataTableColumnHeader column={column} title='Name' />
     ),
     cell: ({ row }) => {
-      const label = labels.find((label) => label.value === row.original.label)
-
+      const type = row.original.type
       return (
-        <div className='flex space-x-2'>
-          {label && <Badge variant='outline'>{label.label}</Badge>}
-          <span className='max-w-32 truncate font-medium sm:max-w-72 md:max-w-[31rem]'>
-            {row.getValue('title')}
+        <div className='flex items-center gap-2'>
+          {type === 'folder' ? (
+            <Folder className="h-4 w-4 text-muted-foreground fill-current" />
+          ) : (
+            <File className="h-4 w-4 text-muted-foreground" />
+          )}
+          <span className='font-medium'>
+            {row.getValue('name')}
           </span>
         </div>
       )
     },
+    enableSorting: true,
   },
   {
-    accessorKey: 'status',
+    accessorKey: 'owner',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Status' />
+      <DataTableColumnHeader column={column} title='Owner' />
     ),
     cell: ({ row }) => {
-      const status = statuses.find(
-        (status) => status.value === row.getValue('status')
-      )
-
-      if (!status) {
-        return null
-      }
-
-      return (
-        <div className='flex w-[100px] items-center'>
-          {status.icon && (
-            <status.icon className='mr-2 h-4 w-4 text-muted-foreground' />
-          )}
-          <span>{status.label}</span>
-        </div>
-      )
-    },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
-  },
-  {
-    accessorKey: 'priority',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Priority' />
-    ),
-    cell: ({ row }) => {
-      const priority = priorities.find(
-        (priority) => priority.value === row.getValue('priority')
-      )
-
-      if (!priority) {
-        return null
-      }
-
       return (
         <div className='flex items-center'>
-          {priority.icon && (
-            <priority.icon className='mr-2 h-4 w-4 text-muted-foreground' />
-          )}
-          <span>{priority.label}</span>
+          <span>{row.getValue('owner')}</span>
         </div>
       )
     },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+    enableSorting: true,
+  },
+  {
+    accessorKey: 'lastModified',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Last Modified' />
+    ),
+    cell: ({ row }) => {
+      const date = row.getValue('lastModified') as Date
+      return (
+        <div>
+          {date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </div>
+      )
     },
+    enableSorting: true,
+  },
+  {
+    accessorKey: 'tags',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Tags' />
+    ),
+    cell: ({ row }) => {
+      const tags = row.getValue('tags') as string[] | null
+      if (!tags || tags.length === 0) return null
+      
+      return (
+        <div className="flex gap-1">
+          {tags.map((tag) => (
+            <Badge 
+              key={tag} 
+              variant="outline" 
+              className="whitespace-nowrap"
+            >
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )
+    },
+    enableSorting: false,
   },
   {
     id: 'actions',

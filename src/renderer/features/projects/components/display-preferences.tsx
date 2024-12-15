@@ -16,12 +16,12 @@ interface DisplayPreferencesProps {
   displayPreferences: {
     tags: boolean
     dateCreated: boolean
-    dateModified: boolean
+    lastModified: boolean
   }
   setDisplayPreferences: (preferences: {
     tags: boolean
     dateCreated: boolean
-    dateModified: boolean
+    lastModified: boolean
   }) => void
 }
 
@@ -75,10 +75,10 @@ export const DisplayPreferences = ({
             </CommandItem>
 
             <CommandItem
-              onSelect={() => handleCheckboxClick('dateModified')}
+              onSelect={() => handleCheckboxClick('lastModified')}
             >
               <div className="flex items-center gap-2 flex-1">
-                {displayPreferences.dateModified ? (
+                {displayPreferences.lastModified ? (
                   <SquareCheck className="h-4 w-4" />
                 ) : (
                   <Square className="h-4 w-4" />

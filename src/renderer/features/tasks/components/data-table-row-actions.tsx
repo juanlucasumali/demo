@@ -1,23 +1,17 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { Row } from '@tanstack/react-table'
-import { IconTrash } from '@tabler/icons-react'
+import { IconTrash, IconStar, IconStarFilled, IconDownload, IconEdit, IconShare } from '@tabler/icons-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/renderer/components/ui/dropdown-menu'
-import { Button } from '@/renderer/components/button'
-import { useTasksContext } from '../context/tasks-context'
-import { labels } from '../data/data'
-import { taskSchema } from '../data/schema'
+import { Button } from '@/renderer/components/ui/button'
+import { projectItemSchema } from '../data/schema'
+import { useProjectDetailContext } from '../context/tasks-context'
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>
@@ -26,9 +20,8 @@ interface DataTableRowActionsProps<TData> {
 export function DataTableRowActions<TData>({
   row,
 }: DataTableRowActionsProps<TData>) {
-  const task = taskSchema.parse(row.original)
-
-  const { setOpen, setCurrentRow } = useTasksContext()
+  const item = projectItemSchema.parse(row.original)
+  const { setOpen, setCurrentRow } = useProjectDetailContext()
 
   return (
     <DropdownMenu modal={false}>
@@ -42,35 +35,55 @@ export function DataTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-[160px]'>
+        {item.type === 'file' && (
+          <DropdownMenuItem onClick={() => console.log('Download', item.id)}>
+            Download
+            <DropdownMenuShortcut>
+              <IconDownload size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        )}
+        
         <DropdownMenuItem
           onClick={() => {
-            setCurrentRow(task)
-            setOpen('update')
+            setCurrentRow(item)
+            setOpen('rename')
           }}
         >
-          Edit
+          Rename
+          <DropdownMenuShortcut>
+            <IconEdit size={16} />
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>Make a copy</DropdownMenuItem>
-        <DropdownMenuItem disabled>Favorite</DropdownMenuItem>
+
+        <DropdownMenuItem onClick={() => console.log('Share', item.id)}>
+          Share
+          <DropdownMenuShortcut>
+            <IconShare size={16} />
+          </DropdownMenuShortcut>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => console.log('Toggle star', item.id)}
+        >
+          {item.starred ? 'Unstar' : 'Star'}
+          <DropdownMenuShortcut>
+            {item.starred ? (
+              <IconStarFilled size={16} />
+            ) : (
+              <IconStar size={16} />
+            )}
+          </DropdownMenuShortcut>
+        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={task.label}>
-              {labels.map((label) => (
-                <DropdownMenuRadioItem key={label.value} value={label.value}>
-                  {label.label}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSeparator />
+
         <DropdownMenuItem
           onClick={() => {
-            setCurrentRow(task)
+            setCurrentRow(item)
             setOpen('delete')
           }}
+          className="text-destructive"
         >
           Delete
           <DropdownMenuShortcut>

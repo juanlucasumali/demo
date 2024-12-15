@@ -64,14 +64,28 @@ ALTER TABLE "public"."items" OWNER TO "postgres";
 
 COMMENT ON COLUMN "public"."items"."owner_id" IS 'Current owner';
 
+CREATE TABLE IF NOT EXISTS "public"."projects" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "icon" "text",
+    "description" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "last_modified" timestamp with time zone DEFAULT "now"(),
+    "is_starred" boolean DEFAULT false NOT NULL,
+    "tags" "jsonb",
+    "owner_id" "uuid" DEFAULT "gen_random_uuid"()
+);
+
+ALTER TABLE "public"."projects" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."users" (
-    "user_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "username" "text",
-    "display_name" "text",
-    "email" "text",
+    "username" "text" NOT NULL,
+    "display_name" "text" NOT NULL,
+    "email" "text" NOT NULL,
     "local_path" "text",
-    "avatar_path" "text"
+    "avatar_path" "text",
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL
 );
 
 ALTER TABLE "public"."users" OWNER TO "postgres";
@@ -79,23 +93,31 @@ ALTER TABLE "public"."users" OWNER TO "postgres";
 ALTER TABLE ONLY "public"."items"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."projects"
+    ADD CONSTRAINT "projects_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."users"
-    ADD CONSTRAINT "users_pkey" PRIMARY KEY ("user_id");
+    ADD CONSTRAINT "users_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE ONLY "public"."items"
-    ADD CONSTRAINT "items_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "items_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."items"
     ADD CONSTRAINT "items_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
+ALTER TABLE ONLY "public"."projects"
+    ADD CONSTRAINT "projects_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
 ALTER TABLE ONLY "public"."users"
-    ADD CONSTRAINT "users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "users_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+CREATE POLICY "Enable all for users based on ower_id" ON "public"."projects" USING ((( SELECT "auth"."uid"() AS "uid") = "owner_id"));
 
 CREATE POLICY "Enable delete for users based on user_id" ON "public"."items" FOR DELETE USING (("auth"."uid"() = "owner_id"));
 
 CREATE POLICY "Enable insert for users based on user_id" ON "public"."items" FOR INSERT WITH CHECK (("auth"."uid"() = "owner_id"));
 
-CREATE POLICY "Enable insert for users based on user_id" ON "public"."users" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable insert for users based on user_id" ON "public"."users" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "id"));
 
 CREATE POLICY "Enable read access for all users" ON "public"."users" FOR SELECT USING (true);
 
@@ -103,9 +125,11 @@ CREATE POLICY "Enable read access for authenticated users only" ON "public"."ite
 
 CREATE POLICY "Enable update for users based on user_id" ON "public"."items" FOR UPDATE USING (("auth"."uid"() = "owner_id")) WITH CHECK (("auth"."uid"() = "owner_id"));
 
-CREATE POLICY "Enable update for users based on user_id" ON "public"."users" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Enable update for users based on user_id" ON "public"."users" FOR UPDATE USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
 
 ALTER TABLE "public"."items" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."projects" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
 
@@ -123,6 +147,10 @@ GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "service_
 GRANT ALL ON TABLE "public"."items" TO "anon";
 GRANT ALL ON TABLE "public"."items" TO "authenticated";
 GRANT ALL ON TABLE "public"."items" TO "service_role";
+
+GRANT ALL ON TABLE "public"."projects" TO "anon";
+GRANT ALL ON TABLE "public"."projects" TO "authenticated";
+GRANT ALL ON TABLE "public"."projects" TO "service_role";
 
 GRANT ALL ON TABLE "public"."users" TO "anon";
 GRANT ALL ON TABLE "public"."users" TO "authenticated";

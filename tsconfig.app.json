@@ -31,6 +31,6 @@
     /* Electron specific */
     "composite": true
   },
-  "include": ["src/renderer/**/*", "src/types/**/*", "src/renderer/routeTree.gen.ts"],
+  "include": ["src/renderer/**/*", "src/types/**/*", "src/renderer/routeTree.gen.ts", "supabase"],
   "exclude": ["src/main/**/*", "src/preload/**/*"]
 }

@@ -1,7 +1,7 @@
-import { navigation } from '@/renderer/stores/useNavigationStore'
+import { navigation, useNavigationStore } from '@/renderer/stores/useNavigationStore'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
 import { Project } from '@/renderer/components/layout/types'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { IconDownload, IconPlus } from '@tabler/icons-react'
 import useDialogState from '@/renderer/hooks/use-dialog-state'
 import { toast } from '@/renderer/hooks/use-toast'
@@ -15,12 +15,24 @@ import { DataTable } from '../../tasks/components/data-table'
 import { columns } from '../../tasks/components/columns'
 import { PageHeader } from '@/renderer/components/layout/page-header'
 import { AppHeader } from '@/renderer/components/layout/app-header'
-import { dummyProjectItems } from '@/renderer/components/layout/data/project-item-data'
 import { ProjectItem } from '../../tasks/data/schema'
+import { useProjectItemsStore } from '@/renderer/stores/useProjectItemsStore'
+import { supabase } from '@/renderer/lib/supabase'
+import { useProjectItemFiltering } from '@/renderer/hooks/use-project-items-filtering'
+import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
+import { Loader2 } from 'lucide-react'
 
 export default function ProjectDetail() {
-  const { projects } = useProjectsStore()
+  const { projects, isLoading: projectsLoading, fetchProjects } = useProjectsStore()
   const [project, setProject] = useState<Project | null>(null)
+  const [currentRow, setCurrentRow] = useState<ProjectItem | null>(null)
+  const [open, setOpen] = useDialogState<ProjectDetailDialogType>(null)
+  const [type, setType] = useDialogState<"file" | "folder">(null)
+  const currentPath = useNavigationStore((state) => state.getCurrentPath())
+
+  useEffect(() => {
+    fetchProjects()
+  }, [fetchProjects])
 
   useEffect(() => {
     navigation.parsePathIds()
@@ -29,46 +41,132 @@ export default function ProjectDetail() {
     setProject(foundProject || null)
   }, [projects])
 
-  // Local states
-  const [currentRow, setCurrentRow] = useState<ProjectItem | null>(null)
-  const [open, setOpen] = useDialogState<ProjectDetailDialogType>(null)
-  const [type, setType] = useDialogState<"file" | "folder">(null)
+    const {
+      items,
+      isLoading: itemsLoading,
+      error,
+      currentFolderId,
+      fetchItems,
+      displayPreferences,
+      sortPreference,
+      selectedTags,
+      toggleStar,
+      setDisplayPreferences,
+      setSortPreference,
+      setSelectedTags,
+      setCurrentFolder,
+    } = useProjectItemsStore()
+  
+    const [searchTerm, setSearchTerm] = useState('')
 
-  if (!project) {
-    return <div>Project not found</div>
-  }
+    useEffect(() => {
+      console.log('Path changed:', currentPath)
+      console.log("projectId and currentFolderId:", project?.id, currentFolderId)
+      const { projectId, folderId } = navigation.parsePathIds()
+      if (projectId) {
+        fetchItems(projectId, folderId)
+      }
+    }, [currentPath, fetchItems])
 
-  return (
-    <TasksContextProvider value={{ open, setOpen, currentRow, setCurrentRow }}>
-      {/* ===== Top Heading ===== */}
-      <AppHeader />
+    // Set up real-time subscription
+    useEffect(() => {
+      if (!project?.id || !currentFolderId) return
+  
+      const channel = supabase
+        .channel('project-items-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'project_items',
+            filter: `project_id=eq.${project.id}`
+          },
+          () => {
+            // Refresh items when any change occurs
+            fetchItems(project.id, currentFolderId)
+          }
+        )
+        .subscribe()
+  
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }, [fetchItems, project?.id, currentFolderId])
+  
+    const allTags = useMemo(() => 
+      Array.from(
+        new Set(items.flatMap(item => item.tags || []))
+      ).sort(),
+      [items]
+    )
+  
+    const { getFilteredAndSortedItems } = useProjectItemFiltering({
+      items,
+      searchTerm,
+      selectedTags,
+      sortPreference
+    })
+  
+    const filteredItems = useMemo(() => {
+      return getFilteredAndSortedItems()
+    }, [getFilteredAndSortedItems, items, searchTerm, selectedTags, sortPreference])
+  
+    const handleFolderClick = (folderId: string) => {
+      setCurrentFolder(folderId)
+    }
+  
+    const handleBackClick = () => {
+      // Logic to navigate to parent folder
+      const currentItem = items.find(item => item.id === currentFolderId)
+      setCurrentFolder(currentItem?.parentFolderId || null)
+    }
 
-      {/* ===== Main ===== */}
-      <Main>
-        <div className='mb-2 flex items-center justify-between space-y-2 flex-wrap gap-x-4'>
-          <PageHeader
-            title={project.name}
-            description={project.description}
-            projectId={project.id}
-          />
-          <div className='flex gap-2'>
-            <Button
-              variant='outline'
-              className='space-x-1'
-              onClick={() => setOpen('upload')}
-            >
-              <span>Import</span> <IconDownload size={18} />
-            </Button>
-            <Button className='space-x-1' onClick={() => setOpen('create')}>
-              <span>Create</span> <IconPlus size={18} />
-            </Button>
-          </div>
-        </div>
-        <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0'>
-          <DataTable data={dummyProjectItems} columns={columns} />
-        </div>
+    const isLoading = projectsLoading || itemsLoading
+
+    console.log('items:', items)
+
+    return (
+      <TasksContextProvider value={{ open, setOpen, currentRow, setCurrentRow }}>
+        <AppHeader />
+        <Main>
+          {isLoading ? (
+            <Loader2/>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertDescription>{error.message}</AlertDescription>
+            </Alert>
+          ) : !project ? (
+            <Alert variant="destructive">
+              <AlertDescription>Project not found</AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <div className='mb-2 flex items-center justify-between'>
+                <PageHeader
+                  title={project.name}
+                  description={project.description}
+                  projectId={project.id}
+                />
+              <div className='flex gap-2'>
+                <Button
+                  variant='outline'
+                  className='space-x-1'
+                  onClick={() => setOpen('upload')}
+                >
+                  <span>Import</span> <IconDownload size={18} />
+                </Button>
+                <Button className='space-x-1' onClick={() => setOpen('create')}>
+                  <span>Create</span> <IconPlus size={18} />
+                </Button>
+              </div>
+            </div>
+            <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0'>
+              <DataTable data={items} columns={columns} />
+            </div>
+          </>
+        )}
       </Main>
-
       {/* ===== Dialogs ===== */}
 
       <ProjectItemMutateDrawer

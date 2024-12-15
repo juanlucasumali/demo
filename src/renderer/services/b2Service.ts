@@ -228,7 +228,7 @@ async function calculateSha1(file: File): Promise<string> {
     async uploadFile(
       file: File, 
       userId: string, 
-      fileType: 'image' | 'audio',
+      fileType: 'image' | 'file',
       onHashProgress?: (progress: number) => void,
       onUploadProgress?: (progress: number) => void
     ) {

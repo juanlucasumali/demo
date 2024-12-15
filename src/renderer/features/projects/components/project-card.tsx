@@ -125,11 +125,11 @@ export const ProjectCard = ({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              toggleStar(project.id, project.is_starred)
+              toggleStar(project.id, project.isStarred)
             }}
             className='text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-300'
           >
-            {project.is_starred 
+            {project.isStarred 
               ? <IconStarFilled size={20} className="text-yellow-400" /> 
               : <IconStar size={20} />}
           </button>
@@ -173,13 +173,13 @@ export const ProjectCard = ({
           {displayPreferences.createdAt && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Created:</span>
-              <span className="text-xs">{formatDate(project.created_at)}</span>
+              <span className="text-xs">{formatDate(project.createdAt)}</span>
             </div>
           )}
           {displayPreferences.lastModified && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Modified:</span>
-              <span className="text-xs">{formatDate(project.last_modified)}</span>
+              <span className="text-xs">{formatDate(project.lastModified)}</span>
             </div>
           )}
         </div>

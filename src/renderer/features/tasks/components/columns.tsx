@@ -54,14 +54,14 @@ export const columns: ColumnDef<ProjectItem>[] = [
     enableSorting: true,
   },
   {
-    accessorKey: 'owner',
+    accessorKey: 'ownerId', // Changed from 'owner' to 'ownerId'
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Owner' />
     ),
     cell: ({ row }) => {
       return (
         <div className='flex items-center'>
-          <span>{row.getValue('owner')}</span>
+          <span>{row.getValue('ownerId')}</span>
         </div>
       )
     },
@@ -73,7 +73,17 @@ export const columns: ColumnDef<ProjectItem>[] = [
       <DataTableColumnHeader column={column} title='Last Modified' />
     ),
     cell: ({ row }) => {
-      const date = row.getValue('lastModified') as Date
+      const dateValue = row.getValue('lastModified')
+      if (!dateValue) return <div>-</div>
+    
+      // Convert string to Date if needed
+      const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue as Date
+    
+      // Validate date
+      if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return <div>Invalid date</div>
+      }
+    
       return (
         <div>
           {date.toLocaleDateString('en-US', {

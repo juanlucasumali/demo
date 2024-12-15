@@ -1,5 +1,4 @@
 import { LinkProps } from '@tanstack/react-router'
-import { Database } from 'supabase/database.types'
 
 export interface UserProfile {
   username: string
@@ -9,9 +8,17 @@ export interface UserProfile {
   localPath: string | null
 }
 
-export type Project = Database['public']['Tables']['projects']['Row'] & {
-  tags: ProjectTag[]
-}
+export type Project = {
+  createdAt: string;
+  description: string | null;
+  icon: string | null;
+  id: string;
+  isStarred: boolean;
+  lastModified: string;
+  name: string;
+  ownerId: string;
+  tags: ProjectTag[],
+} 
 
 export interface ProjectTag {
   category: TagCategory
@@ -19,7 +26,7 @@ export interface ProjectTag {
   color: string
 }
 
-export type ProjectItem = {
+export interface ProjectItem {
   id: string
   name: string
   type: 'file' | 'folder'
@@ -28,10 +35,13 @@ export type ProjectItem = {
   fileFormat: string | null
   size: number | null
   duration: number | null
-  lastModified: Date
-  createdAt: Date
-  owner: string
-  tags: string[] | null
+  lastModified: Date | null
+  createdAt: Date | null
+  ownerId: string
+  tags: string[]
+  projectId: string
+  parentFolderId: string | null
+  filePath: string | null
 }
 
 export const PROJECT_TAGS = {

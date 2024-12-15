@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-type FileType = 'image' | 'audio'
+type FileType = 'image' | 'file'
 
 interface StoragePathOptions {
   userId: string
@@ -40,8 +40,8 @@ export function generateStoragePath({
   switch (fileType) {
     case 'image':
       return `users/${userId}/image/${sanitizedName}-${uniqueId}.${extension}`
-    case 'audio':
-      return `users/${userId}/audio/${sanitizedName}-${uniqueId}.${extension}`
+    case 'file':
+      return `users/${userId}/file/${sanitizedName}-${uniqueId}.${extension}`
     default:
       throw new Error(`Unsupported file type: ${fileType}`)
   }

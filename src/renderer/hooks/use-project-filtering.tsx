@@ -49,14 +49,14 @@ export function useProjectFiltering({
       ascending: (a: Project, b: Project) => (a.name || '').localeCompare(b.name || ''),
       descending: (a: Project, b: Project) => (b.name || '').localeCompare(a.name || ''),
       createdAt: (a: Project, b: Project) => 
-        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
       lastModified: (a: Project, b: Project) => 
-        new Date(b.last_modified || 0).getTime() - new Date(a.last_modified || 0).getTime(),
+        new Date(b.lastModified || 0).getTime() - new Date(a.lastModified || 0).getTime(),
     }
 
     // First, separate starred and non-starred projects
-    const starredProjects = filtered.filter(project => project.is_starred)
-    const nonStarredProjects = filtered.filter(project => !project.is_starred)
+    const starredProjects = filtered.filter(project => project.isStarred)
+    const nonStarredProjects = filtered.filter(project => !project.isStarred)
 
     // Sort each group separately
     const sortFn = sortFunctions[sortPreference as keyof typeof sortFunctions] || sortFunctions.lastModified

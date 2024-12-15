@@ -47,6 +47,7 @@ export function DataTable<TData, TValue>({
     if (item.type === 'folder') {
       const projectId = navigation.getCurrentProjectId()
       if (projectId) {
+        // This will update both the URL and the store state
         navigation.navigateToFolder(projectId, item.id)
       }
     }

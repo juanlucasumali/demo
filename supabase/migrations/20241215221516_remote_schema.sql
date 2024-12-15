@@ -42,27 +42,39 @@ $$;
 
 ALTER FUNCTION "public"."check_email_exists"("email" "text") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."get_root_folder_id"() RETURNS "uuid"
+    LANGUAGE "plpgsql" IMMUTABLE
+    AS $$
+BEGIN
+    RETURN '00000000-0000-0000-0000-000000000000'::uuid;
+END;
+$$;
+
+ALTER FUNCTION "public"."get_root_folder_id"() OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
 
-CREATE TABLE IF NOT EXISTS "public"."items" (
+CREATE TABLE IF NOT EXISTS "public"."project_items" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "owner_id" "uuid",
-    "name" "text",
-    "file_path" "text",
-    "format" "text",
-    "updated_at" timestamp with time zone DEFAULT "now"(),
-    "size" bigint,
+    "name" "text" NOT NULL,
     "type" "text" NOT NULL,
-    "sub_type" "text",
-    "parent_id" "uuid"
+    "description" "text" NOT NULL,
+    "size" bigint,
+    "duration" bigint,
+    "last_modified" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "tags" "text"[],
+    "file_format" "text",
+    "file_path" "text",
+    "is_starred" boolean DEFAULT false NOT NULL,
+    "owner_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "parent_folder_id" "uuid",
+    "project_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL
 );
 
-ALTER TABLE "public"."items" OWNER TO "postgres";
-
-COMMENT ON COLUMN "public"."items"."owner_id" IS 'Current owner';
+ALTER TABLE "public"."project_items" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."projects" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -71,8 +83,8 @@ CREATE TABLE IF NOT EXISTS "public"."projects" (
     "description" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "last_modified" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "is_starred" boolean DEFAULT false NOT NULL,
     "tags" "jsonb",
+    "is_starred" boolean DEFAULT false NOT NULL,
     "owner_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL
 );
 
@@ -90,8 +102,8 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
 
 ALTER TABLE "public"."users" OWNER TO "postgres";
 
-ALTER TABLE ONLY "public"."items"
-    ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "public"."project_items"
+    ADD CONSTRAINT "project_items_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_pkey" PRIMARY KEY ("id");
@@ -99,11 +111,14 @@ ALTER TABLE ONLY "public"."projects"
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_pkey" PRIMARY KEY ("id");
 
-ALTER TABLE ONLY "public"."items"
-    ADD CONSTRAINT "items_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."project_items"
+    ADD CONSTRAINT "project_items_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE ONLY "public"."items"
-    ADD CONSTRAINT "items_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."project_items"
+    ADD CONSTRAINT "project_items_parent_folder_id_fkey" FOREIGN KEY ("parent_folder_id") REFERENCES "public"."project_items"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."project_items"
+    ADD CONSTRAINT "project_items_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
@@ -113,21 +128,15 @@ ALTER TABLE ONLY "public"."users"
 
 CREATE POLICY "Enable all for users based on ower_id" ON "public"."projects" USING ((( SELECT "auth"."uid"() AS "uid") = "owner_id"));
 
-CREATE POLICY "Enable delete for users based on user_id" ON "public"."items" FOR DELETE USING (("auth"."uid"() = "owner_id"));
-
-CREATE POLICY "Enable insert for users based on user_id" ON "public"."items" FOR INSERT WITH CHECK (("auth"."uid"() = "owner_id"));
+CREATE POLICY "Enable all for users based on owner_id" ON "public"."project_items" USING ((( SELECT "auth"."uid"() AS "uid") = "owner_id"));
 
 CREATE POLICY "Enable insert for users based on user_id" ON "public"."users" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "id"));
 
 CREATE POLICY "Enable read access for all users" ON "public"."users" FOR SELECT USING (true);
 
-CREATE POLICY "Enable read access for authenticated users only" ON "public"."items" FOR SELECT TO "authenticated" USING (true);
-
-CREATE POLICY "Enable update for users based on user_id" ON "public"."items" FOR UPDATE USING (("auth"."uid"() = "owner_id")) WITH CHECK (("auth"."uid"() = "owner_id"));
-
 CREATE POLICY "Enable update for users based on user_id" ON "public"."users" FOR UPDATE USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
 
-ALTER TABLE "public"."items" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."project_items" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."projects" ENABLE ROW LEVEL SECURITY;
 
@@ -144,9 +153,13 @@ GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "service_role";
 
-GRANT ALL ON TABLE "public"."items" TO "anon";
-GRANT ALL ON TABLE "public"."items" TO "authenticated";
-GRANT ALL ON TABLE "public"."items" TO "service_role";
+GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "anon";
+GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "service_role";
+
+GRANT ALL ON TABLE "public"."project_items" TO "anon";
+GRANT ALL ON TABLE "public"."project_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."project_items" TO "service_role";
 
 GRANT ALL ON TABLE "public"."projects" TO "anon";
 GRANT ALL ON TABLE "public"."projects" TO "authenticated";

@@ -10,17 +10,15 @@ import {
   DropdownMenuTrigger,
 } from '@/renderer/components/ui/dropdown-menu'
 import { Button } from '@/renderer/components/ui/button'
-import { projectItemSchema } from '../data/schema'
+import { RowActionItem, rowActionSchema } from '../data/schema'
 import { useProjectDetailContext } from '../context/tasks-context'
 
-interface DataTableRowActionsProps<TData> {
-  row: Row<TData>
+interface DataTableRowActionsProps {
+  row: Row<RowActionItem>
 }
 
-export function DataTableRowActions<TData>({
-  row,
-}: DataTableRowActionsProps<TData>) {
-  const item = projectItemSchema.parse(row.original)
+export function DataTableRowActions({ row }: DataTableRowActionsProps) {
+  const item = rowActionSchema.parse(row.original)
   const { setOpen, setCurrentRow } = useProjectDetailContext()
 
   return (

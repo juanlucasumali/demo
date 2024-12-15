@@ -17,7 +17,7 @@ interface ProjectsState {
   
   // Actions
   fetchProjects: () => Promise<void>
-  addProject: (project: Omit<Project, 'id' | 'created_at' | 'last_modified'>) => Promise<void>
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'lastModified'>) => Promise<void>
   updateProject: (id: string, updates: Partial<Project>) => Promise<void>
   deleteProject: (id: string) => Promise<void>
   toggleStar: (id: string, currentValue: boolean) => Promise<void>

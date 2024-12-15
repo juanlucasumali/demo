@@ -19,7 +19,7 @@ export const projectsService = {
     }))
   },
 
-  async createProject(project: Omit<Project, 'id' | 'created_at' | 'last_modified'>): Promise<Project> {
+  async createProject(project: Omit<Project, 'id' | 'createdAt' | 'lastModified'>): Promise<Project> {
     const { data, error } = await supabase
       .from('projects')
       .insert([project])
@@ -72,6 +72,6 @@ export const projectsService = {
   },
 
   async toggleStar(id: string, currentValue: boolean): Promise<Project> {
-    return this.updateProject(id, { is_starred: !currentValue })
+    return this.updateProject(id, { isStarred: !currentValue })
   }
 }

@@ -9,59 +9,78 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      items: {
+      project_items: {
         Row: {
           created_at: string
+          description: string
+          duration: number | null
+          file_format: string | null
           file_path: string | null
-          format: string | null
           id: string
-          name: string | null
-          owner_id: string | null
-          parent_id: string | null
+          is_starred: boolean
+          last_modified: string
+          name: string
+          owner_id: string
+          parent_folder_id: string | null
+          project_id: string
           size: number | null
-          sub_type: string | null
+          tags: string[] | null
           type: string
-          updated_at: string | null
         }
         Insert: {
           created_at?: string
+          description: string
+          duration?: number | null
+          file_format?: string | null
           file_path?: string | null
-          format?: string | null
           id?: string
-          name?: string | null
-          owner_id?: string | null
-          parent_id?: string | null
+          is_starred?: boolean
+          last_modified?: string
+          name: string
+          owner_id?: string
+          parent_folder_id?: string | null
+          project_id?: string
           size?: number | null
-          sub_type?: string | null
+          tags?: string[] | null
           type: string
-          updated_at?: string | null
         }
         Update: {
           created_at?: string
+          description?: string
+          duration?: number | null
+          file_format?: string | null
           file_path?: string | null
-          format?: string | null
           id?: string
-          name?: string | null
-          owner_id?: string | null
-          parent_id?: string | null
+          is_starred?: boolean
+          last_modified?: string
+          name?: string
+          owner_id?: string
+          parent_folder_id?: string | null
+          project_id?: string
           size?: number | null
-          sub_type?: string | null
+          tags?: string[] | null
           type?: string
-          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "items_owner_id_fkey"
+            foreignKeyName: "project_items_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "items_parent_id_fkey"
-            columns: ["parent_id"]
+            foreignKeyName: "project_items_parent_folder_id_fkey"
+            columns: ["parent_folder_id"]
             isOneToOne: false
-            referencedRelation: "items"
+            referencedRelation: "project_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -150,6 +169,10 @@ export type Database = {
           email: string
         }
         Returns: boolean
+      }
+      get_root_folder_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {

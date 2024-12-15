@@ -4,7 +4,7 @@ import { Icon } from '@tabler/icons-react'
 
 interface PageHeaderProps {
   title: string
-  description?: string
+  description?: string | null
   projectId?: string
   icon?: Icon
 }

@@ -80,7 +80,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
 
   useEffect(() => {
     if (project) {
-      setIsStarred(project.is_starred)
+      setIsStarred(project.isStarred)
       setTags(project.tags)
     }
   }, [project, mode]);
@@ -131,13 +131,13 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
       }
 
       const projectData = {
-        owner_id: user.id,
+        ownerId: user.id,
         name: values.name,
         icon: null,
         description: values.description,
-        is_starred: isStarred,
+        isStarred: isStarred,
         tags: tags,
-        last_modified: new Date().toISOString()
+        lastModified: new Date().toISOString()
       }
 
       if (mode === 'edit' && project) {
@@ -179,7 +179,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
       unblockNavigation()
     } else {
       if (project) {
-        setIsStarred(project.is_starred)
+        setIsStarred(project.isStarred)
         setTags(project.tags)
       }
       blockNavigation()
@@ -406,15 +406,15 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
                   <span className="text-xs text-muted-foreground">Created:</span>
                     <span className="text-xs">
                       {mode === 'edit' && project 
-                        ? formatDate(project.created_at)
+                        ? formatDate(project.createdAt)
                         : formatDate(new Date().toISOString())
                       }
                     </span>
                   </div>
-                  {mode === 'edit' && project?.last_modified && (
+                  {mode === 'edit' && project?.lastModified && (
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">Modified:</span>
-                      <span className="text-xs">{formatDate(project.last_modified)}</span>
+                      <span className="text-xs">{formatDate(project.lastModified)}</span>
                     </div>
                   )}
                 </div>

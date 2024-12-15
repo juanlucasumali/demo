@@ -18,18 +18,40 @@ import {
 } from "@/renderer/components/ui/dropdown-menu"
 import { useEffect, useState } from 'react'
 import React from 'react'
+import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
+import { useProjectItemsStore } from '@/renderer/stores/useProjectItemsStore'
 
 export function Breadcrumbs() {
   const { getCurrentPath, navigate } = useNavigationStore()
   const currentPath = getCurrentPath()
   const [hiddenSegments, setHiddenSegments] = useState<string[]>([])
   const [visibleSegments, setVisibleSegments] = useState<string[]>([])
+  const { projects } = useProjectsStore()
+  const { items } = useProjectItemsStore();
 
   // Split the path and remove empty strings
   const pathSegments = currentPath.split('/').filter(Boolean)
 
   // Function to generate the breadcrumb label
   const getBreadcrumbLabel = (segment: string) => {
+    // Check if we're in the projects path
+    if (pathSegments[0] === 'projects' && segment === pathSegments[1]) {
+      // Look up project name
+      const project = projects.find(p => p.id === segment)
+      console.log("Breadcrumb label: ", project?.name || '')
+      return project?.name || '' //TODO: LOADING
+    }
+    
+    // Check if this is a folder ID
+    if (pathSegments[0] === 'projects' && segment === pathSegments[2]) {
+      // You'll need to implement folder lookup logic here
+      const folder = items.find(p => p.id === segment)
+      console.log("Breadcrumb label: ", folder?.name || '')
+      return folder?.name || '' //TODO: LOADING
+    }
+  
+    // Default formatting for other segments
+    console.log("Breadcrumb label: ", segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '))
     return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ')
   }
 

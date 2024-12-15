@@ -1,4 +1,4 @@
-import { useNavigationStore } from '@/renderer/stores/useNavigationStore'
+import { navigation } from '@/renderer/stores/useNavigationStore'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
 import { Project } from '@/renderer/components/layout/types'
 import { useState, useEffect } from 'react'
@@ -19,16 +19,15 @@ import { dummyProjectItems } from '@/renderer/components/layout/data/project-ite
 import { ProjectItem } from '../../tasks/data/schema'
 
 export default function ProjectDetail() {
-  const { getCurrentPath } = useNavigationStore()
   const { projects } = useProjectsStore()
   const [project, setProject] = useState<Project | null>(null)
 
   useEffect(() => {
-    const path = getCurrentPath()
-    const projectId = path.split('/').pop()
+    navigation.parsePathIds()
+    const projectId = navigation.getCurrentProjectId()
     const foundProject = projects.find(p => p.id === projectId)
     setProject(foundProject || null)
-  }, [getCurrentPath, projects])
+  }, [projects])
 
   // Local states
   const [currentRow, setCurrentRow] = useState<ProjectItem | null>(null)

@@ -92,6 +92,65 @@ export const PROJECT_TAGS = {
 
 export type TagCategory = keyof typeof PROJECT_TAGS
 
+export const FILE_TAGS = {
+  type: {
+    color: 'blue',
+    allowMultiple: false,
+    options: [
+      'Stems',
+      'Mix',
+      'Master',
+      'Reference',
+      'Project File',  // DAW project files
+      'Sample Pack',
+      'Recording',
+      'Bounce',        // Quick exports/drafts
+    ]
+  },
+  instrument: {
+    color: 'orange',
+    allowMultiple: true,
+    options: [
+      'Vocals',
+      'Drums',
+      'Bass',
+      'Keys',
+      'Synth',
+      'Guitar',
+      'Strings',
+      'Brass',
+      'FX',
+      'Percussion',
+    ]
+  },
+  status: {
+    color: 'green',
+    allowMultiple: false,
+    options: [
+      'Draft',
+      'Final',
+      'Approved',
+      'Needs Revision',
+      'Reference Only',
+      'Archive',
+    ]
+  },
+  version: {
+    color: 'purple',
+    allowMultiple: false,
+    options: [
+      'Dry',      // No effects
+      'Wet',      // With effects
+      'Edited',
+      'Tuned',
+      'Compressed',
+      'Clean',    // Noise reduced/cleaned up
+    ]
+  },
+} as const
+
+export type FileTags = keyof typeof FILE_TAGS
+
 export interface DisplayPreferences {
   tags: boolean
   dateCreated: boolean

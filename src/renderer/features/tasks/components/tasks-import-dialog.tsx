@@ -24,6 +24,13 @@ import { Input } from '@/renderer/components/ui/input'
 
 // Allowed file types - extend as needed
 const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'application/pdf',
+  'text/plain',
+  'application/msword',
+  'video/mp4',
   'audio/mpeg',
 ]
 

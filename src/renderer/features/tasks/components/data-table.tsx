@@ -23,6 +23,8 @@ import {
 } from '@/renderer/components/ui/table'
 import { DataTablePagination } from '../components/data-table-pagination'
 import { DataTableToolbar } from '../components/data-table-toolbar'
+import { ProjectItem } from '../data/schema'
+import { navigation } from '@/renderer/stores/useNavigationStore'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -40,6 +42,15 @@ export function DataTable<TData, TValue>({
     []
   )
   const [sorting, setSorting] = React.useState<SortingState>([])
+
+  const handleRowClick = (item: ProjectItem) => {
+    if (item.type === 'folder') {
+      const projectId = navigation.getCurrentProjectId()
+      if (projectId) {
+        navigation.navigateToFolder(projectId, item.id)
+      }
+    }
+  }
 
   const table = useReactTable({
     data,
@@ -92,6 +103,12 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  onClick={() => handleRowClick(row.original as ProjectItem)}
+                  onDoubleClick={() => handleRowClick(row.original as ProjectItem)}
+                  className={`
+                    ${(row.original as ProjectItem).type === 'folder' ? 'cursor-pointer' : ''}
+                    hover:bg-muted/50
+                  `}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

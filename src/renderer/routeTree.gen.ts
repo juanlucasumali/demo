@@ -70,6 +70,9 @@ const AuthenticatedSettingsAccountLazyImport = createFileRoute(
 const AuthenticatedProjectsProjectIdLazyImport = createFileRoute(
   '/_authenticated/projects/$projectId',
 )()
+const AuthenticatedProjectsProjectIdFolderIdLazyImport = createFileRoute(
+  '/_authenticated/projects/$projectId/$folderId',
+)()
 
 // Create/Update Routes
 
@@ -307,6 +310,17 @@ const AuthenticatedProjectsProjectIdLazyRoute =
     ),
   )
 
+const AuthenticatedProjectsProjectIdFolderIdLazyRoute =
+  AuthenticatedProjectsProjectIdFolderIdLazyImport.update({
+    id: '/$folderId',
+    path: '/$folderId',
+    getParentRoute: () => AuthenticatedProjectsProjectIdLazyRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/projects/$projectId/$folderId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -507,6 +521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersIndexLazyImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/projects/$projectId/$folderId': {
+      id: '/_authenticated/projects/$projectId/$folderId'
+      path: '/$folderId'
+      fullPath: '/projects/$projectId/$folderId'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdFolderIdLazyImport
+      parentRoute: typeof AuthenticatedProjectsProjectIdLazyImport
+    }
   }
 }
 
@@ -538,10 +559,25 @@ const AuthenticatedSettingsRouteLazyRouteWithChildren =
     AuthenticatedSettingsRouteLazyRouteChildren,
   )
 
+interface AuthenticatedProjectsProjectIdLazyRouteChildren {
+  AuthenticatedProjectsProjectIdFolderIdLazyRoute: typeof AuthenticatedProjectsProjectIdFolderIdLazyRoute
+}
+
+const AuthenticatedProjectsProjectIdLazyRouteChildren: AuthenticatedProjectsProjectIdLazyRouteChildren =
+  {
+    AuthenticatedProjectsProjectIdFolderIdLazyRoute:
+      AuthenticatedProjectsProjectIdFolderIdLazyRoute,
+  }
+
+const AuthenticatedProjectsProjectIdLazyRouteWithChildren =
+  AuthenticatedProjectsProjectIdLazyRoute._addFileChildren(
+    AuthenticatedProjectsProjectIdLazyRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteLazyRoute: typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedProjectsProjectIdLazyRoute: typeof AuthenticatedProjectsProjectIdLazyRoute
+  AuthenticatedProjectsProjectIdLazyRoute: typeof AuthenticatedProjectsProjectIdLazyRouteWithChildren
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedChatsIndexLazyRoute: typeof AuthenticatedChatsIndexLazyRoute
   AuthenticatedHelpCenterIndexLazyRoute: typeof AuthenticatedHelpCenterIndexLazyRoute
@@ -555,7 +591,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedSettingsRouteLazyRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedProjectsProjectIdLazyRoute:
-    AuthenticatedProjectsProjectIdLazyRoute,
+    AuthenticatedProjectsProjectIdLazyRouteWithChildren,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedChatsIndexLazyRoute: AuthenticatedChatsIndexLazyRoute,
   AuthenticatedHelpCenterIndexLazyRoute: AuthenticatedHelpCenterIndexLazyRoute,
@@ -583,7 +619,7 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404LazyRoute
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
-  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdLazyRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdLazyRouteWithChildren
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
@@ -595,6 +631,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexLazyRoute
   '/tasks': typeof AuthenticatedTasksIndexLazyRoute
   '/users': typeof AuthenticatedUsersIndexLazyRoute
+  '/projects/$projectId/$folderId': typeof AuthenticatedProjectsProjectIdFolderIdLazyRoute
 }
 
 export interface FileRoutesByTo {
@@ -611,7 +648,7 @@ export interface FileRoutesByTo {
   '/404': typeof errors404LazyRoute
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
-  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdLazyRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdLazyRouteWithChildren
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
@@ -623,6 +660,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexLazyRoute
   '/tasks': typeof AuthenticatedTasksIndexLazyRoute
   '/users': typeof AuthenticatedUsersIndexLazyRoute
+  '/projects/$projectId/$folderId': typeof AuthenticatedProjectsProjectIdFolderIdLazyRoute
 }
 
 export interface FileRoutesById {
@@ -643,7 +681,7 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500LazyRoute
   '/(errors)/503': typeof errors503LazyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdLazyRoute
+  '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdLazyRouteWithChildren
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
@@ -655,6 +693,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexLazyRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexLazyRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexLazyRoute
+  '/_authenticated/projects/$projectId/$folderId': typeof AuthenticatedProjectsProjectIdFolderIdLazyRoute
 }
 
 export interface FileRouteTypes {
@@ -687,6 +726,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/tasks'
     | '/users'
+    | '/projects/$projectId/$folderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/500'
@@ -714,6 +754,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/users'
+    | '/projects/$projectId/$folderId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -744,6 +785,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/projects/$projectId/$folderId'
   fileRoutesById: FileRoutesById
 }
 
@@ -877,7 +919,10 @@ export const routeTree = rootRoute
     },
     "/_authenticated/projects/$projectId": {
       "filePath": "_authenticated/projects/$projectId.lazy.tsx",
-      "parent": "/_authenticated"
+      "parent": "/_authenticated",
+      "children": [
+        "/_authenticated/projects/$projectId/$folderId"
+      ]
     },
     "/_authenticated/settings/account": {
       "filePath": "_authenticated/settings/account.lazy.tsx",
@@ -922,6 +967,10 @@ export const routeTree = rootRoute
     "/_authenticated/users/": {
       "filePath": "_authenticated/users/index.lazy.tsx",
       "parent": "/_authenticated"
+    },
+    "/_authenticated/projects/$projectId/$folderId": {
+      "filePath": "_authenticated/projects/$projectId/$folderId.lazy.tsx",
+      "parent": "/_authenticated/projects/$projectId"
     }
   }
 }

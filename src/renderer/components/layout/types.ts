@@ -10,10 +10,11 @@ export interface UserProfile {
 
 export interface Project {
   id: string
+  ownerId: string
   name: string;
-  logo: string | null;
+  icon: string | null;
   description: string;
-  dateCreated: string;
+  createdAt: string;
   lastModified: string;
   isStarred: boolean
   tags: ProjectTag[]
@@ -29,13 +30,13 @@ export type ProjectItem = {
   id: string
   name: string
   type: 'file' | 'folder'
-  starred: boolean
+  isStarred: boolean
   description: string
   fileFormat: string | null
   size: number | null
   duration: number | null
   lastModified: Date
-  dateCreated: Date
+  createdAt: Date
   owner: string
   tags: string[] | null
 }
@@ -153,7 +154,7 @@ export type FileTags = keyof typeof FILE_TAGS
 
 export interface DisplayPreferences {
   tags: boolean
-  dateCreated: boolean
+  createdAt: boolean
   lastModified: boolean
 }
 

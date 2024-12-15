@@ -4,10 +4,11 @@ export const projects: Project[] = [
   {
     id: 'project-001',
     name: 'Midnight Echoes',
-    logo: null,
+    ownerId: '',
+    icon: null,
     isStarred: true,
     description: 'Dark R&B track with atmospheric electronic elements.',
-    dateCreated: '2024-01-15T10:30:00Z',
+    createdAt: '2024-01-15T10:30:00Z',
     lastModified: '2024-02-20T15:45:00Z',
     tags: [
       { category: 'stage', name: 'In-Progress', color: 'green' },
@@ -20,10 +21,11 @@ export const projects: Project[] = [
   {
     id: 'project-002',
     name: 'Urban Pulse',
-    logo: null,
+    ownerId: '',
+    icon: null,
     isStarred: false,
     description: 'High-energy trap beat with drill influences.',
-    dateCreated: '2024-01-20T08:00:00Z',
+    createdAt: '2024-01-20T08:00:00Z',
     lastModified: '2024-02-01T11:20:00Z',
     tags: [
       { category: 'stage', name: 'Demo', color: 'green' },
@@ -35,11 +37,12 @@ export const projects: Project[] = [
   },
   {
     id: 'project-003',
+    ownerId: '',
     name: 'Ethereal Dreams',
-    logo: null,
+    icon: null,
     isStarred: true,
     description: 'Ambient indie track with atmospheric soundscapes.',
-    dateCreated: '2024-01-05T14:15:00Z',
+    createdAt: '2024-01-05T14:15:00Z',
     lastModified: '2024-02-25T09:30:00Z',
     tags: [
       { category: 'stage', name: 'Arrangement', color: 'green' },
@@ -50,11 +53,12 @@ export const projects: Project[] = [
   },
   {
     id: 'project-004',
+    ownerId: '',
     name: 'Summer Waves',
-    logo: null,
+    icon: null,
     isStarred: true,
     description: 'Upbeat Afrobeats fusion with house elements.',
-    dateCreated: '2024-01-12T09:30:00Z',
+    createdAt: '2024-01-12T09:30:00Z',
     lastModified: '2024-02-18T14:25:00Z',
     tags: [
       { category: 'stage', name: 'Mixing', color: 'green' },
@@ -67,10 +71,11 @@ export const projects: Project[] = [
   {
     id: 'project-005',
     name: 'Electric Soul',
-    logo: null,
+    ownerId: '',
+    icon: null,
     isStarred: false,
     description: 'Alternative R&B with electronic influences.',
-    dateCreated: '2024-01-05T11:45:00Z',
+    createdAt: '2024-01-05T11:45:00Z',
     lastModified: '2024-02-02T16:30:00Z',
     tags: [
       { category: 'stage', name: 'Final', color: 'green' },
@@ -81,10 +86,11 @@ export const projects: Project[] = [
   },
   {
     id: '1',
+    ownerId: '',
     name: "Meowing in Auto-Tune: The Album",
-    logo: "🐱",
+    icon: "🐱",
     description: "Converting my cat's 3AM concerts into the next viral sensation. Currently seeking cat choir for backing vocals.",
-    dateCreated: "2024-01-15",
+    createdAt: "2024-01-15",
     lastModified: "2024-01-28",
     isStarred: true,
     tags: [
@@ -96,10 +102,11 @@ export const projects: Project[] = [
   },
   {
     id: '2',
+    ownerId: '',
     name: "Minecraft Villager Trap Symphony",
-    logo: "⛏️",
+    icon: "⛏️",
     description: "Turning 'Hrmm' into heat. Features creeper explosion 808s and zombie growl ad-libs.",
-    dateCreated: "2024-01-20",
+    createdAt: "2024-01-20",
     lastModified: "2024-01-27",
     isStarred: true,
     tags: [
@@ -110,10 +117,11 @@ export const projects: Project[] = [
   },
   {
     id: '3',
+    ownerId: '',
     name: "Grandma's Recipe Book Type Beat",
-    logo: "👵",
+    icon: "👵",
     description: "Each track inspired by a different cookie recipe. The snare is literally me slapping cookie dough.",
-    dateCreated: "2024-01-10",
+    createdAt: "2024-01-10",
     lastModified: "2024-01-26",
     isStarred: false,
     tags: [
@@ -124,10 +132,11 @@ export const projects: Project[] = [
   },
   {
     id: '4',
+    ownerId: '',
     name: "Discord Notification Core",
-    logo: "💬",
+    icon: "💬",
     description: "For people who get anxiety every time they hear the Discord ping. Now in beat form!",
-    dateCreated: "2024-01-22",
+    createdAt: "2024-01-22",
     lastModified: "2024-01-25",
     isStarred: true,
     tags: [
@@ -138,10 +147,11 @@ export const projects: Project[] = [
   },
   {
     id: '5',
+    ownerId: '',
     name: "Zoom Meeting Beats to Study/Panic To",
-    logo: "📹",
+    icon: "📹",
     description: "Sample pack made entirely from Zoom sounds. 'You're on mute' is the new 'DJ Khaled'.",
-    dateCreated: "2024-01-05",
+    createdAt: "2024-01-05",
     lastModified: "2024-01-24",
     isStarred: false,
     tags: [
@@ -152,10 +162,11 @@ export const projects: Project[] = [
   },
   {
     id: '6',
+    ownerId: '',
     name: "IKEA Instructions Core",
-    logo: "🔧",
+    icon: "🔧",
     description: "Each track represents a different stage of furniture assembly frustration.",
-    dateCreated: "2024-01-18",
+    createdAt: "2024-01-18",
     lastModified: "2024-01-23",
     isStarred: true,
     tags: [
@@ -166,10 +177,11 @@ export const projects: Project[] = [
   },
   {
     id: '7',
+    ownerId: '',
     name: "WiFi Router Symphony",
-    logo: "📶",
+    icon: "📶",
     description: "The sweet sound of router beeps arranged into a drill beat. Features dial-up modem adlibs.",
-    dateCreated: "2024-01-12",
+    createdAt: "2024-01-12",
     lastModified: "2024-01-22",
     isStarred: false,
     tags: [
@@ -180,10 +192,11 @@ export const projects: Project[] = [
   },
   {
     id: '8',
+    ownerId: '',
     name: "Rubber Duck Debug Beats",
-    logo: "🦆",
+    icon: "🦆",
     description: "Programming rubber duck squeaks turned into a trap masterpiece. Stack overflow certified.",
-    dateCreated: "2024-01-08",
+    createdAt: "2024-01-08",
     lastModified: "2024-01-21",
     isStarred: true,
     tags: [
@@ -194,10 +207,11 @@ export const projects: Project[] = [
   },
   {
     id: '9',
+    ownerId: '',
     name: "404 Beats Not Found",
-    logo: "⚠️",
+    icon: "⚠️",
     description: "Every Windows error sound from 95 to 11 remixed into a full album. Blue screen of death is the drop.",
-    dateCreated: "2024-01-16",
+    createdAt: "2024-01-16",
     lastModified: "2024-01-20",
     isStarred: false,
     tags: [
@@ -208,10 +222,11 @@ export const projects: Project[] = [
   },
   {
     id: '10',
+    ownerId: '',
     name: "Washing Machine Type Beat",
-    logo: "🧺",
+    icon: "🧺",
     description: "My washing machine was off-balance and accidentally created the hardest beat of 2024.",
-    dateCreated: "2024-01-01",
+    createdAt: "2024-01-01",
     lastModified: "2024-01-19",
     isStarred: true,
     tags: [

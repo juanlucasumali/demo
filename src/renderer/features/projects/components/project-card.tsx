@@ -17,7 +17,7 @@ interface ProjectCardProps {
   toggleStar: (projectName: string) => void
   displayPreferences: {
     tags: boolean
-    dateCreated: boolean
+    createdAt: boolean
     lastModified: boolean
   }
 }
@@ -27,10 +27,10 @@ export const ProjectCard = ({
   toggleStar,
   displayPreferences,
 }: ProjectCardProps) => {
-  const logoGradientStyle = useMemo(() => {
-    // if (project.logo) return {};
+  const iconGradientStyle = useMemo(() => {
+    // if (project.icon) return {};
     return generateGradientStyle(project.id);
-  }, [project.id, project.logo]);
+  }, [project.id, project.icon]);
 
   const handleClick = () => {
     navigation.navigate(`/projects/${project.id}`)
@@ -45,9 +45,9 @@ export const ProjectCard = ({
         <div className='flex items-center gap-2'>
           <div 
             className={`flex size-10 items-center justify-center rounded-lg p-2`}
-            style={logoGradientStyle}
+            style={iconGradientStyle}
           >
-            {/* {getIconComponent(project.logo)} */}
+            {/* {getIconComponent(project.icon)} */}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -127,15 +127,15 @@ export const ProjectCard = ({
           </div>
         )}
 
-        {(displayPreferences.dateCreated || displayPreferences.lastModified) && (
+        {(displayPreferences.createdAt || displayPreferences.lastModified) && (
           <Separator className="my-3" />
         )}
 
         <div className="text-sm text-muted-foreground space-y-1">
-          {displayPreferences.dateCreated && (
+          {displayPreferences.createdAt && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Created:</span>
-              <span className="text-xs">{formatDate(project.dateCreated)}</span>
+              <span className="text-xs">{formatDate(project.createdAt)}</span>
             </div>
           )}
           {displayPreferences.lastModified && (

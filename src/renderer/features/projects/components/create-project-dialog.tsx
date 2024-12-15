@@ -66,7 +66,7 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   const addProject = useProjectsStore((state) => state.addProject)
   const { blockNavigation, unblockNavigation } = useNavigationStore()
 
-  const logoGradientStyle = useMemo(() => {
+  const iconGradientStyle = useMemo(() => {
     return generateGradientStyle(previewProjectId);
   }, [previewProjectId]);
 
@@ -96,11 +96,12 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newProject: Project = {
       id: previewProjectId,
+      ownerId: '',
       name: values.name,
-      logo: null,
+      icon: null,
       description: values.description,
       isStarred: isStarred,
-      dateCreated: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       lastModified: new Date().toISOString(),
       tags: tags
     }
@@ -146,7 +147,7 @@ export function CreateProjectDialog({ }: CreateProjectDialogProps) {
                 <div className="flex items-center gap-2">
                   <div 
                     className="flex size-10 items-center justify-center rounded-lg p-2 text-white"
-                    style={logoGradientStyle}
+                    style={iconGradientStyle}
                   >
                   </div>
                 </div>

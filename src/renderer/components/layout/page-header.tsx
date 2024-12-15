@@ -15,7 +15,7 @@ export function PageHeader({
   projectId,
   icon: Icon 
 }: PageHeaderProps) {
-  const logoGradientStyle = useMemo(() => {
+  const iconGradientStyle = useMemo(() => {
     if (!projectId) return
     return generateGradientStyle(projectId)
   }, [projectId])
@@ -28,7 +28,7 @@ export function PageHeader({
           flex size-10 items-center justify-center rounded-xl
           ${projectId ? '' : 'bg-muted'} // Optional: add a background for when neither icon nor gradient is present
         `}
-        style={projectId ? logoGradientStyle : undefined}
+        style={projectId ? iconGradientStyle : undefined}
       >
         {Icon && <Icon size={24} />}
       </div>

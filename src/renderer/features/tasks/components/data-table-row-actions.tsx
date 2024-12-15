@@ -66,9 +66,9 @@ export function DataTableRowActions<TData>({
         <DropdownMenuItem
           onClick={() => console.log('Toggle star', item.id)}
         >
-          {item.starred ? 'Unstar' : 'Star'}
+          {item.isStarred ? 'Unstar' : 'Star'}
           <DropdownMenuShortcut>
-            {item.starred ? (
+            {item.isStarred ? (
               <IconStarFilled size={16} />
             ) : (
               <IconStar size={16} />

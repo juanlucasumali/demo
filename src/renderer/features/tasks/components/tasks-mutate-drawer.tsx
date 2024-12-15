@@ -67,9 +67,9 @@ export function ProjectItemMutateDrawer({
       type: type,
       tags: data.tags,
       lastModified: new Date(),
-      dateCreated: new Date(),
+      createdAt: new Date(),
       owner: 'Current User', // Get from auth context
-      starred: false,
+      isStarred: false,
       fileFormat: type === 'file' ? 'unknown' : null,
       size: null,
       duration: null,

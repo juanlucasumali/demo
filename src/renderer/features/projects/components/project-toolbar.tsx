@@ -13,12 +13,12 @@ interface ProjectToolbarProps {
   setSort: (sort: string) => void
   displayPreferences: {
     tags: boolean
-    dateCreated: boolean
+    createdAt: boolean
     lastModified: boolean
   }
   setDisplayPreferences: (preferences: {
     tags: boolean
-    dateCreated: boolean
+    createdAt: boolean
     lastModified: boolean
   }) => void 
 }
@@ -40,7 +40,7 @@ export const ProjectToolbar = ({
           <SelectValue>
             {sort === 'ascending' && <div className='flex items-center gap-2'><IconSortAscendingLetters size={16} />Name (A-Z)</div>}
             {sort === 'descending' && <div className='flex items-center gap-2'><IconSortDescendingLetters size={16} />Name (Z-A)</div>}
-            {sort === 'dateCreated' && <div className='flex items-center gap-2'>Date Created</div>}
+            {sort === 'createdAt' && <div className='flex items-center gap-2'>Date Created</div>}
             {sort === 'lastModified' && <div className='flex items-center gap-2'>Last Modified</div>}
           </SelectValue>
         </SelectTrigger>
@@ -57,7 +57,7 @@ export const ProjectToolbar = ({
               <span>Name (Z-A)</span>
             </div>
           </SelectItem>
-          <SelectItem value='dateCreated'>
+          <SelectItem value='createdAt'>
             <div className='flex items-center gap-4'>
               <span>Date Created</span>
             </div>

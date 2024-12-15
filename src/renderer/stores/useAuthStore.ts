@@ -75,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
             const { data, error } = await supabase
               .from('users')
               .select('*')
-              .eq('user_id', currentUser.id)
+              .eq('id', currentUser.id)
               .single()
       
             if (error) throw error
@@ -86,7 +86,7 @@ export const useAuthStore = create<AuthState>()(
                 username: data.username,
                 email: data.email,
                 displayName: data.display_name,
-                localPath: data.localPath ?? null,
+                localPath: data.local_path ?? null,
                 // Wait for the avatar URL
                 avatar: data.avatar_path ? await mediaService.getAvatarUrl(data.avatar_path) : null
               }
@@ -120,9 +120,9 @@ export const useAuthStore = create<AuthState>()(
       
         try {
           const { data, error } = await supabase
-            .from('profiles')
+            .from('users')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('id', user.id)
             .single()
       
           if (error) throw error
@@ -204,7 +204,7 @@ export const useAuthStore = create<AuthState>()(
           const { data } = await supabase
             .from('users')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('id', user.id)
             .single()
 
           const hasProfile = !!data

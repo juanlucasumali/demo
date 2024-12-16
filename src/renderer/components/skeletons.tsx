@@ -29,3 +29,15 @@ export const ProjectListSkeleton = () => {
     </ul>
   )
 }
+
+export function PageHeaderSkeleton() {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="size-10 animate-pulse rounded-xl bg-muted" />
+      <div className="flex flex-col gap-2">
+        <div className="h-7 w-[200px] animate-pulse rounded-md bg-muted" />
+        <div className="h-4 w-[300px] animate-pulse rounded-md bg-muted" />
+      </div>
+    </div>
+  )
+}

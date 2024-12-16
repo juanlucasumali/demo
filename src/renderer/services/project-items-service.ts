@@ -21,21 +21,16 @@ export const projectItemsService = {
 
       const { data, error } = await query
 
-    console.log("Items Data:", data)
-
     if (error) throw new Error(error.message)
 
-    return data
+    const itemsWithUrls = await Promise.all(
+      data.map(async (item) => ({
+        ...item,
+        url: item.filePath ? await b2Service.getPublicUrl(item.filePath) : null
+      }))
+    )
 
-    // // Fetch public URLs for all files
-    // const itemsWithUrls = await Promise.all(
-    //   data.map(async (item) => ({
-    //     ...item,
-    //     url: item.filePath ? await b2Service.getPublicUrl(item.filePath) : null
-    //   }))
-    // )
-
-    // return itemsWithUrls.map(transformDatabaseItem)
+    return itemsWithUrls.map(transformDatabaseItem)
   },
 
   async getParentFolders(folderId: string): Promise<ProjectItem[]> {
@@ -62,6 +57,7 @@ export const projectItemsService = {
    * Create a new project item
    */
   async createItem(item: Omit<ProjectItem, 'id' | 'createdAt' | 'lastModified'>): Promise<ProjectItem> {
+    console.log("Creating item:", item)
     const { data, error } = await supabase
       .from('project_items')
       .insert({
@@ -74,13 +70,66 @@ export const projectItemsService = {
         duration: item.duration,
         owner_id: item.ownerId,
         tags: item.tags,
+        project_id: item.projectId,
+        parent_folder_id: item.parentFolderId
       })
       .select()
       .single()
 
+      console.log("Create item Data:", data)
     if (error) throw new Error(error.message)
 
     return transformDatabaseItem(data)
+  },
+
+  async createItemWithFile(
+    itemData: Omit<ProjectItem, 'id' | 'createdAt' | 'lastModified'>,
+    file: File,
+    onHashProgress?: (progress: number) => void,
+    onUploadProgress?: (progress: number) => void
+  ): Promise<ProjectItem> {
+    try {
+      // Upload to B2 first
+      const fileType = file.type.startsWith('image/') ? 'image' : 'file'
+      const { fileName, url } = await b2Service.uploadFile(
+        file,
+        itemData.ownerId,
+        fileType,
+        onHashProgress,
+        onUploadProgress
+      )
+
+      // Create database entry with file path
+      const { data, error } = await supabase
+        .from('project_items')
+        .insert({
+          name: itemData.name,
+          type: 'file',
+          description: itemData.description,
+          is_starred: itemData.isStarred,
+          file_format: file.type,
+          file_path: fileName,
+          size: file.size,
+          duration: itemData.duration,
+          owner_id: itemData.ownerId,
+          tags: itemData.tags,
+          project_id: itemData.projectId,
+          parent_folder_id: itemData.parentFolderId
+        })
+        .select()
+        .single()
+
+      if (error) {
+        // Cleanup uploaded file if database insert fails
+        await b2Service.deleteFile(fileName)
+        throw error
+      }
+
+      return transformDatabaseItem({ ...data, url })
+    } catch (error) {
+      console.error('Error creating item with file:', error)
+      throw new Error('Failed to create item with file')
+    }
   },
 
   /**

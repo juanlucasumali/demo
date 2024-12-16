@@ -143,3 +143,4 @@ export const generateGradientStyle = (id: string) => {
     backgroundBlendMode: 'soft-light'
   };
 };
+

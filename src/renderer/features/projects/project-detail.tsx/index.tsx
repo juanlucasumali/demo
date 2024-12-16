@@ -20,26 +20,22 @@ import { useProjectItemsStore } from '@/renderer/stores/useProjectItemsStore'
 import { supabase } from '@/renderer/lib/supabase'
 import { useProjectItemFiltering } from '@/renderer/hooks/use-project-items-filtering'
 import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
-import { Loader2 } from 'lucide-react'
+import { CreateFolderDialog } from './components/create-folder-dialog'
+import { UploadFileDialog } from './components/upload-file-dialog'
+import { PageHeaderSkeleton } from '@/renderer/components/skeletons'
 
 export default function ProjectDetail() {
   const { projects, isLoading: projectsLoading, fetchProjects } = useProjectsStore()
-  const [project, setProject] = useState<Project | null>(null)
   const [currentRow, setCurrentRow] = useState<ProjectItem | null>(null)
   const [open, setOpen] = useDialogState<ProjectDetailDialogType>(null)
   const [type, setType] = useDialogState<"file" | "folder">(null)
   const currentPath = useNavigationStore((state) => state.getCurrentPath())
+  const projectId = useNavigationStore((state) => state.getCurrentProjectId())
+  const project = projects.find(p => p.id === projectId)
 
   useEffect(() => {
     fetchProjects()
   }, [fetchProjects])
-
-  useEffect(() => {
-    navigation.parsePathIds()
-    const projectId = navigation.getCurrentProjectId()
-    const foundProject = projects.find(p => p.id === projectId)
-    setProject(foundProject || null)
-  }, [projects])
 
     const {
       items,
@@ -60,8 +56,6 @@ export default function ProjectDetail() {
     const [searchTerm, setSearchTerm] = useState('')
 
     useEffect(() => {
-      console.log('Path changed:', currentPath)
-      console.log("projectId and currentFolderId:", project?.id, currentFolderId)
       const { projectId, folderId } = navigation.parsePathIds()
       if (projectId) {
         fetchItems(projectId, folderId)
@@ -124,14 +118,15 @@ export default function ProjectDetail() {
 
     const isLoading = projectsLoading || itemsLoading
 
-    console.log('items:', items)
-
     return (
       <TasksContextProvider value={{ open, setOpen, currentRow, setCurrentRow }}>
         <AppHeader />
         <Main>
-          {isLoading ? (
-            <Loader2/>
+          {projectsLoading && !project ? (
+            // Show only PageHeader skeleton while project data is loading
+            <div className="space-y-4">
+              <PageHeaderSkeleton />
+            </div>
           ) : error ? (
             <Alert variant="destructive">
               <AlertDescription>{error.message}</AlertDescription>
@@ -142,31 +137,26 @@ export default function ProjectDetail() {
             </Alert>
           ) : (
             <>
-              <div className='mb-2 flex items-center justify-between'>
+              <div className="mb-2 flex items-center justify-between">
                 <PageHeader
                   title={project.name}
                   description={project.description}
                   projectId={project.id}
                 />
-              <div className='flex gap-2'>
-                <Button
-                  variant='outline'
-                  className='space-x-1'
-                  onClick={() => setOpen('upload')}
-                >
-                  <span>Import</span> <IconDownload size={18} />
-                </Button>
-                <Button className='space-x-1' onClick={() => setOpen('create')}>
-                  <span>Create</span> <IconPlus size={18} />
-                </Button>
+                <div className="flex gap-2">
+                  <UploadFileDialog projectId={project.id} />
+                  <CreateFolderDialog
+                    projectId={project.id}
+                    parentFolderId={currentFolderId}
+                  />
+                </div>
               </div>
-            </div>
-            <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0'>
-              <DataTable data={items} columns={columns} />
-            </div>
-          </>
-        )}
-      </Main>
+              <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0">
+                <DataTable data={items} columns={columns} isLoading={itemsLoading}/>
+              </div>
+            </>
+          )}
+        </Main>
       {/* ===== Dialogs ===== */}
 
       <ProjectItemMutateDrawer

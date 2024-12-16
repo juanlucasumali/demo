@@ -119,12 +119,6 @@ export default function Projects() {
         
         {isLoading && projects.length === 0 ? (
           <ProjectListSkeleton />
-        ) : error ? (
-          <Alert variant="destructive" className="my-4">
-            <AlertDescription>
-              {error.message || 'Failed to load projects'}
-            </AlertDescription>
-          </Alert>
         ) : projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <IconPackages size={48} className="mb-4 opacity-50" />

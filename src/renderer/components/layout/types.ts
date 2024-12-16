@@ -26,24 +26,6 @@ export interface ProjectTag {
   color: string
 }
 
-export interface ProjectItem {
-  id: string
-  name: string
-  type: 'file' | 'folder'
-  isStarred: boolean
-  description: string
-  fileFormat: string | null
-  size: number | null
-  duration: number | null
-  lastModified: Date | null
-  createdAt: Date | null
-  ownerId: string
-  tags: string[]
-  projectId: string
-  parentFolderId: string | null
-  filePath: string | null
-}
-
 export const PROJECT_TAGS = {
   stage: {
     color: 'green',
@@ -96,9 +78,28 @@ export const PROJECT_TAGS = {
 
 export type TagCategory = keyof typeof PROJECT_TAGS
 
+
+export interface ProjectItem {
+  id: string
+  name: string
+  type: 'file' | 'folder'
+  isStarred: boolean
+  description: string
+  fileFormat: string | null
+  size: number | null
+  duration: number | null
+  lastModified: Date | null
+  createdAt: Date | null
+  ownerId: string
+  tags: string[]
+  projectId: string
+  parentFolderId: string | null
+  filePath: string | null
+}
+
 export const FILE_TAGS = {
   type: {
-    color: 'blue',
+    color: 'green',
     allowMultiple: false,
     options: [
       'Stems',
@@ -112,7 +113,7 @@ export const FILE_TAGS = {
     ]
   },
   instrument: {
-    color: 'orange',
+    color: 'blue',
     allowMultiple: true,
     options: [
       'Vocals',
@@ -128,7 +129,7 @@ export const FILE_TAGS = {
     ]
   },
   status: {
-    color: 'green',
+    color: 'purple',
     allowMultiple: false,
     options: [
       'Draft',
@@ -140,7 +141,7 @@ export const FILE_TAGS = {
     ]
   },
   version: {
-    color: 'purple',
+    color: 'red',
     allowMultiple: false,
     options: [
       'Dry',      // No effects

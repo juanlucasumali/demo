@@ -33,6 +33,13 @@ export function Breadcrumbs() {
   const getAllBreadcrumbs = () => {
     const allBreadcrumbs: Array<{ id: string; name: string; path: string }> = []
 
+    // Always add Home
+    allBreadcrumbs.push({
+      id: 'home',
+      name: 'Home',
+      path: '/projects'
+    })
+
     // Add static path segments
     pathSegments.forEach((segment, index) => {
       if (segment === 'projects') {
@@ -69,16 +76,16 @@ export function Breadcrumbs() {
 
   const allBreadcrumbs = getAllBreadcrumbs()
 
-  // Show max 3 items: first, last two
-  const visibleBreadcrumbs = allBreadcrumbs.length <= 3 
+  // Always show first (Home) and last two items
+  const visibleBreadcrumbs = allBreadcrumbs.length <= 3
     ? allBreadcrumbs
     : [
-        allBreadcrumbs[0],
-        allBreadcrumbs[allBreadcrumbs.length - 2],
-        allBreadcrumbs[allBreadcrumbs.length - 1]
+        allBreadcrumbs[0], // Home
+        allBreadcrumbs[allBreadcrumbs.length - 2], // Parent
+        allBreadcrumbs[allBreadcrumbs.length - 1], // Current
       ]
 
-  const hiddenBreadcrumbs = allBreadcrumbs.length > 3 
+  const hiddenBreadcrumbs = allBreadcrumbs.length > 3
     ? allBreadcrumbs.slice(1, -2)
     : []
 
@@ -87,29 +94,19 @@ export function Breadcrumbs() {
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Button
-              variant="ghost"
-              className="h-6 p-2"
-              onClick={() => navigate('/projects')}
-            >
-              <Home className="h-4 w-4" />
-            </Button>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-
         {visibleBreadcrumbs.map((crumb, index) => {
           const isLast = index === visibleBreadcrumbs.length - 1
           const showEllipsis = hiddenBreadcrumbs.length > 0 && index === 0
 
           return (
             <React.Fragment key={crumb.id}>
-              <BreadcrumbItem>
+              {index > 0 && (
                 <BreadcrumbSeparator>
                   <ChevronRight className="h-4 w-4" />
                 </BreadcrumbSeparator>
-                
+              )}
+
+              <BreadcrumbItem>
                 {isLast ? (
                   <BreadcrumbPage className="max-w-[200px] truncate">
                     <Button
@@ -126,39 +123,45 @@ export function Breadcrumbs() {
                       className="h-6 px-2 max-w-[200px] truncate"
                       onClick={() => navigate(crumb.path)}
                     >
-                      {crumb.name}
+                      {crumb.id === 'home' ? (
+                        <Home className="h-4 w-4" />
+                      ) : (
+                        crumb.name
+                      )}
                     </Button>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
 
               {showEllipsis && hiddenBreadcrumbs.length > 0 && (
-                <BreadcrumbItem>
+                <>
                   <BreadcrumbSeparator>
                     <ChevronRight className="h-4 w-4" />
                   </BreadcrumbSeparator>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-6 w-6 p-0"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">More</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      {hiddenBreadcrumbs.map((hidden) => (
-                        <DropdownMenuItem
-                          key={hidden.id}
-                          onClick={() => navigate(hidden.path)}
+                  <BreadcrumbItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
                         >
-                          {hidden.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </BreadcrumbItem>
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">More</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {hiddenBreadcrumbs.map((hidden) => (
+                          <DropdownMenuItem
+                            key={hidden.id}
+                            onClick={() => navigate(hidden.path)}
+                          >
+                            {hidden.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </BreadcrumbItem>
+                </>
               )}
             </React.Fragment>
           )

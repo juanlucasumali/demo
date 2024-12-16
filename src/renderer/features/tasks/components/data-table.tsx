@@ -29,11 +29,13 @@ import { navigation } from '@/renderer/stores/useNavigationStore'
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  isLoading?: boolean
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -74,6 +76,28 @@ export function DataTable<TData, TValue>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+  
+  // Skeleton row component
+  const SkeletonRow = () => (
+    <TableRow>
+      {columns.map((_, index) => (
+        <TableCell key={index}>
+          <div className="h-4 w-[100px] animate-pulse rounded bg-muted" />
+        </TableCell>
+      ))}
+    </TableRow>
+  )
+
+  // Skeleton header component
+  const SkeletonHeader = () => (
+    <TableRow>
+      {columns.map((_, index) => (
+        <TableHead key={index}>
+          <div className="h-4 w-[100px] animate-pulse rounded bg-muted" />
+        </TableHead>
+      ))}
+    </TableRow>
+  )
 
   return (
     <div className='space-y-4'>
@@ -81,10 +105,12 @@ export function DataTable<TData, TValue>({
       <div className='rounded-md border'>
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
+            {isLoading ? (
+              <SkeletonHeader />
+            ) : (
+              table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
                     <TableHead key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder
                         ? null
@@ -93,13 +119,18 @@ export function DataTable<TData, TValue>({
                             header.getContext()
                           )}
                     </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
+                  ))}
+                </TableRow>
+              ))
+            )}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              // Show 5 skeleton rows while loading
+              Array.from({ length: 5 }).map((_, index) => (
+                <SkeletonRow key={index} />
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

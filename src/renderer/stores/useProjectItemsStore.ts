@@ -31,6 +31,12 @@ interface ProjectItemsState {
   setCurrentFolder: (folderId: string | null) => void
   breadcrumbs: Array<{ id: string; name: string }> 
   updateBreadcrumbs: (items: ProjectItem[]) => void // Add this
+  addFileItem: (
+    item: Omit<ProjectItem, 'id' | 'createdAt' | 'lastModified'>,
+    file: File,
+    onHashProgress?: (progress: number) => void,
+    onUploadProgress?: (progress: number) => void
+  ) => Promise<void>
 }
 
 export const useProjectItemsStore = create<ProjectItemsState>()(
@@ -75,12 +81,29 @@ export const useProjectItemsStore = create<ProjectItemsState>()(
           set({ error: error as Error, isLoading: false })
         }
       },
-      
 
       addItem: async (item) => {
         set({ isLoading: true, error: null })
         try {
           const newItem = await projectItemsService.createItem(item)
+          set(state => ({
+            items: [...state.items, newItem],
+            isLoading: false
+          }))
+        } catch (error) {
+          set({ error: error as Error, isLoading: false })
+        }
+      },
+
+      addFileItem: async (item, file, onHashProgress, onUploadProgress) => {
+        set({ isLoading: true, error: null })
+        try {
+          const newItem = await projectItemsService.createItemWithFile(
+            item,
+            file,
+            onHashProgress,
+            onUploadProgress
+          )
           set(state => ({
             items: [...state.items, newItem],
             isLoading: false

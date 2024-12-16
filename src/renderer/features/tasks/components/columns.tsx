@@ -1,10 +1,10 @@
 import { ColumnDef } from '@tanstack/react-table'
-import { Badge } from '@/renderer/components/ui/badge'
 import { Checkbox } from '@/renderer/components/ui/checkbox'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { DataTableRowActions } from './data-table-row-actions'
 import { File, Folder } from 'lucide-react'
 import { ProjectItem } from '@/renderer/components/layout/types'
+import { TagBadge } from '@/renderer/components/tag-badge'
 
 export const columns: ColumnDef<ProjectItem>[] = [
   {
@@ -108,15 +108,9 @@ export const columns: ColumnDef<ProjectItem>[] = [
       if (!tags || tags.length === 0) return null
       
       return (
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {tags.map((tag) => (
-            <Badge 
-              key={tag} 
-              variant="outline" 
-              className="whitespace-nowrap"
-            >
-              {tag}
-            </Badge>
+            <TagBadge key={tag} tag={tag} />
           ))}
         </div>
       )

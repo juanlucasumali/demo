@@ -6,18 +6,18 @@ export const projectItemSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.enum(['file', 'folder']),
-  isStarred: z.boolean().optional().default(false),
+  isStarred: z.boolean().default(false),
   description: z.string(),
-  fileFormat: z.string().nullable().optional(),
-  size: z.number().nullable().optional(),
-  duration: z.number().nullable().optional(),
-  lastModified: z.date().nullable().optional(),
-  createdAt: z.date().nullable().optional(),
-  ownerId: z.string().optional(), // Made optional
-  tags: z.array(z.string()).nullable().optional(),
-  projectId: z.string().optional(), // Made optional
-  parentFolderId: z.string().nullable().optional(),
-  filePath: z.string().nullable().optional(),
+  fileFormat: z.string().nullable(),
+  size: z.number().nullable(),
+  duration: z.number().nullable(),
+  lastModified: z.date().nullable(),
+  createdAt: z.date().nullable(),
+  ownerId: z.string(), // Made optional
+  tags: z.array(z.string()),
+  projectId: z.string(), // Made optional
+  parentFolderId: z.string().nullable(),
+  filePath: z.string().nullable(),
 })
 
 // Specific schema for row actions

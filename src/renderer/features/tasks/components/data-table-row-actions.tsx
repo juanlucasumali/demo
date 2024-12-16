@@ -18,9 +18,10 @@ interface DataTableRowActionsProps {
   row: Row<RowActionItem>
   onEditFolder?: (folder: ProjectItem) => void
   onEditFile?: (file: ProjectItem) => void
+  onDeleteFile?: (file: ProjectItem) => void
 }
 
-export function DataTableRowActions({ row, onEditFolder, onEditFile }: DataTableRowActionsProps) {
+export function DataTableRowActions({ row, onEditFolder, onEditFile, onDeleteFile }: DataTableRowActionsProps) {
   const item = rowActionSchema.parse(row.original)
   const { setOpen, setCurrentRow } = useProjectDetailContext()
 
@@ -104,9 +105,9 @@ export function DataTableRowActions({ row, onEditFolder, onEditFile }: DataTable
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-          onClick={() => {
-            setCurrentRow(item)
-            setOpen('delete')
+          onClick={(e) => {
+            e.stopPropagation()
+            onDeleteFile(item)
           }}
           className="text-destructive"
         >

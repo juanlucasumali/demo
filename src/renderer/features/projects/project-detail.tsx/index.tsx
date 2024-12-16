@@ -18,6 +18,7 @@ import { UploadFileDialog } from './components/upload-file-dialog'
 import { PageHeaderSkeleton } from '@/renderer/components/skeletons'
 import { EditFolderDialog } from './components/edit-folder-dialog'
 import { EditFileDialog } from './components/edit-file-dialog'
+import { DeleteProjectItemDialog } from './components/delete-project-item'
 
 export default function ProjectDetail() {
   const { projects, isLoading: projectsLoading, fetchProjects } = useProjectsStore()
@@ -52,6 +53,14 @@ export default function ProjectDetail() {
     const [selectedFolder, setSelectedFolder] = useState<ProjectItem | null>(null)
     const [editFileDialogOpen, setEditFileDialogOpen] = useState(false)
     const [selectedFile, setSelectedFile] = useState<ProjectItem | null>(null)
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [itemToDelete, setItemToDelete] = useState<ProjectItem | null>(null)
+  
+    const handleDelete = (item: ProjectItem) => {
+      console.log("Handling delete in project details")
+      setItemToDelete(item)
+      setDeleteDialogOpen(true)
+    }
   
     // Function to open dialog with selected folder
     const handleEditFolder = (folder: ProjectItem) => {
@@ -155,7 +164,14 @@ export default function ProjectDetail() {
                 </div>
               </div>
               <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0">
-                <DataTable data={items} columns={columns} isLoading={itemsLoading} onEditFolder={handleEditFolder} onEditFile={handleEditFile}/>
+                <DataTable 
+                  data={items} 
+                  columns={columns} 
+                  isLoading={itemsLoading} 
+                  onEditFolder={handleEditFolder} 
+                  onEditFile={handleEditFile}
+                  onDeleteFile={handleDelete}
+                />
               </div>
             </>
           )}
@@ -177,6 +193,17 @@ export default function ProjectDetail() {
             onClose={() => {
               setEditFileDialogOpen(false)
               setSelectedFile(null)
+            }}
+          />
+        )}
+
+        {itemToDelete && (
+          <DeleteProjectItemDialog
+            item={itemToDelete}
+            isOpen={deleteDialogOpen}
+            onClose={() => {
+              setDeleteDialogOpen(false)
+              setItemToDelete(null)
             }}
           />
         )}

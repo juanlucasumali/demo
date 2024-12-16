@@ -44,7 +44,7 @@ export const useNavigationStore = create<NavigationState>()(
   persist(
     (set, get) => ({
       // Initial state
-      lastVisitedPath: '/',
+      lastVisitedPath: '/projects',
       isNavigationBlocked: false,
       isSidebarOpen: true,
       currentProjectId: null,

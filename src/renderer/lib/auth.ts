@@ -30,7 +30,7 @@ export async function publicOnlyLoader() {
   if (hasProfile && isAuthenticated) {
     console.log('Already has profile and is authenticated, redirecting to last visited path')
     throw redirect({
-      to: lastVisitedPath || '/dashboard',
+      to: lastVisitedPath || '/projects',
     })
   } 
 }

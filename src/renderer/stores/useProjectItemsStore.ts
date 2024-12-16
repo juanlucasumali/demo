@@ -53,18 +53,29 @@ export const useProjectItemsStore = create<ProjectItemsState>()(
 
       fetchItems: async (projectId, folderId) => {
         set({ isLoading: true, error: null })
-        console.log("Fetching items:", projectId, folderId)
         try {
           const items = await projectItemsService.getItems(projectId, folderId)
+          let breadcrumbs: Array<{ id: string; name: string }> = []
+      
+          if (folderId) {
+            const parents = await projectItemsService.getParentFolders(folderId)
+            breadcrumbs = parents.map(parent => ({
+              id: parent.id,
+              name: parent.name
+            }))
+          }
+      
           set({ 
-            items, 
+            items,
+            breadcrumbs,
             isLoading: false,
-            currentFolderId: folderId ?? null // Ensure null for root
+            currentFolderId: folderId
           })
         } catch (error) {
           set({ error: error as Error, isLoading: false })
         }
       },
+      
 
       addItem: async (item) => {
         set({ isLoading: true, error: null })

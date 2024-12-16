@@ -87,7 +87,7 @@ export function CompleteProfileForm() {
         title: 'Error',
         description: 'User not found. Please sign in again.'
       })
-      navigate({ to: '/dashboard' })
+      navigate({ to: '/projects' })
       return
     }
 
@@ -163,7 +163,7 @@ export function CompleteProfileForm() {
 
       if (hasProfile) {
         await verifyAuth()
-        navigate({ to: '/dashboard' })
+        navigate({ to: '/projects' })
       } else {
         throw profileError
       }

@@ -63,7 +63,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
       if (hasProfile) {
         await verifyAuth()
-        navigate({ to: '/dashboard' })
+        navigate({ to: '/projects' })
       } else {
         navigate({ to: '/complete-profile' })
       }

@@ -38,6 +38,26 @@ export const projectItemsService = {
     // return itemsWithUrls.map(transformDatabaseItem)
   },
 
+  async getParentFolders(folderId: string): Promise<ProjectItem[]> {
+    const parents: ProjectItem[] = []
+    let currentId = folderId
+  
+    while (currentId) {
+      const { data, error } = await supabase
+        .from('project_items')
+        .select('*')
+        .eq('id', currentId)
+        .single()
+  
+      if (error || !data) break
+  
+      parents.unshift(data)
+      currentId = data.parent_folder_id
+    }
+  
+    return parents
+  },
+
   /**
    * Create a new project item
    */
@@ -158,6 +178,7 @@ export const projectItemsService = {
 
     return transformDatabaseItem({ ...data, url })
   },
+  
 
     /**
    * Upload a file to B2 and create database entry

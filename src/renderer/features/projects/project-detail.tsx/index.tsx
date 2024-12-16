@@ -17,6 +17,7 @@ import { CreateFolderDialog } from './components/create-folder-dialog'
 import { UploadFileDialog } from './components/upload-file-dialog'
 import { PageHeaderSkeleton } from '@/renderer/components/skeletons'
 import { EditFolderDialog } from './components/edit-folder-dialog'
+import { EditFileDialog } from './components/edit-file-dialog'
 
 export default function ProjectDetail() {
   const { projects, isLoading: projectsLoading, fetchProjects } = useProjectsStore()
@@ -62,6 +63,11 @@ export default function ProjectDetail() {
     const handleEditFolderClose = () => {
       setEditFolderDialogOpen(false)
       setSelectedFolder(null)
+    }
+
+    const handleEditFile = (file: ProjectItem) => {
+      setSelectedFile(file)
+      setEditFileDialogOpen(true)
     }
 
     useEffect(() => {
@@ -149,7 +155,7 @@ export default function ProjectDetail() {
                 </div>
               </div>
               <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0">
-                <DataTable data={items} columns={columns} isLoading={itemsLoading} onEditFolder={handleEditFolder} />
+                <DataTable data={items} columns={columns} isLoading={itemsLoading} onEditFolder={handleEditFolder} onEditFile={handleEditFile}/>
               </div>
             </>
           )}
@@ -164,13 +170,16 @@ export default function ProjectDetail() {
           />
         )}
 
-        {/* {selectedFile && (
-          <EditFolderDialog
-            folder={selectedFolder}
-            isOpen={editFolderDialogOpen}
-            onClose={handleEditFolderClose}
+        {selectedFile && (
+          <EditFileDialog
+            file={selectedFile}
+            isOpen={editFileDialogOpen}
+            onClose={() => {
+              setEditFileDialogOpen(false)
+              setSelectedFile(null)
+            }}
           />
-        )} */}
+        )}
 
     </TasksContextProvider>
   )

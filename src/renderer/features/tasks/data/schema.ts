@@ -28,6 +28,11 @@ export const rowActionSchema = z.object({
   type: z.enum(['file', 'folder']),
   isStarred: z.boolean().optional().default(false),
   parentFolderId: z.string().nullable().optional(),
+  tags: z.array(z.string()).nullable(),
+  ownerId: z.string(), // Made optional
+  createdAt: z.string(),
+  fileFormat: z.string().nullable(),
+  size: z.number().nullable(),
 })
 
 export type ProjectItem = z.infer<typeof projectItemSchema>

@@ -30,10 +30,9 @@ import { FILE_TAGS, FileTags } from '@/renderer/components/layout/types'
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { IconPlus } from "@tabler/icons-react"
+import { IconEdit } from "@tabler/icons-react"
 import { Circle, CircleDot, Square, SquareCheck } from "lucide-react"
 import { useToast } from "@/renderer/hooks/use-toast"
-import { useAuth } from '@/renderer/stores/useAuthStore'
 
 const formSchema = z.object({
   name: z.string()
@@ -43,150 +42,194 @@ const formSchema = z.object({
     .max(60, { message: "Description cannot exceed 60 characters." }),
 })
 
-interface UploadFileDialogProps {
-  projectId: string
+interface EditFileDialogProps {
+  file: ProjectItem
   trigger?: React.ReactNode
+  isOpen?: boolean
+  onClose?: () => void
 }
 
-export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [file, setFile] = useState<File | null>(null)
-  const [selectedTags, setSelectedTags] = useState<Record<string, string[]>>({
-    type: [],
-    instrument: [],
-    status: [],
-    version: [],
-  })
-  const addFileItem = useProjectItemsStore((state) => state.addFileItem)
-  const currentFolderId = useProjectItemsStore((state) => state.currentFolderId)
-  const { toast } = useToast()
-  const { user } = useAuth()
+export function EditFileDialog({ 
+  file, 
+  trigger, 
+  isOpen: controlledIsOpen,
+  onClose 
+}: EditFileDialogProps) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
+  const isOpen = controlledIsOpen ?? internalIsOpen
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-    },
-    mode: "onChange",
-  })
+  console.log("FILE??", file)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0]
-      setFile(selectedFile)
-      form.setValue("name", selectedFile.name)
-    }
-  }
-
-  const handleTagSelect = (category: FileTags, tag: string) => {
-    setSelectedTags((prev) => {
-      const categoryTags = [...prev[category]]
-      const tagIndex = categoryTags.indexOf(tag)
-  
-      if (tagIndex === -1) {
-        if (FILE_TAGS[category].allowMultiple) {
-          categoryTags.push(tag)
-        } else {
-          return { ...prev, [category]: [tag] }
-        }
-      } else {
-        categoryTags.splice(tagIndex, 1)
-      }
-  
-      return { ...prev, [category]: categoryTags }
-    })
-  }
-
-  const resetForm = () => {
-    form.reset()
-    setFile(null)
-    setSelectedTags({
+  // Initialize tags state with existing file tags
+  const [selectedTags, setSelectedTags] = useState<Record<FileTags, string[]>>(() => {
+    // Create initial empty state
+    const initialTags: Record<FileTags, string[]> = {
       type: [],
       instrument: [],
       status: [],
       version: [],
+    }
+
+    // If file has tags, categorize them
+    if (file.tags && file.tags.length > 0) {
+      file.tags.forEach(tag => {
+        // Check each category to find where this tag belongs
+        Object.entries(FILE_TAGS).forEach(([category, config]) => {
+          if (config.options.includes(tag)) {
+            initialTags[category as FileTags].push(tag)
+          }
+        })
+      })
+    }
+
+    return initialTags
+  })
+
+  // Handle tag selection
+  const handleTagSelect = (category: FileTags, tag: string) => {
+    setSelectedTags(prev => {
+      const newTags = { ...prev }
+      const categoryTags = [...prev[category]]
+      const tagIndex = categoryTags.indexOf(tag)
+
+      if (tagIndex === -1) {
+        // Tag is not selected
+        if (FILE_TAGS[category].allowMultiple) {
+          // For multiple-select categories, add to existing tags
+          newTags[category] = [...categoryTags, tag]
+        } else {
+          // For single-select categories, replace existing tag
+          newTags[category] = [tag]
+        }
+      } else {
+        // Tag is already selected, remove it
+        categoryTags.splice(tagIndex, 1)
+        newTags[category] = categoryTags
+      }
+
+      return newTags
     })
   }
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!file || !user) return
+  // Reset form and tags to original values
+  const resetForm = () => {
+    form.reset({
+      name: file.name,
+      description: file.description || "",
+    })
 
+    // Reset tags to original file tags
+    const initialTags: Record<FileTags, string[]> = {
+      type: [],
+      instrument: [],
+      status: [],
+      version: [],
+    }
+
+    if (file.tags && file.tags.length > 0) {
+      file.tags.forEach(tag => {
+        Object.entries(FILE_TAGS).forEach(([category, config]) => {
+          if (config.options.includes(tag)) {
+            initialTags[category as FileTags].push(tag)
+          }
+        })
+      })
+    }
+
+    setSelectedTags(initialTags)
+  }
+
+  const updateItem = useProjectItemsStore((state) => state.updateItem)
+  const { toast } = useToast()
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: file.name,
+      description: file.description || "",
+    },
+    mode: "onChange",
+  })
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose()
+    } else {
+      setInternalIsOpen(false)
+    }
+    resetForm()
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    if (onClose && !open) {
+      onClose()
+    } else {
+      setInternalIsOpen(open)
+    }
+
+    if (!open) {
+      resetForm()
+    }
+  }
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     const allTags = Object.values(selectedTags).flat()
 
     try {
-      const newItem: Omit<ProjectItem, 'id' | 'createdAt' | 'lastModified'> = {
+      await updateItem(file.id, {
         name: values.name,
         description: values.description,
-        type: 'file',
-        isStarred: false,
-        fileFormat: file.type,
-        size: file.size,
-        duration: null,
-        ownerId: user.id,
         tags: allTags,
-        projectId,
-        parentFolderId: currentFolderId,
-        filePath: null,
-      }
+      })
 
-        // Use the new addFileItem method
-        await addFileItem(
-          newItem,
-          file,
-          (hashProgress) => {
-            // Handle hash calculation progress
-            console.log('Hash progress:', hashProgress)
-          },
-          (uploadProgress) => {
-            // Handle upload progress
-            console.log('Upload progress:', uploadProgress)
-          }
-        )
-
-      setOpen(false)
-      resetForm()
+      handleClose()
       toast({
         title: "Success",
-        description: "File uploaded successfully",
+        description: "File updated successfully",
       })
     } catch (error) {
-      console.error('Failed to upload file:', error)
+      console.error('Failed to update file:', error)
       toast({
         title: "Error",
-        description: "Failed to upload file",
+        description: "Failed to update file",
         variant: "destructive"
       })
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild onClick={(e) => {
+        e.stopPropagation()
+      }}>
         {trigger ?? (
-          <Button variant="default" size="sm" className="gap-2">
-            <IconPlus size={16} />
-            <span>Upload File</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="gap-2"
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            }}
+          >
+            <IconEdit size={16} />
+            <span>Edit File</span>
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px]" onClick={(e) => {
+        e.stopPropagation()
+      }}>
         <DialogHeader>
-          <DialogTitle>Upload File</DialogTitle>
+          <DialogTitle>Edit File</DialogTitle>
           <DialogDescription>
-            Upload a file to your project. Add details and tags below.
+            Update file details and tags.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="rounded-lg border p-4 space-y-4">
-              <Input
-                type="file"
-                onChange={handleFileChange}
-                className="w-full"
-              />
-              
               <FormField
                 control={form.control}
                 name="name"
@@ -223,14 +266,16 @@ export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) 
               />
 
               <Accordion type="single" collapsible className="w-full">
-                {Object.entries(FILE_TAGS).map(([category, { options, color }], categoryIndex) => (
-                  <AccordionItem key={category} value={category}>
-                    <AccordionTrigger className="text-sm hover:no-underline capitalize">
-                      {category}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="grid grid-cols-2 gap-1 p-1">
-                        {options.map((option) => (
+              {Object.entries(FILE_TAGS).map(([category, config]) => (
+                <AccordionItem key={category} value={category}>
+                  <AccordionTrigger className="text-sm hover:no-underline capitalize">
+                    {category}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-2 gap-1 p-1">
+                      {config.options.map((option) => {
+                        const isSelected = selectedTags[category as FileTags].includes(option)
+                        return (
                           <Button
                             key={option}
                             type="button"
@@ -240,16 +285,14 @@ export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) 
                             onClick={() => handleTagSelect(category as FileTags, option)}
                           >
                             <div className="flex items-center gap-2">
-                              {FILE_TAGS[category].allowMultiple ? (
-                                // Use squares for categories that allow multiple selections
-                                selectedTags[category].includes(option) ? (
+                              {config.allowMultiple ? (
+                                isSelected ? (
                                   <SquareCheck className="h-4 w-4" />
                                 ) : (
                                   <Square className="h-4 w-4" />
                                 )
                               ) : (
-                                // Use circles for categories that only allow single selection
-                                selectedTags[category].includes(option) ? (
+                                isSelected ? (
                                   <CircleDot className="h-4 w-4" />
                                 ) : (
                                   <Circle className="h-4 w-4" />
@@ -257,45 +300,47 @@ export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) 
                               )}
                               <span className="truncate">{option}</span>
                             </div>
-
                           </Button>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                        )
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
 
-              {/* Selected tags display */}
-              {Object.entries(selectedTags).some(([_, tags]) => tags.length > 0) && (
-                <div className="w-full overflow-x-auto no-scrollbar">
-                  <div className="flex gap-2 flex-nowrap" style={{ maxWidth: "400px" }}>
-                    {Object.entries(selectedTags).map(([category, tags]) =>
-                      tags.map((tag) => (
-                        <Badge
-                          key={`${category}-${tag}`}
-                          variant="secondary"
-                          className={`bg-${FILE_TAGS[category as FileTags].color}-100 text-${FILE_TAGS[category as FileTags].color}-700 `}
-                        >
-                          {tag}
-                        </Badge>
-                      ))
-                    )}
-                  </div>
+            {/* Selected tags display */}
+            {Object.values(selectedTags).some(tags => tags.length > 0) && (
+              <div className="w-full overflow-x-auto no-scrollbar">
+                <div className="flex gap-2 flex-nowrap" style={{ maxWidth: "400px" }}>
+                  {Object.entries(selectedTags).map(([category, tags]) =>
+                    tags.map((tag) => (
+                      <Badge
+                        key={`${category}-${tag}`}
+                        variant="secondary"
+                        className={`whitespace-nowrap flex-shrink-0 ${
+                          colorClasses[FILE_TAGS[category as FileTags].color]
+                        }`}
+                      >
+                        {tag}
+                      </Badge>
+                    ))
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
             <div className="flex justify-end gap-3">
               <Button 
                 variant="outline" 
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={handleClose}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={!file}>
-                Upload
+              <Button type="submit">
+                Save Changes
               </Button>
             </div>
           </form>
@@ -303,4 +348,16 @@ export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) 
       </DialogContent>
     </Dialog>
   )
+}
+
+// Add this at the top of the file with other imports
+const colorClasses = {
+  blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  green: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  red: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+  purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  yellow: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+  pink: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300',
+  sky: 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300',
+  orange: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
 }

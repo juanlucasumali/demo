@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { Row } from '@tanstack/react-table'
-import { IconTrash, IconStar, IconStarFilled, IconDownload, IconEdit, IconShare } from '@tabler/icons-react'
+import { IconTrash, IconStar, IconStarFilled, IconDownload, IconEdit, IconShare, IconFolder } from '@tabler/icons-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +17,10 @@ import { ProjectItem } from '@/renderer/components/layout/types'
 interface DataTableRowActionsProps {
   row: Row<RowActionItem>
   onEditFolder?: (folder: ProjectItem) => void
+  onEditFile?: (file: ProjectItem) => void
 }
 
-export function DataTableRowActions({ row, onEditFolder }: DataTableRowActionsProps) {
+export function DataTableRowActions({ row, onEditFolder, onEditFile }: DataTableRowActionsProps) {
   const item = rowActionSchema.parse(row.original)
   const { setOpen, setCurrentRow } = useProjectDetailContext()
 
@@ -59,8 +60,24 @@ export function DataTableRowActions({ row, onEditFolder }: DataTableRowActionsPr
               onEditFolder(item)
             }}
           >
-            <IconEdit className="mr-2 h-4 w-4" />
             Edit Folder
+            <DropdownMenuShortcut>
+              <IconFolder size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        )}
+
+        {item.type === 'file' && onEditFile && (
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation()
+              onEditFile(item)
+            }}
+          >
+            Edit File
+            <DropdownMenuShortcut>
+              <IconEdit size={16} />
+            </DropdownMenuShortcut>
           </DropdownMenuItem>
         )}
 

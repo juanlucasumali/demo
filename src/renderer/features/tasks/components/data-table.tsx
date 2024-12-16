@@ -32,13 +32,15 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   isLoading?: boolean
   onEditFolder?: (folder: ProjectItem) => void
+  onEditFile?: (file: ProjectItem) => void
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   isLoading = false,
-  onEditFolder
+  onEditFolder,
+  onEditFile
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -58,6 +60,7 @@ export function DataTable<TData, TValue>({
               <DataTableRowActions 
                 row={row} 
                 onEditFolder={onEditFolder}
+                onEditFile={onEditFile}
               />
             ),
           }

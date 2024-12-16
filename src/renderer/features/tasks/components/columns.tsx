@@ -108,10 +108,12 @@ export const columns: ColumnDef<ProjectItem>[] = [
       if (!tags || tags.length === 0) return null
       
       return (
-        <div className="flex flex-wrap gap-1">
-          {tags.map((tag) => (
-            <TagBadge key={tag} tag={tag} />
-          ))}
+        <div className="overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 min-w-min">
+            {tags.map((tag) => (
+              <TagBadge key={tag} tag={tag} />
+            ))}
+          </div>
         </div>
       )
     },
@@ -119,6 +121,13 @@ export const columns: ColumnDef<ProjectItem>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => <DataTableRowActions row={row} />,
-  },
+    cell: ({ row }) => (
+      <div onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+      }}>
+        <DataTableRowActions row={row} />
+      </div>
+    ),
+  }  
 ]

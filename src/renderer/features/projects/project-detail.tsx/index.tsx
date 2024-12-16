@@ -1,15 +1,8 @@
 import { navigation, useNavigationStore } from '@/renderer/stores/useNavigationStore'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
-import { Project } from '@/renderer/components/layout/types'
 import { useState, useEffect, useMemo } from 'react'
-import { IconDownload, IconPlus } from '@tabler/icons-react'
 import useDialogState from '@/renderer/hooks/use-dialog-state'
-import { toast } from '@/renderer/hooks/use-toast'
-import { Button } from '@/renderer/components/ui/button'
-import { ConfirmDialog } from '@/renderer/components/confirm-dialog'
 import { Main } from '@/renderer/components/layout/main'
-import { UploadDialog } from '../../tasks/components/tasks-import-dialog'
-import { ProjectItemMutateDrawer } from '../../tasks/components/tasks-mutate-drawer'
 import TasksContextProvider, { ProjectDetailDialogType } from '../../tasks/context/tasks-context'
 import { DataTable } from '../../tasks/components/data-table'
 import { columns } from '../../tasks/components/columns'
@@ -23,12 +16,12 @@ import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
 import { CreateFolderDialog } from './components/create-folder-dialog'
 import { UploadFileDialog } from './components/upload-file-dialog'
 import { PageHeaderSkeleton } from '@/renderer/components/skeletons'
+import { EditFolderDialog } from './components/edit-folder-dialog'
 
 export default function ProjectDetail() {
   const { projects, isLoading: projectsLoading, fetchProjects } = useProjectsStore()
   const [currentRow, setCurrentRow] = useState<ProjectItem | null>(null)
   const [open, setOpen] = useDialogState<ProjectDetailDialogType>(null)
-  const [type, setType] = useDialogState<"file" | "folder">(null)
   const currentPath = useNavigationStore((state) => state.getCurrentPath())
   const projectId = useNavigationStore((state) => state.getCurrentProjectId())
   const project = projects.find(p => p.id === projectId)
@@ -54,6 +47,22 @@ export default function ProjectDetail() {
     } = useProjectItemsStore()
   
     const [searchTerm, setSearchTerm] = useState('')
+    const [editFolderDialogOpen, setEditFolderDialogOpen] = useState(false)
+    const [selectedFolder, setSelectedFolder] = useState<ProjectItem | null>(null)
+    const [editFileDialogOpen, setEditFileDialogOpen] = useState(false)
+    const [selectedFile, setSelectedFile] = useState<ProjectItem | null>(null)
+  
+    // Function to open dialog with selected folder
+    const handleEditFolder = (folder: ProjectItem) => {
+      setSelectedFolder(folder)
+      setEditFolderDialogOpen(true)
+    }
+  
+    // Function to close dialog
+    const handleEditFolderClose = () => {
+      setEditFolderDialogOpen(false)
+      setSelectedFolder(null)
+    }
 
     useEffect(() => {
       const { projectId, folderId } = navigation.parsePathIds()
@@ -105,18 +114,6 @@ export default function ProjectDetail() {
     const filteredItems = useMemo(() => {
       return getFilteredAndSortedItems()
     }, [getFilteredAndSortedItems, items, searchTerm, selectedTags, sortPreference])
-  
-    const handleFolderClick = (folderId: string) => {
-      setCurrentFolder(folderId)
-    }
-  
-    const handleBackClick = () => {
-      // Logic to navigate to parent folder
-      const currentItem = items.find(item => item.id === currentFolderId)
-      setCurrentFolder(currentItem?.parentFolderId || null)
-    }
-
-    const isLoading = projectsLoading || itemsLoading
 
     return (
       <TasksContextProvider value={{ open, setOpen, currentRow, setCurrentRow }}>
@@ -152,80 +149,29 @@ export default function ProjectDetail() {
                 </div>
               </div>
               <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0">
-                <DataTable data={items} columns={columns} isLoading={itemsLoading}/>
+                <DataTable data={items} columns={columns} isLoading={itemsLoading} onEditFolder={handleEditFolder} />
               </div>
             </>
           )}
         </Main>
-      {/* ===== Dialogs ===== */}
 
-      <ProjectItemMutateDrawer
-        key='task-create'
-        open={open === 'create'}
-        onOpenChange={() => setOpen('create')}
-        type={type ?? 'file'}
-      />
-
-      <UploadDialog
-        key='tasks-import'
-        open={open === 'upload'}
-        onOpenChange={() => setOpen('upload')}
-      />
-
-      {currentRow && (
-        <>
-          <ProjectItemMutateDrawer
-            key={`task-update-${currentRow.id}`}
-            open={open === 'update'}
-            onOpenChange={() => {
-              setOpen('update')
-              setTimeout(() => {
-                setCurrentRow(null)
-              }, 500)
-            }}
-            currentItem={currentRow}
-            type={type ?? 'file'}
+        {/* ===== Dialogs ===== */}
+        {selectedFolder && (
+          <EditFolderDialog
+            folder={selectedFolder}
+            isOpen={editFolderDialogOpen}
+            onClose={handleEditFolderClose}
           />
+        )}
 
-          <ConfirmDialog
-            key='task-delete'
-            destructive
-            open={open === 'delete'}
-            onOpenChange={() => {
-              setOpen('delete')
-              setTimeout(() => {
-                setCurrentRow(null)
-              }, 500)
-            }}
-            handleConfirm={() => {
-              setOpen(null)
-              setTimeout(() => {
-                setCurrentRow(null)
-              }, 500)
-              toast({
-                title: 'The following task has been deleted:',
-                description: (
-                  <pre className='mt-2 w-[340px] rounded-md bg-slate-950 p-4'>
-                    <code className='text-white'>
-                      {JSON.stringify(currentRow, null, 2)}
-                    </code>
-                  </pre>
-                ),
-              })
-            }}
-            className='max-w-md'
-            title={`Delete this task: ${currentRow.id} ?`}
-            desc={
-              <>
-                You are about to delete a task with the ID{' '}
-                <strong>{currentRow.id}</strong>. <br />
-                This action cannot be undone.
-              </>
-            }
-            confirmText='Delete'
+        {/* {selectedFile && (
+          <EditFolderDialog
+            folder={selectedFolder}
+            isOpen={editFolderDialogOpen}
+            onClose={handleEditFolderClose}
           />
-        </>
-      )}
+        )} */}
+
     </TasksContextProvider>
   )
 }

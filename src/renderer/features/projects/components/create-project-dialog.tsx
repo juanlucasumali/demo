@@ -380,18 +380,6 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
                               } group`}
                             >
                               <span>{tag.name}</span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()  // Add this
-                                  e.preventDefault()
-                                  const newTags = [...tags]
-                                  newTags.splice(index, 1)
-                                  setTags(newTags)
-                                }}
-                                className="ml-1 opacity-0 group-hover:opacity-100 flex-shrink-0"
-                              >
-                                ×
-                              </button>
                             </Badge>
                           ))}
                       </div>

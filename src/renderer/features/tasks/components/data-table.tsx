@@ -25,17 +25,20 @@ import { DataTablePagination } from '../components/data-table-pagination'
 import { DataTableToolbar } from '../components/data-table-toolbar'
 import { ProjectItem } from '../data/schema'
 import { navigation } from '@/renderer/stores/useNavigationStore'
+import { DataTableRowActions } from './data-table-row-actions'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   isLoading?: boolean
+  onEditFolder?: (folder: ProjectItem) => void
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   isLoading = false,
+  onEditFolder
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -44,6 +47,25 @@ export function DataTable<TData, TValue>({
     []
   )
   const [sorting, setSorting] = React.useState<SortingState>([])
+
+  const tableColumns = React.useMemo(
+    () =>
+      columns.map((col) => {
+        if (col.id === 'actions') {
+          return {
+            ...col,
+            cell: ({ row }) => (
+              <DataTableRowActions 
+                row={row} 
+                onEditFolder={onEditFolder}
+              />
+            ),
+          }
+        }
+        return col
+      }),
+    [columns, onEditFolder]
+  )
 
   const handleRowClick = (item: ProjectItem) => {
     if (item.type === 'folder') {
@@ -57,7 +79,7 @@ export function DataTable<TData, TValue>({
 
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     state: {
       sorting,
       columnVisibility,

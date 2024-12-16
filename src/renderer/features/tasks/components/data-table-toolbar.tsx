@@ -80,27 +80,6 @@ export function DataTableToolbar<TData>({
           )}
         </div>
       </div>
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8"
-          onClick={() => setOpen('upload')}
-        >
-          <Upload className="mr-2 h-4 w-4" />
-          Upload
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8"
-          onClick={() => setOpen('create')}
-        >
-          <FolderPlus className="mr-2 h-4 w-4" />
-          New Folder
-        </Button>
-        <DataTableViewOptions table={table} />
-      </div>
     </div>
   )
 }

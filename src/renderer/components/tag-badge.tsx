@@ -1,8 +1,6 @@
 import { FILE_TAGS, FileTags } from "./layout/types";
 import { Badge } from "./ui/badge";
 
-type TagOption = typeof FILE_TAGS[FileTags]["options"][number]
-
 const getTagCategory = (tag: string): { category: FileTags; color: string } | null => {
   for (const [category, config] of Object.entries(FILE_TAGS)) {
     if ((config.options as readonly string[]).includes(tag)) {

@@ -12,21 +12,31 @@ import {
 import { Button } from '@/renderer/components/ui/button'
 import { RowActionItem, rowActionSchema } from '../data/schema'
 import { useProjectDetailContext } from '../context/tasks-context'
+import { ProjectItem } from '@/renderer/components/layout/types'
 
 interface DataTableRowActionsProps {
   row: Row<RowActionItem>
+  onEditFolder?: (folder: ProjectItem) => void
 }
 
-export function DataTableRowActions({ row }: DataTableRowActionsProps) {
+export function DataTableRowActions({ row, onEditFolder }: DataTableRowActionsProps) {
   const item = rowActionSchema.parse(row.original)
   const { setOpen, setCurrentRow } = useProjectDetailContext()
 
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger 
+        asChild
+        onClick={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+        }}
+      >
         <Button
           variant='ghost'
           className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
+          onClick={(e) => {
+          }}
         >
           <DotsHorizontalIcon className='h-4 w-4' />
           <span className='sr-only'>Open menu</span>
@@ -42,17 +52,17 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           </DropdownMenuItem>
         )}
         
-        <DropdownMenuItem
-          onClick={() => {
-            setCurrentRow(item)
-            setOpen('rename')
-          }}
-        >
-          Rename
-          <DropdownMenuShortcut>
-            <IconEdit size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        {item.type === 'folder' && onEditFolder && (
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation()
+              onEditFolder(item)
+            }}
+          >
+            <IconEdit className="mr-2 h-4 w-4" />
+            Edit Folder
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuItem onClick={() => console.log('Share', item.id)}>
           Share

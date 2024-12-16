@@ -152,7 +152,7 @@ export const ProjectCard = ({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <button
+          {/* <button
             onClick={(e) => {
               e.stopPropagation()
               toggleStar(project.id, project.isStarred)
@@ -162,7 +162,7 @@ export const ProjectCard = ({
             {project.isStarred 
               ? <IconStarFilled size={20} className="text-yellow-400" /> 
               : <IconStar size={20} />}
-          </button>
+          </button> */}
         </div>
       </div>
       {/* Rest of the component remains the same */}

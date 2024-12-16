@@ -79,11 +79,14 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
   const isOpen = controlledIsOpen ?? internalIsOpen
 
   useEffect(() => {
+    console.log('useEffect triggered', { project, mode })
     if (project) {
       setIsStarred(project.isStarred)
       setTags(project.tags)
+      console.log("project tags:", project.tags)
+      console.log("project tags:", tags)
     }
-  }, [project, mode]);
+  }, []);
 
   const iconGradientStyle = useMemo(() => {
     return generateGradientStyle(project?.id ?? previewProjectId);
@@ -91,8 +94,9 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
 
   // Add reset function
   const resetForm = () => {
+    console.log('resetForm called')
     form.reset()
-    setTags([])
+    // setTags([])
     setIsStarred(false)
   }
 
@@ -136,7 +140,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
         icon: null,
         description: values.description,
         isStarred: isStarred,
-        tags: tags,
+        tags: values.tags,
         lastModified: new Date().toISOString()
       }
 
@@ -168,6 +172,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
   }
 
     const handleOpenChange = (open: boolean) => {
+      console.log('handleOpenChange', { open, projectTags: project?.tags })
     if (onClose && !open) {
       onClose()
     } else {
@@ -180,7 +185,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
     } else {
       if (project) {
         setIsStarred(project.isStarred)
-        setTags(project.tags)
+        // setTags(project.tags)
       }
       blockNavigation()
     }
@@ -228,7 +233,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
                   >
                     <IconDots size={20} className="text-muted-foreground" />
                   </button>
-                  <button
+                  {/* <button
                     type="button"
                     className="text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-300"
                     onClick={() => setIsStarred(!isStarred)}
@@ -236,7 +241,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
                   {isStarred 
                     ? <IconStarFilled size={20} className="text-yellow-400" /> 
                     : <IconStar size={20} />}
-                  </button>
+                  </button> */}
                 </div>
               </div>
 

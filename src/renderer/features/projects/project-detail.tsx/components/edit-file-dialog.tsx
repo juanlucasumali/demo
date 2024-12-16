@@ -247,7 +247,7 @@ export function EditFileDialog({
                 )}
               />
               
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
@@ -263,7 +263,7 @@ export function EditFileDialog({
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <Accordion type="single" collapsible className="w-full">
               {Object.entries(FILE_TAGS).map(([category, config]) => (

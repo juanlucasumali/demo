@@ -194,7 +194,7 @@ export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) 
                   <FormItem>
                     <FormControl>
                       <Input 
-                        placeholder="" 
+                        placeholder="File name" 
                         {...field}
                         maxLength={100}
                       />

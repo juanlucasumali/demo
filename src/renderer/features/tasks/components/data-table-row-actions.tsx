@@ -77,6 +77,19 @@ export function DataTableRowActions({ row, onEditFolder, onEditFile, onDeleteFil
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-[160px]'>
+        {item.type === 'file' && onEditFile && (
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation()
+                onEditFile(item)
+              }}
+            >
+              Edit File
+              <DropdownMenuShortcut>
+                <IconEdit size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          )}
         {item.type === 'file' && (
           <DropdownMenuItem 
             onClick={(e) => {

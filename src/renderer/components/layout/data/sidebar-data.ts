@@ -25,7 +25,7 @@ import { type SidebarData } from '../types'
 export const sidebarData: SidebarData = {
   teams: [
     {
-      name: 'Shadcn Admin',
+      name: 'Team 1',
       logo: Command,
       plan: 'Vite + ShadcnUI',
     },
@@ -44,16 +44,16 @@ export const sidebarData: SidebarData = {
     {
       title: 'General',
       items: [
-        // {
-        //   title: 'Dashboard',
-        //   url: '/dashboard',
-        //   icon: IconLayoutDashboard,
-        // },
         {
           title: 'Projects',
           url: '/projects',
           icon: IconPackages,
         },
+        // {
+        //   title: 'Dashboard',
+        //   url: '/dashboard',
+        //   icon: IconLayoutDashboard,
+        // },
         // {
         //   title: 'Tasks',
         //   url: '/tasks',
@@ -137,37 +137,37 @@ export const sidebarData: SidebarData = {
     {
       title: 'Other',
       items: [
-        {
-          title: 'Settings',
-          icon: IconSettings,
-          items: [
-            {
-              title: 'Profile',
-              url: '/settings',
-              icon: IconUserCog,
-            },
-            {
-              title: 'Account',
-              url: '/settings/account',
-              icon: IconTool,
-            },
-            {
-              title: 'Appearance',
-              url: '/settings/appearance',
-              icon: IconPalette,
-            },
-            {
-              title: 'Notifications',
-              url: '/settings/notifications',
-              icon: IconNotification,
-            },
-            {
-              title: 'Display',
-              url: '/settings/display',
-              icon: IconBrowserCheck,
-            },
-          ],
-        },
+        // {
+        //   title: 'Settings',
+        //   icon: IconSettings,
+        //   items: [
+        //     {
+        //       title: 'Account',
+        //       url: '/settings/account',
+        //       icon: IconTool,
+        //     },
+        //     {
+        //       title: 'Appearance',
+        //       url: '/settings/appearance',
+        //       icon: IconPalette,
+        //     },
+        //     {
+        //       title: 'Notifications',
+        //       url: '/settings/notifications',
+        //       icon: IconNotification,
+        //     },
+        //     {
+        //       title: 'Display',
+        //       url: '/settings/display',
+        //       icon: IconBrowserCheck,
+        //     },
+        //   ],
+        // },
+        // {
+        //   title: 'Profile',
+        //   url: '/settings',
+        //   icon: IconUserCog,
+        // },
         {
           title: 'Help Center',
           url: '/help-center',

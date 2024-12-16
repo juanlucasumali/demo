@@ -46,7 +46,7 @@ export function DataTableToolbar<TData>({
     <div className='flex items-center justify-between'>
       <div className='flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2'>
         <Input
-          placeholder='Filter files and folders...'
+          placeholder='Search for a file or folder...'
           value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
           onChange={(event) =>
             table.getColumn('name')?.setFilterValue(event.target.value)
@@ -61,13 +61,13 @@ export function DataTableToolbar<TData>({
               options={fileTypeOptions}
             />
           )}
-          {table.getColumn('owner') && (
+          {/* {table.getColumn('owner') && (
             <DataTableFacetedFilter
               column={table.getColumn('owner')}
               title='Owner'
               options={ownerOptions}
             />
-          )}
+          )} */}
           {isFiltered && (
             <Button
               variant='ghost'

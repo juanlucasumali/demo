@@ -140,7 +140,7 @@ export const columns: ColumnDef<ProjectItem>[] = [
         </div>
       )
     },
-    enableSorting: false,
+    enableSorting: true,
   },
   {
     id: 'actions',

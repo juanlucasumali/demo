@@ -11,8 +11,10 @@ import {
 } from '@/renderer/components/ui/dropdown-menu'
 import { Button } from '@/renderer/components/ui/button'
 import { RowActionItem, rowActionSchema } from '../data/schema'
-import { useProjectDetailContext } from '../context/tasks-context'
 import { ProjectItem } from '@/renderer/components/layout/types'
+import { projectItemsService } from '@/renderer/services/project-items-service'
+import { useState } from 'react'
+import { useToast } from '@/renderer/hooks/use-toast'
 
 interface DataTableRowActionsProps {
   row: Row<RowActionItem>
@@ -23,6 +25,37 @@ interface DataTableRowActionsProps {
 
 export function DataTableRowActions({ row, onEditFolder, onEditFile, onDeleteFile }: DataTableRowActionsProps) {
   const item = rowActionSchema.parse(row.original)
+  const [isDownloading, setIsDownloading] = useState(false)
+  const { toast } = useToast()
+  
+  const handleDownload = async (filePath: string) => {
+    if (!filePath) return
+    
+    setIsDownloading(true)
+    try {
+      const { url, filename } = await projectItemsService.downloadFile(filePath)
+      
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      toast({
+        title: "Download started",
+        description: `Downloading ${filename}`,
+      })
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "There was an error downloading the file",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   return (
     <DropdownMenu modal={false}>
@@ -45,8 +78,14 @@ export function DataTableRowActions({ row, onEditFolder, onEditFile, onDeleteFil
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-[160px]'>
         {item.type === 'file' && (
-          <DropdownMenuItem onClick={() => console.log('Download', item.id)}>
-            Download
+          <DropdownMenuItem 
+            onClick={(e) => {
+              e.stopPropagation()
+              handleDownload(item.filePath)
+            }}
+            disabled={isDownloading}
+          >
+            {isDownloading ? 'Downloading...' : 'Download'}
             <DropdownMenuShortcut>
               <IconDownload size={16} />
             </DropdownMenuShortcut>
@@ -66,40 +105,6 @@ export function DataTableRowActions({ row, onEditFolder, onEditFile, onDeleteFil
             </DropdownMenuShortcut>
           </DropdownMenuItem>
         )}
-
-        {item.type === 'file' && onEditFile && (
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.stopPropagation()
-              onEditFile(item)
-            }}
-          >
-            Edit File
-            <DropdownMenuShortcut>
-              <IconEdit size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-        )}
-
-        {/* <DropdownMenuItem onClick={() => console.log('Share', item.id)}>
-          Share
-          <DropdownMenuShortcut>
-            <IconShare size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          onClick={() => console.log('Toggle star', item.id)}
-        >
-          {item.isStarred ? 'Unstar' : 'Star'}
-          <DropdownMenuShortcut>
-            {item.isStarred ? (
-              <IconStarFilled size={16} />
-            ) : (
-              <IconStar size={16} />
-            )}
-          </DropdownMenuShortcut>
-        </DropdownMenuItem> */}
 
         <DropdownMenuSeparator />
 

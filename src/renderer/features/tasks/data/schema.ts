@@ -32,6 +32,7 @@ export const rowActionSchema = z.object({
   ownerId: z.string(), // Made optional
   createdAt: z.string(),
   fileFormat: z.string().nullable(),
+  filePath: z.string().nullable(),
   size: z.number().nullable(),
 })
 

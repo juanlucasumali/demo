@@ -23,7 +23,6 @@ interface DataTableRowActionsProps {
 
 export function DataTableRowActions({ row, onEditFolder, onEditFile, onDeleteFile }: DataTableRowActionsProps) {
   const item = rowActionSchema.parse(row.original)
-  const { setOpen, setCurrentRow } = useProjectDetailContext()
 
   return (
     <DropdownMenu modal={false}>
@@ -82,7 +81,7 @@ export function DataTableRowActions({ row, onEditFolder, onEditFile, onDeleteFil
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuItem onClick={() => console.log('Share', item.id)}>
+        {/* <DropdownMenuItem onClick={() => console.log('Share', item.id)}>
           Share
           <DropdownMenuShortcut>
             <IconShare size={16} />
@@ -100,7 +99,7 @@ export function DataTableRowActions({ row, onEditFolder, onEditFile, onDeleteFil
               <IconStar size={16} />
             )}
           </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
 
         <DropdownMenuSeparator />
 

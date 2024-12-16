@@ -194,9 +194,9 @@ export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) 
                   <FormItem>
                     <FormControl>
                       <Input 
-                        placeholder="File Name" 
+                        placeholder="" 
                         {...field}
-                        maxLength={30}
+                        maxLength={100}
                       />
                     </FormControl>
                     <FormMessage />
@@ -204,7 +204,7 @@ export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) 
                 )}
               />
               
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
@@ -220,7 +220,7 @@ export function UploadFileDialog({ projectId, trigger }: UploadFileDialogProps) 
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <Accordion type="single" collapsible className="w-full">
                 {Object.entries(FILE_TAGS).map(([category, { options, color }], categoryIndex) => (

@@ -5,6 +5,8 @@ import { DataTableRowActions } from './data-table-row-actions'
 import { File, Folder } from 'lucide-react'
 import { ProjectItem } from '@/renderer/components/layout/types'
 import { TagBadge } from '@/renderer/components/tag-badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/renderer/components/ui/avatar'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
 
 export const columns: ColumnDef<ProjectItem>[] = [
   {
@@ -54,19 +56,40 @@ export const columns: ColumnDef<ProjectItem>[] = [
     enableSorting: true,
   },
   {
-    accessorKey: 'ownerId', // Changed from 'owner' to 'ownerId'
+    accessorKey: 'owner',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Owner' />
     ),
     cell: ({ row }) => {
+      const owner = row.original.owner
+      
+      if (!owner) return <div>-</div>
+
       return (
-        <div className='flex items-center'>
-          <span>{row.getValue('ownerId')}</span>
+        <div className='flex items-center gap-2'>
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar className="h-6 w-6">
+                  <AvatarImage 
+                    src={owner.avatarPath || ''} 
+                    alt={owner.username} 
+                  />
+                  <AvatarFallback>
+                    {owner.username[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="center">
+                <p className="text-xs">{owner.username}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )
     },
     enableSorting: true,
-  },
+},
   {
     accessorKey: 'lastModified',
     header: ({ column }) => (

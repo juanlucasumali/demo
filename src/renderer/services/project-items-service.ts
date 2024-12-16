@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { ProjectItem } from '../components/layout/types'
-import { b2Service } from './b2Service'
+import { b2Service, mediaService } from './b2Service'
 
 export const projectItemsService = {
   /**
@@ -10,28 +10,39 @@ export const projectItemsService = {
     console.log("Getting items:", projectId, folderId)
     const query = supabase
       .from('project_items')
-      .select('*')
+      .select(`
+        *,
+        owner:owner_id (
+          username,
+          avatar_path
+        )
+      `)
       .eq('project_id', projectId)
 
-      if (folderId === null) {
-        query.is('parent_folder_id', null)  // Root items
-      } else if (folderId) {
-        query.eq('parent_folder_id', folderId)  // Items in specific folder
-      }
+    if (folderId === null) {
+      query.is('parent_folder_id', null)  // Root items
+    } else if (folderId) {
+      query.eq('parent_folder_id', folderId)  // Items in specific folder
+    }
 
-      const { data, error } = await query
+    const { data, error } = await query
 
     if (error) throw new Error(error.message)
 
     const itemsWithUrls = await Promise.all(
       data.map(async (item) => ({
         ...item,
-        url: item.filePath ? await b2Service.getPublicUrl(item.filePath) : null
+        url: item.file_path ? await b2Service.getPublicUrl(item.file_path) : null,
+        owner: {
+          username: item.owner.username,
+          avatar_path: item.owner.avatar_path ? await mediaService.getAvatarUrl(item.owner.avatar_path) : null
+        }
       }))
     )
 
     return itemsWithUrls.map(transformDatabaseItem)
   },
+
 
   async getParentFolders(folderId: string): Promise<ProjectItem[]> {
     const parents: ProjectItem[] = []
@@ -40,18 +51,33 @@ export const projectItemsService = {
     while (currentId) {
       const { data, error } = await supabase
         .from('project_items')
-        .select('*')
+        .select(`
+          *,
+          owner:owner_id (
+            username,
+            avatar_path
+          )
+        `)
         .eq('id', currentId)
         .single()
   
       if (error || !data) break
   
-      parents.unshift(data)
+      const itemWithUrls = {
+        ...data,
+        owner: {
+          username: data.owner.username,
+          avatar_path: data.owner.avatar_path ? await mediaService.getAvatarUrl(data.owner.avatar_path) : null
+        }
+      }
+  
+      parents.unshift(transformDatabaseItem(itemWithUrls))
       currentId = data.parent_folder_id
     }
   
     return parents
   },
+  
 
   /**
    * Create a new project item
@@ -73,14 +99,28 @@ export const projectItemsService = {
         project_id: item.projectId,
         parent_folder_id: item.parentFolderId
       })
-      .select()
+      .select(`
+        *,
+        owner:owner_id (
+          username,
+          avatar_path
+        )
+      `)
       .single()
 
       console.log("Create item Data:", data)
     if (error) throw new Error(error.message)
 
-    return transformDatabaseItem(data)
-  },
+      const itemWithUrls = {
+        ...data,
+        owner: {
+          username: data.owner.username,
+          avatar_path: data.owner.avatar_path ? await mediaService.getAvatarUrl(data.owner.avatar_path) : null
+        }
+      }
+  
+      return transformDatabaseItem(itemWithUrls)
+    },  
 
   async createItemWithFile(
     itemData: Omit<ProjectItem, 'id' | 'createdAt' | 'lastModified'>,
@@ -116,7 +156,13 @@ export const projectItemsService = {
           project_id: itemData.projectId,
           parent_folder_id: itemData.parentFolderId
         })
-        .select()
+        .select(`
+          *,
+          owner:owner_id (
+            username,
+            avatar_path
+          )
+        `)
         .single()
 
       if (error) {
@@ -125,7 +171,16 @@ export const projectItemsService = {
         throw error
       }
 
-      return transformDatabaseItem({ ...data, url })
+      const itemWithUrls = {
+        ...data,
+        url,
+        owner: {
+          username: data.owner.username,
+          avatar_path: data.owner.avatar_path ? await mediaService.getAvatarUrl(data.owner.avatar_path) : null
+        }
+      }
+
+      return transformDatabaseItem(itemWithUrls)
     } catch (error) {
       console.error('Error creating item with file:', error)
       throw new Error('Failed to create item with file')
@@ -149,13 +204,27 @@ export const projectItemsService = {
         last_modified: new Date().toISOString(),
       })
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        owner:owner_id (
+          username,
+          avatar_path
+        )
+      `)
       .single()
 
     if (error) throw new Error(error.message)
-
-    return transformDatabaseItem(data)
-  },
+      
+      const itemWithUrls = {
+        ...data,
+        owner: {
+          username: data.owner.username,
+          avatar_path: data.owner.avatar_path ? await mediaService.getAvatarUrl(data.owner.avatar_path) : null
+        }
+      }
+  
+      return transformDatabaseItem(itemWithUrls)
+    },
 
     /**
    * Delete item and associated file from B2
@@ -195,15 +264,29 @@ export const projectItemsService = {
   async toggleStar(id: string, currentValue: boolean): Promise<ProjectItem> {
     const { data, error } = await supabase
       .from('project_items')
-      .update({ isStarred: !currentValue })
+      .update({ is_starred: !currentValue })
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        owner:owner_id (
+          username,
+          avatar_path
+        )
+      `)
       .single()
 
     if (error) throw new Error(error.message)
 
-    return transformDatabaseItem(data)
-  },
+      const itemWithUrls = {
+        ...data,
+        owner: {
+          username: data.owner.username,
+          avatar_path: data.owner.avatar_path ? await mediaService.getAvatarUrl(data.owner.avatar_path) : null
+        }
+      }
+  
+      return transformDatabaseItem(itemWithUrls)
+    },
 
   
   /**
@@ -213,20 +296,32 @@ export const projectItemsService = {
     const { data, error } = await supabase
       .from('project_items')
       .update({ 
-        parentFolderId: targetFolderId,
-        lastModified: new Date().toISOString()
+        parent_folder_id: targetFolderId,
+        last_modified: new Date().toISOString()
       })
       .eq('id', itemId)
-      .select()
+      .select(`
+        *,
+        owner:owner_id (
+          username,
+          avatar_path
+        )
+      `)
       .single()
 
     if (error) throw new Error(error.message)
 
-    // Get public URL if it's a file
-    const url = data.filePath ? await b2Service.getPublicUrl(data.filePath) : null
-
-    return transformDatabaseItem({ ...data, url })
-  },
+      const itemWithUrls = {
+        ...data,
+        url: data.file_path ? await b2Service.getPublicUrl(data.file_path) : null,
+        owner: {
+          username: data.owner.username,
+          avatar_path: data.owner.avatar_path ? await mediaService.getAvatarUrl(data.owner.avatar_path) : null
+        }
+      }
+  
+      return transformDatabaseItem(itemWithUrls)
+    },
   
 
     /**
@@ -266,7 +361,13 @@ export const projectItemsService = {
             is_starred: false,
             owner_id: userId,
           })
-          .select()
+          .select(`
+            *,
+            owner:owner_id (
+              username,
+              avatar_path
+            )
+          `)
           .single()
   
         if (error) {
@@ -274,8 +375,17 @@ export const projectItemsService = {
           await b2Service.deleteFile(fileName)
           throw error
         }
+        
+        const itemWithUrls = {
+          ...data,
+          url,
+          owner: {
+            username: data.owner.username,
+            avatar_path: data.owner.avatar_path ? await mediaService.getAvatarUrl(data.owner.avatar_path) : null
+          }
+        }
   
-        return transformDatabaseItem({ ...data, url })
+        return transformDatabaseItem(itemWithUrls)
       } catch (error) {
         console.error('File upload error:', error)
         throw new Error('Failed to upload file')
@@ -313,6 +423,10 @@ function transformDatabaseItem(item: any): ProjectItem {
     lastModified: item.last_modified,
     createdAt: item.created_at,
     ownerId: item.owner_id,
+    owner: {
+      username: item.owner.username,
+      avatarPath: item.owner.avatar_path
+    },
     tags: item.tags,
     parentFolderId: item.parent_folder_id,
     filePath: item.file_path,

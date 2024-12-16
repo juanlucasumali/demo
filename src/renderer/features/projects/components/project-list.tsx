@@ -2,6 +2,7 @@ import { DisplayPreferences, Project } from "@/renderer/components/layout/types"
 import { ProjectCard } from "./project-card"
 import { useState } from 'react'
 import { EditProjectDialog } from "./edit-project-dialog"
+import { ShareProjectDialog } from "./share-project-dialog"
 
 interface ProjectListProps {
     projects: Project[]
@@ -11,6 +12,7 @@ interface ProjectListProps {
 
 export const ProjectList = ({ projects, toggleStar, displayPreferences }: ProjectListProps) => {
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [sharingProject, setSharingProject] = useState<Project | null>(null)
 
   return (
     <>
@@ -22,6 +24,7 @@ export const ProjectList = ({ projects, toggleStar, displayPreferences }: Projec
             toggleStar={toggleStar}
             displayPreferences={displayPreferences}
             onEditClick={setEditingProject}
+            onSharingProject={setSharingProject}
           />
         ))}
       </ul>
@@ -30,6 +33,12 @@ export const ProjectList = ({ projects, toggleStar, displayPreferences }: Projec
         project={editingProject}
         isOpen={!!editingProject}
         onClose={() => setEditingProject(null)}
+      />
+
+      <ShareProjectDialog
+        project={sharingProject}
+        isOpen={!!sharingProject}
+        onClose={() => setSharingProject(null)}
       />
     </>
   )

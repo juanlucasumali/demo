@@ -9,6 +9,52 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      collabs: {
+        Row: {
+          created_at: string
+          id: number
+          invitee_id: string
+          inviter_id: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          invitee_id?: string
+          inviter_id?: string
+          project_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          invitee_id?: string
+          inviter_id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collabs_invintee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collabs_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collabs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_items: {
         Row: {
           created_at: string

@@ -1,3 +1,4 @@
+import { Collaborator } from '@/renderer/services/collab-service'
 import { LinkProps } from '@tanstack/react-router'
 
 export interface UserProfile {
@@ -18,6 +19,7 @@ export type Project = {
   name: string;
   ownerId: string;
   tags: ProjectTag[],
+  collaborators?: Collaborator[]
 } 
 
 export interface ProjectTag {
@@ -94,7 +96,11 @@ export interface ProjectItem {
   tags: string[]
   projectId: string
   parentFolderId: string | null
-  filePath: string | null
+  filePath: string | null,
+  owner: {
+    username: string
+    avatarPath?: string
+  },
 }
 
 export const FILE_TAGS = {

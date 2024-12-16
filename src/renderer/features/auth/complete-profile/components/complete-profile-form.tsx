@@ -100,7 +100,13 @@ export function CompleteProfileForm() {
       displayName: displayNameError
     })
 
-    if (usernameError || displayNameError || errors.avatarPath) {
+    if (usernameError || displayNameError || errors.avatarPath || !user.email) {
+
+      toast({
+        variant: 'destructive',
+        title: 'Warning',
+        description: 'Missing field'
+      })
       return
     }
 
@@ -130,6 +136,8 @@ export function CompleteProfileForm() {
             (hashProgress) => console.log(`Hashing: ${hashProgress}%`),
             (uploadProgress) => console.log(`Uploading: ${uploadProgress}%`)
           )
+          console.log("Upload result:", uploadResult)
+          console.log("uploadResult.fileName", uploadResult.fileName)
           avatarPathUrl = uploadResult.fileName
         } catch (error) {
           console.error('Failed to upload profile image:', error)
@@ -145,7 +153,7 @@ export function CompleteProfileForm() {
       const { error: profileError } = await supabase
         .from('users')
         .insert({
-          user_id: user.id,
+          id: user.id,
           username,
           display_name: displayName,
           email: user.email,

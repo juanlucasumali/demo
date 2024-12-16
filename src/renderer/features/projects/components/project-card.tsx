@@ -15,6 +15,8 @@ import { navigation } from '@/renderer/stores/useNavigationStore'
 import { useToast } from '@/renderer/hooks/use-toast'
 import { useProjectsStore } from '@/renderer/stores/useProjectsStore'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/renderer/components/ui/alert-dialog'
+import { ShareProjectDialog } from './share-project-dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
 
 interface ProjectCardProps {
   project: Project
@@ -25,6 +27,7 @@ interface ProjectCardProps {
     lastModified: boolean
   }
   onEditClick: (project: Project) => void
+  onSharingProject: (project: Project) => void 
 }
 
 export const ProjectCard = ({
@@ -32,6 +35,7 @@ export const ProjectCard = ({
   toggleStar,
   displayPreferences,
   onEditClick,
+  onSharingProject
 }: ProjectCardProps) => {
   const { toast } = useToast()
   const projects = useProjectsStore()
@@ -74,9 +78,36 @@ export const ProjectCard = ({
           <div 
             className={`flex size-10 items-center justify-center rounded-lg p-2`}
             style={iconGradientStyle}
-          >
-            {/* {getIconComponent(project.icon)} */}
-          </div>
+          />
+          
+          {project.collaborators && project.collaborators.length > 0 && (
+            <div className="flex overflow-x-auto no-scrollbar items-center gap-1">
+              {project.collaborators.map((collaborator) => (
+                <TooltipProvider key={collaborator.id} delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="size-8 rounded-full border-2 border-background overflow-hidden flex-shrink-0">
+                        {collaborator.avatar ? (
+                          <img
+                            src={collaborator.avatar}
+                            alt={collaborator.username}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center text-xs font-medium uppercase">
+                            {collaborator.username[0]}
+                          </div>
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" align="center">
+                      <p className="text-xs">{collaborator.username}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -92,8 +123,7 @@ export const ProjectCard = ({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation()
-                  // Handle share action
-                  console.log('Share', project.name)
+                  onSharingProject(project)
                 }}
               >
                 <IconShare className="mr-2 h-4 w-4" />
@@ -101,8 +131,8 @@ export const ProjectCard = ({
               </DropdownMenuItem>
               <DropdownMenuItem
                   onClick={(e) => {
-                      e.stopPropagation()
-                      onEditClick(project)
+                    e.stopPropagation()
+                    onEditClick(project)
                   }}
               >
                   <IconPencil className="mr-2 h-4 w-4" />

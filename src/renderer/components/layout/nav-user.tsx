@@ -99,10 +99,10 @@ export function NavUser() {
               </Avatar>
               <div className='grid flex-1 text-left text-sm leading-tight'>
                 <span className='truncate font-semibold'>
-                  {userProfile.displayName || userProfile.username}
+                  {userProfile.displayName || `@${userProfile.username}`}
                 </span>
                 <span className='truncate text-xs text-muted-foreground'>
-                  {userProfile.email}
+                  @{userProfile.username}
                 </span>
               </div>
               <ChevronsUpDown className='ml-auto size-4' />
@@ -131,10 +131,10 @@ export function NavUser() {
                 </Avatar>
                 <div className='grid flex-1 text-left text-sm leading-tight'>
                   <span className='truncate font-semibold'>
-                    {userProfile.displayName || userProfile.username}
+                    {userProfile.displayName || `@${userProfile.username}`}
                   </span>
                   <span className='truncate text-xs text-muted-foreground'>
-                    {userProfile.email}
+                    @{userProfile.username}
                   </span>
                 </div>
               </div>

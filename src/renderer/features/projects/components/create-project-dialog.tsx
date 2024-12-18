@@ -79,14 +79,14 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
   const isOpen = controlledIsOpen ?? internalIsOpen
 
   useEffect(() => {
-    console.log('useEffect triggered', { project, mode })
+      console.log('useEffect triggered', { project, mode })
     if (project) {
       setIsStarred(project.isStarred)
       setTags(project.tags)
       console.log("project tags:", project.tags)
       console.log("project tags:", tags)
     }
-  }, []);
+  }, [project, mode]);
 
   const iconGradientStyle = useMemo(() => {
     return generateGradientStyle(project?.id ?? previewProjectId);
@@ -96,7 +96,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
   const resetForm = () => {
     console.log('resetForm called')
     form.reset()
-    // setTags([])
+    setTags([])
     setIsStarred(false)
   }
 
@@ -185,7 +185,7 @@ export function CreateProjectDialog({ mode, project, trigger, isOpen: controlled
     } else {
       if (project) {
         setIsStarred(project.isStarred)
-        // setTags(project.tags)
+        setTags(project.tags)
       }
       blockNavigation()
     }

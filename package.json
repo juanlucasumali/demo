@@ -14,17 +14,13 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
-    "build:win": "pnpm run build && electron-builder --win --config",
-    "build:mac": "pnpm run build && electron-builder --mac --universal --config",
-    "build:linux": "pnpm run build && electron-builder --linux --config",
-    "build:all": "pnpm run build && electron-builder -mwl",
+    "build:win": "npm run build && electron-builder --win --config",
+    "build:mac": "npm run build && electron-builder --mac --universal --config",
+    "build:linux": "npm run build && electron-builder --linux --config",
+    "build:all": "npm run build && electron-builder -mwl",
     "lint": "eslint .",
     "format:check": "prettier --check .",
-    "format": "prettier --write .",
-    "clean": "rimraf node_modules dist out",
-    "reinstall": "pnpm clean && pnpm install",
-    "postinstall": "electron-builder install-app-deps",
-    "type-check": "tsc --noEmit"
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

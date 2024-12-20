@@ -2,17 +2,6 @@ import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router'
 
-// Implement auto-updates
-const { updateElectronApp, UpdateSourceType } = require('update-electron-app')
-updateElectronApp({
-  updateSource: {
-    type: UpdateSourceType.ElectronPublicUpdateService,
-    repo: 'juanlucasumali/demo'
-  },
-  updateInterval: '5 minutes',
-  logger: require('electron-log')
-})
-
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 

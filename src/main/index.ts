@@ -2,6 +2,19 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import log from 'electron-log/main';
+import { updateElectronApp, UpdateSourceType } from  'update-electron-app'
+
+// Implement auto-updates
+updateElectronApp({
+  updateSource: {
+    type: UpdateSourceType.ElectronPublicUpdateService,
+    repo: 'juanlucasumali/demo',
+    host: 'https://update.electronjs.org'
+  },
+  updateInterval: '5 minutes',
+  logger: log
+})
 
 function createWindow(): void {
   // Create the browser window.

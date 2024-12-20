@@ -25,7 +25,7 @@ import {
   useSidebar,
 } from "../ui/sidebar"
 
-export function NavProjects({
+export function NavStarredProjects({
   projects,
 }: {
   projects: {
@@ -38,7 +38,7 @@ export function NavProjects({
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
+      <SidebarGroupLabel>Starred Projects</SidebarGroupLabel>
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>

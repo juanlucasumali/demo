@@ -6,14 +6,37 @@ import icon from '../../resources/icon.png?asset'
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1200,
+    height: 800,
+    minWidth: 600,
+    minHeight: 600,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
+    }
+  })
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.setZoomLevel(0) // reset to default zoom level
+  })
+
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    const isMac = process.platform === 'darwin'
+    const modifier = isMac ? input.meta : input.control
+
+    const currentZoom = mainWindow.webContents.getZoomLevel()
+    if (modifier && input.key === '+') {
+      mainWindow.webContents.setZoomLevel(1 + currentZoom)
+      event.preventDefault()
+    } else if (modifier && input.key === '-') {
+      mainWindow.webContents.setZoomLevel(currentZoom - 1)
+      event.preventDefault()
+    } else if (modifier && input.key.toLowerCase() === '0') {
+      mainWindow.webContents.setZoomLevel(0)
+      event.preventDefault()
     }
   })
 

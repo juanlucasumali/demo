@@ -1,4 +1,4 @@
-import { AppTopbar } from '@renderer/components/app-topbar'
+import { AppTopbar } from '@renderer/components/topbar/app-topbar'
 import { AppSidebar } from '../components/sidebar/app-sidebar'
 import {
   SidebarInset,

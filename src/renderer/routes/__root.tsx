@@ -2,7 +2,7 @@ import { createRootRoute, Outlet } from '@tanstack/react-router'
 import '../index.css'
 import { AppSidebar } from '@renderer/components/sidebar/app-sidebar'
 import { SidebarProvider } from '@renderer/components/ui/sidebar'
-import { AppTopbar } from '@renderer/components/app-topbar'
+import { AppTopbar } from '@renderer/components/topbar/app-topbar'
 import { cn } from '../lib/utils'
 
 export const Route = createRootRoute({

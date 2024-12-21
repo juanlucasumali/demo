@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { User as UserIcon } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,10 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu'
-import { Button } from '../components/ui/button'
-import { toast } from '../hooks/use-toast'
-import { Skeleton } from '../components/ui/skeleton'
+} from '../ui/dropdown-menu'
+import { Button } from '../ui/button'
+import { toast } from '../../hooks/use-toast'
+import { Skeleton } from '../../components/ui/skeleton'
 
 export function ProfileDropdown() {
   const navigate = useNavigate()

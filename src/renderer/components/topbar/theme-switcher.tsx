@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
-import { cn } from "../lib/utils"
-import { useTheme } from '../../renderer/context/theme-context'
+import { cn } from "../../lib/utils"
+import { useTheme } from '../../context/theme-context'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu'
-import { Button } from '../components/ui/button'
+} from '../ui/dropdown-menu'
+import { Button } from '../ui/button'
 import { CheckCircle2, MoonIcon, SunDim } from 'lucide-react'
 
 export function ThemeSwitch() {

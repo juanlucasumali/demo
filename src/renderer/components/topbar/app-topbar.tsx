@@ -1,6 +1,6 @@
-import { SidebarTrigger } from './ui/sidebar'
+import { SidebarTrigger } from '../ui/sidebar'
 import { Separator } from '@radix-ui/react-separator'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from './ui/breadcrumb'
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '../ui/breadcrumb'
 import { ThemeSwitch } from './theme-switcher'
 import { ProfileDropdown } from './profile-dropdown'
 interface AppTopbarProps {

@@ -8,7 +8,7 @@ import { routeTree } from './routeTree.gen'
 import { ThemeProvider } from './context/theme-context'
 
 const memoryHistory = createMemoryHistory({
-  initialEntries: ['/'] // Pass your initial url
+  initialEntries: ['/home'] // Pass your initial url
 })
 
 // Create a new router instance

@@ -1,11 +1,11 @@
 import { columns } from "./data-table/columns"
 import { DataTable } from "./data-table/data-table"
 import { createFileRoute } from '@tanstack/react-router'
-import { payments } from './data-table/payments'
 import { PageHeader } from "@renderer/components/page/page-header"
 import { HomeIcon } from "lucide-react"
 import { PageContent } from "@renderer/components/page/page-content"
 import { PageMain } from "@renderer/components/page/page-main"
+import { dummyData } from "./data-table/dummy-data"
 
 export const Route = createFileRoute('/home/')({
   component: Home,
@@ -36,7 +36,7 @@ export default function Home() {
         {/* <div className="min-h-[50vh] flex-1 rounded-xl md:min-h-min container mx-auto py-5 px-10 bg-muted/50"> */}
 
         <PageContent>
-            <DataTable columns={columns} data={payments} />
+            <DataTable columns={columns} data={dummyData} />
         </PageContent>
       </PageMain>
     </>

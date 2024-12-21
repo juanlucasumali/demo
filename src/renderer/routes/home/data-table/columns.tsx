@@ -2,27 +2,22 @@
 
 import { Button } from "@renderer/components/ui/button"
 import { Checkbox } from "@renderer/components/ui/checkbox"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger } from "@renderer/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal } from "lucide-react"
+import { File, Folder, MoreHorizontal, Star } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
+import { DemoItem, tagBgClasses } from "@renderer/types/files"
+import { Badge } from "@renderer/components/ui/badge"
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
-export type Payment = {
-  id: string
-  amount: number
-  status: "pending" | "processing" | "success" | "failed"
-  email: string
-}
+export const columns: ColumnDef<DemoItem>[] = [
 
-export const columns: ColumnDef<Payment>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -45,38 +40,111 @@ export const columns: ColumnDef<Payment>[] = [
     enableSorting: false,
     enableHiding: false,
   },
+
   {
-    accessorKey: "status",
+    accessorKey: "name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
-    ),
-  },
-  {
-    accessorKey: "email",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Email" />
-    ),
-  },
-  {
-    accessorKey: "amount",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Amount" />
+      <DataTableColumnHeader column={column} title="Name" />
     ),
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"))
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount)
- 
-      return <div className="font-medium">{formatted}</div>
+      const type = row.original.type;
+      const isStarred = row.original.isStarred;
+      const tags = row.original.tags;
+  
+      return (
+        <div className="flex gap-1" style={{ maxWidth: "700px" }}>
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            {isStarred ? (
+              <Star className="h-4 w-4 text-muted-foreground fill-current" />
+            ) : (
+              <Star className="h-4 w-4 text-muted-foreground" />
+            )}
+            {type === "folder" ? (
+              <Folder className="h-4 w-4 text-muted-foreground fill-current" />
+            ) : (
+              <File className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="font-medium">{row.getValue("name")}</span>
+          </div>
+          {tags && (
+            <div className="pl-2 flex gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
+              {/* 1. fileType */}
+              <Badge
+                variant="secondary"
+                className={`${tagBgClasses.green}`}
+              >
+                {tags.fileType}
+              </Badge>
+  
+              {/* 2. status */}
+              <Badge
+                key={tags.status}
+                variant="secondary"
+                className={`${tagBgClasses.purple}`}
+              >
+                {tags.status}
+              </Badge>
+  
+              {/* 3. instruments */}
+              {tags.instruments.map((instrument) => (
+                <Badge
+                  key={instrument}
+                  variant="secondary"
+                  className={`${tagBgClasses.blue}`}
+                >
+                  {instrument}
+                </Badge>
+              ))}
+  
+              {/* 4. version */}
+              {tags.version.map((ver) => (
+                <Badge
+                  key={ver}
+                  variant="secondary"
+                  className={`${tagBgClasses.red}`}
+                >
+                  {ver}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      );
     },
   },
+
+  {
+    accessorKey: "format",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Format" />
+    ),
+    cell: ({ row }) => {
+      // format is optional, so we do a null check
+      const format = row.getValue<DemoItem["format"]>("format")
+      return format ? <span>{format.toUpperCase()}</span> : ""
+    },
+  },
+
+  {
+    accessorKey: "size",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Size" />
+    ),
+    cell: ({ row }) => {
+      const size = row.getValue<number | undefined>("size")
+      if (!size) return ""
+
+      // Simple numeric formatting, adapt as you like (e.g., MB, KB, etc.)
+      const sizeInMb = (size / 1_000_000).toFixed(2)
+      return <div>{sizeInMb} MB</div>
+    },
+  },
+
   {
     id: "actions",
     cell: ({ row }) => {
-      const payment = row.original
- 
+      const item = row.original
+
       return (
         <div className="text-end">
           <DropdownMenu>
@@ -89,13 +157,15 @@ export const columns: ColumnDef<Payment>[] = [
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(payment.id)}
+                onClick={() => navigator.clipboard.writeText(item.id)}
               >
-                Copy payment ID
+                Copy Item ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>View customer</DropdownMenuItem>
-              <DropdownMenuItem>View payment details</DropdownMenuItem>
+              <DropdownMenuItem>
+                View {item.type === "folder" ? "folder" : "file"} details
+              </DropdownMenuItem>
+              <DropdownMenuItem>Open in new tab</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -1,20 +1,15 @@
 import { AppTopbar } from '@renderer/components/app-topbar'
-import { AppSidebar } from '../../components/sidebar/app-sidebar'
+import { AppSidebar } from '../components/sidebar/app-sidebar'
 import {
   SidebarInset,
   SidebarProvider,
-} from '../../components/ui/sidebar'
-import { columns } from "./data-table/columns"
-import { DataTable } from "./data-table/data-table"
+} from '../components/ui/sidebar'
 
-import { createFileRoute } from '@tanstack/react-router'
-import { payments } from './data-table/payments'
+// export const Route = createFileRoute('/default-page')({
+//   component: DefaultPage,
+// })
 
-export const Route = createFileRoute('/home/')({
-  component: Home,
-})
-
-export default function Home() {
+export default function DefaultPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -34,12 +29,11 @@ export default function Home() {
           {/* <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min"/> */}
 
           {/* Page Content */}
-          <div className="min-h-[50vh] flex-1 rounded-xl md:min-h-min">
+          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
             <div className="container mx-auto py-5 px-10">
-              <DataTable columns={columns} data={payments} />
             </div>
           </div>
-
+          
         </div>
 
       </SidebarInset>

@@ -8,7 +8,6 @@ import { cn } from '../lib/utils'
 export const Route = createRootRoute({
   // Implement breadcrumbs, Sidebar toggle, back & forth button
   component: () => (
-    <>
     <SidebarProvider>
       <AppSidebar />
       <div
@@ -25,6 +24,5 @@ export const Route = createRootRoute({
         <Outlet/>
       </div>
     </SidebarProvider>
-    </>
   ),
 })

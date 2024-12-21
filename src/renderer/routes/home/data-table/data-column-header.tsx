@@ -15,12 +15,14 @@ interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>
   title: string
+  disabled?: boolean
 }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
   className,
+  disabled = false,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
     return <div className={cn(className)}>{title}</div>
@@ -34,14 +36,17 @@ export function DataTableColumnHeader<TData, TValue>({
             variant="ghost"
             size="sm"
             className="-ml-3 h-8 data-[state=open]:bg-accent"
+            disabled={disabled} // Disable button if sort is false
           >
             <span>{title}</span>
-            {column.getIsSorted() === "desc" ? (
-              <ArrowDown />
-            ) : column.getIsSorted() === "asc" ? (
-              <ArrowUp />
-            ) : (
-              <ChevronsUpDown />
+            {!disabled && ( // Show icons only if sorting is enabled
+              column.getIsSorted() === "desc" ? (
+                <ArrowDown />
+              ) : column.getIsSorted() === "asc" ? (
+                <ArrowUp />
+              ) : (
+                <ChevronsUpDown />
+              )
             )}
           </Button>
         </DropdownMenuTrigger>

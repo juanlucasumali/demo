@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@renderer/components/ui/dropdown-menu"
@@ -15,6 +14,8 @@ import { File, Folder, MoreHorizontal, Star } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem, tagBgClasses } from "@renderer/types/files"
 import { Badge } from "@renderer/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@renderer/components/ui/avatar"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
 
 export const columns: ColumnDef<DemoItem>[] = [
 
@@ -114,6 +115,60 @@ export const columns: ColumnDef<DemoItem>[] = [
   },
 
   {
+    accessorKey: "collaborators",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Collaborators" disabled={true}/>
+    ),
+    cell: ({ row }) => {
+      // 1. Extract the owner info
+      const ownerId = row.original.ownerId
+      const ownerAvatar = row.original.ownerAvatar
+      const ownerUsername = row.original.ownerUsername
+  
+      // 2. Extract the collaborators array (may be null or empty)
+      const collaborators = row.original.sharedWith ?? []
+  
+      // 3. Make a combined array: owner first, then collaborators
+      const profiles = [
+        {
+          id: ownerId,
+          avatar: ownerAvatar,
+          username: ownerUsername,
+        },
+        ...collaborators,
+      ]
+  
+      return (
+        <div className="flex items-center">
+          {/* Container for overlapping avatars */}
+          <div className="flex -space-x-3">
+            {profiles.map((profile) => (
+              <Tooltip key={profile.id}>
+                <TooltipTrigger asChild>
+                  <div className="cursor-pointer">
+                    <Avatar className="h-8 w-8 border-2 border-background">
+                      <AvatarImage
+                        src={profile.avatar || ""}
+                        alt={profile.username}
+                      />
+                      <AvatarFallback>
+                        {profile.username?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {profile.username}
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        </div>
+      )
+    },
+  },
+  
+  {
     accessorKey: "format",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Format" />
@@ -155,11 +210,15 @@ export const columns: ColumnDef<DemoItem>[] = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(item.id)}
               >
-                Copy Item ID
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(item.id)}
+              >
+                Convert File
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>

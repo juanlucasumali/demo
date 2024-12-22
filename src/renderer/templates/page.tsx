@@ -2,6 +2,7 @@ import { PageHeader } from "@renderer/components/page/page-header"
 import { FileQuestion } from "lucide-react"
 import { PageContent } from "@renderer/components/page/page-content"
 import { PageMain } from "@renderer/components/page/page-main"
+import { createFileRoute } from '@tanstack/react-router'
 
 // export const Route = createFileRoute('/page')({
 //   component: Page,

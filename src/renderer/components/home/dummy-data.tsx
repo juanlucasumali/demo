@@ -27,7 +27,10 @@ import {
         {
           id: "user-999",
           avatar: "https://example.com/avatars/user999.png",
-          username: "producer999",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "producer999",
         },
       ],
       type: "folder"
@@ -57,7 +60,10 @@ import {
         {
           id: "user-999",
           avatar: "https://example.com/avatars/user999.png",
-          username: "producer999",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "producer999",
         },
       ],
       // File-specific (optional) fields
@@ -90,12 +96,18 @@ import {
         {
           id: "user-123",
           avatar: "https://example.com/avatars/user123.png",
-          username: "singer123",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "singer123",
         },
         {
           id: "user-555",
           avatar: "https://example.com/avatars/user555.png",
-          username: "engineer555",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "engineer555",
         },
       ],
       type: "folder"
@@ -125,12 +137,18 @@ import {
         {
           id: "user-123",
           avatar: "https://example.com/avatars/user123.png",
-          username: "singer123",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "singer123",
         },
         {
           id: "user-555",
           avatar: "https://example.com/avatars/user555.png",
-          username: "engineer555",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "engineer555",
         },
       ],
       // File-specific
@@ -163,12 +181,18 @@ import {
         {
           id: "user-123",
           avatar: "https://example.com/avatars/user123.png",
-          username: "singer123",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "singer123",
         },
         {
           id: "user-999",
           avatar: "https://example.com/avatars/user999.png",
-          username: "producer999",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "producer999",
         },
       ],
       // File-specific
@@ -201,12 +225,18 @@ import {
         {
           id: "user-123",
           avatar: "https://example.com/avatars/user123.png",
-          username: "singer123",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "singer123",
         },
         {
           id: "user-999",
           avatar: "https://example.com/avatars/user999.png",
-          username: "producer999",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "producer999",
         },
       ],
       type: "folder",
@@ -236,12 +266,18 @@ import {
         {
           id: "user-123",
           avatar: "https://example.com/avatars/user123.png",
-          username: "singer123",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "singer123",
         },
         {
           id: "user-999",
           avatar: "https://example.com/avatars/user999.png",
-          username: "producer999",
+          email: "producer@gmail.com", 
+name: "Name", 
+description: "omg no wayyyy", 
+username: "producer999",
         },
       ],
       // File-specific

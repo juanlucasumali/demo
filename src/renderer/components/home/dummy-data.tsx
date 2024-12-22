@@ -1,7 +1,7 @@
 import {
     DemoItem,
     FileFormat,
-  } from '../../../types/files'; // <-- Replace with the actual path to your types
+  } from '../../types/items'; // <-- Replace with the actual path to your types
   
   export const dummyData: DemoItem[] = [
     // 1. "Folder-like" item (no file-specific fields)

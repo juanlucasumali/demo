@@ -21,14 +21,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../components/ui/table"
+} from "../ui/table"
 import { Button } from "@renderer/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu"
+} from "../ui/dropdown-menu"
 import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
 

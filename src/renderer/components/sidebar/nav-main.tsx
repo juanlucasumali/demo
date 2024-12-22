@@ -9,35 +9,40 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "../../components/ui/sidebar"
+import { Link, useRouterState } from "@tanstack/react-router"
 
-export function NavMain({
-}: {
+export function NavMain({}: {
 }) {
+  const currentRoute = useRouterState().location.pathname
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
 
-        <SidebarMenuItem>
-            <SidebarMenuButton tooltip={'Home'}>
+      <SidebarMenuItem>
+        <Link to="/home">
+          <SidebarMenuButton tooltip={'Home'} isActive={currentRoute === '/home'}>
               <Home />
               <span>{'Home'}</span>
-            </SidebarMenuButton>
-        </SidebarMenuItem>
+          </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
 
-        <SidebarMenuItem>
-            <SidebarMenuButton tooltip={'Projects'}>
+      <SidebarMenuItem>
+        <Link to="/projects">
+          <SidebarMenuButton tooltip={'Projects'} isActive={currentRoute === '/projects'}>
               <PackageIcon />
               <span>{'Projects'}</span>
-            </SidebarMenuButton>
-        </SidebarMenuItem>
+          </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
 
-        <SidebarMenuItem>
-            <SidebarMenuButton tooltip={'Starred'}>
-              <Star />
-              <span>{'Starred'}</span>
-            </SidebarMenuButton>
-        </SidebarMenuItem>
+      <SidebarMenuItem>
+          <SidebarMenuButton tooltip={'Starred'}>
+            <Star />
+            <span>{'Starred'}</span>
+          </SidebarMenuButton>
+      </SidebarMenuItem>
 
       </SidebarMenu>
     </SidebarGroup>

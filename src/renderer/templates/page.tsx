@@ -1,42 +1,28 @@
-import { AppTopbar } from '@renderer/components/topbar/app-topbar'
-import { AppSidebar } from '../components/sidebar/app-sidebar'
-import {
-  SidebarInset,
-  SidebarProvider,
-} from '../components/ui/sidebar'
+import { PageHeader } from "@renderer/components/page/page-header"
+import { FileQuestion } from "lucide-react"
+import { PageContent } from "@renderer/components/page/page-content"
+import { PageMain } from "@renderer/components/page/page-main"
 
-// export const Route = createFileRoute('/default-page')({
-//   component: DefaultPage,
+// export const Route = createFileRoute('/page')({
+//   component: Page,
 // })
 
-export default function DefaultPage() {
+// npx @tanstack/router-cli generate
+
+export default function Page() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <AppTopbar />
+    <PageMain>   
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <PageHeader
+        title={"Title"}
+        description={"Description."}
+        icon={FileQuestion}
+      />
 
-          {/* Page Header Skeleton */}
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" />
-          </div>
-
-          {/* Page Content Skeleton */}
-          {/* <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min"/> */}
-
-          {/* Page Content */}
-          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
-            <div className="container mx-auto py-5 px-10">
-            </div>
-          </div>
-          
-        </div>
-
-      </SidebarInset>
-    </SidebarProvider>
+      {/* <PageContent>
+        <DataTable columns={columns} data={data} />
+      </PageContent> */}
+      
+    </PageMain>
   )
 }

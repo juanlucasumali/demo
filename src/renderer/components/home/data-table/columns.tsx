@@ -10,12 +10,13 @@ import {
   DropdownMenuTrigger,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
-import { File, Folder, MoreHorizontal, Star } from "lucide-react"
-import { DataTableColumnHeader } from "./data-column-header"
-import { DemoItem, tagBgClasses } from "@renderer/types/files"
-import { Badge } from "@renderer/components/ui/badge"
+import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash } from "lucide-react"
+import { DataTableColumnHeader } from "../data-column-header"
+import { DemoItem } from "@renderer/types/items"
 import { Avatar, AvatarFallback, AvatarImage } from "@renderer/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
+import { formatDuration } from "@renderer/lib/utils"
+import TagBadge from "@renderer/components/tag-badge"
 
 export const columns: ColumnDef<DemoItem>[] = [
 
@@ -45,7 +46,7 @@ export const columns: ColumnDef<DemoItem>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title="Name" disabled={true}/>
     ),
     cell: ({ row }) => {
       const type = row.original.type;
@@ -70,42 +71,19 @@ export const columns: ColumnDef<DemoItem>[] = [
           {tags && (
             <div className="pl-2 flex gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
               {/* 1. fileType */}
-              <Badge
-                variant="secondary"
-                className={`${tagBgClasses.green}`}
-              >
-                {tags.fileType}
-              </Badge>
+              <TagBadge tag={tags.fileType} property={"fileType"} />
   
               {/* 2. status */}
-              <Badge
-                key={tags.status}
-                variant="secondary"
-                className={`${tagBgClasses.purple}`}
-              >
-                {tags.status}
-              </Badge>
+              <TagBadge tag={tags.status} property={"status"} />
   
               {/* 3. instruments */}
               {tags.instruments.map((instrument) => (
-                <Badge
-                  key={instrument}
-                  variant="secondary"
-                  className={`${tagBgClasses.blue}`}
-                >
-                  {instrument}
-                </Badge>
+                <TagBadge tag={instrument} property={"instruments"} />
               ))}
   
               {/* 4. version */}
               {tags.version.map((ver) => (
-                <Badge
-                  key={ver}
-                  variant="secondary"
-                  className={`${tagBgClasses.red}`}
-                >
-                  {ver}
-                </Badge>
+                <TagBadge tag={ver} property={"version"} />
               ))}
             </div>
           )}
@@ -167,11 +145,23 @@ export const columns: ColumnDef<DemoItem>[] = [
       )
     },
   },
-  
+
+  {
+    accessorKey: "duration",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Duration" disabled={true}/>
+    ),
+    cell: ({ row }) => {
+      // format is optional, so we do a null check
+      const duration = row.getValue<DemoItem["duration"]>("duration")
+      return <span>{duration ? formatDuration(duration) : ""}</span>
+    },
+  },
+
   {
     accessorKey: "format",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Format" />
+      <DataTableColumnHeader column={column} title="Format" disabled={true}/>
     ),
     cell: ({ row }) => {
       // format is optional, so we do a null check
@@ -213,18 +203,25 @@ export const columns: ColumnDef<DemoItem>[] = [
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(item.id)}
               >
-                Edit
+                <Edit/> Edit
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(item.id)}
               >
-                Convert File
+                <Share/> Share
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(item.id)}
+              >
+                <RefreshCcw/> Convert
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                View {item.type === "folder" ? "folder" : "file"} details
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(item.id)}
+                className="text-red-500"
+              >
+                <Trash/> Delete
               </DropdownMenuItem>
-              <DropdownMenuItem>Open in new tab</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

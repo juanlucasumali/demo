@@ -19,10 +19,10 @@ export type InstrumentType = 'Vocals' | 'Drums' | 'Bass' | 'Keys' | 'Synth' | 'G
 export type VersionType = 'Dry' | 'Wet' | 'Edited' | 'Tuned' | 'Compressed' | 'Clean';
 
 export interface FileTags {
-fileType?: FileTagType;
-status?: StatusType;
-instruments?: InstrumentType[];
-version?: VersionType[];
+fileType: FileTagType;
+status: StatusType;
+instruments: InstrumentType[];
+version: VersionType[];
 }
 
 export const fileTagColors = {
@@ -76,9 +76,9 @@ export type NeedsType =
   | 'Writing';
 
 export interface ProjectTags {
-  stage?: StageType;
-  genre?: GenreType[];
-  needs?: NeedsType[];
+  stage: StageType;
+  genre: GenreType[];
+  needs: NeedsType[];
 }
 
 export const projectTagColors = {

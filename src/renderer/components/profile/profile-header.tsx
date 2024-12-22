@@ -1,5 +1,5 @@
 import { UserProfile } from "@renderer/types/users";
-import { ChevronDown, Package, PlusCircle, Share, TriangleAlertIcon, User } from "lucide-react";
+import { ChevronDown, Ellipsis, Package, Plus, PlusCircle, Share, TriangleAlertIcon, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
@@ -37,20 +37,20 @@ export function ProfileHeader({
 
         {/* If you're current user, this button will be an EditProfile dropdown */}
 
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <Button
+              variant="default"
+              className="flex w-16 h-7 p-0"
+            >
+                <Plus className="-mr-1" />
+                Add
+          </Button>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="default"
-              className="flex w-12 h-7 p-0"
-            >
-              <PlusCircle className="w-6 h-8" />
-              <ChevronDown className="w-4 h-4 -ml-1" />
-            </Button>
+            <Ellipsis className="w-6 h-6 text-primary cursor-pointer pl-1" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem onSelect={() => console.log("Option 1 selected")}>
-              <User /> Add
-            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => console.log("Option 2 selected")}>
               <Share /> Share
             </DropdownMenuItem>
@@ -63,6 +63,7 @@ export function ProfileHeader({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
 
         {/* Description at the bottom */}
         {user.description && (

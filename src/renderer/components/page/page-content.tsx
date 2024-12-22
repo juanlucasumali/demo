@@ -1,5 +1,7 @@
+import { ReactNode } from "react"
+
 interface PageContentProps {
-    children: React.JSX.Element
+    children: ReactNode
 }
 
 export function PageContent({ children }: PageContentProps) {

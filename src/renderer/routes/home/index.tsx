@@ -5,6 +5,7 @@ import { useDataStore } from '@renderer/stores/items-store'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { GenericPage } from '@renderer/templates/generic-page'
+import FileUpload from '@renderer/components/home/dialogs/file-upload'
 
 export const Route = createFileRoute('/home/')({
   component: Home,
@@ -22,11 +23,10 @@ export default function Home() {
     { icon: PackagePlus, tooltip: 'Create a project', onClick: () => setCreateProject(true) },
   ]
 
-  // When implementing dialogues forreal, remove DialogContent and inwards
   const dialogs = [
-    { open: upload, setOpen: setUpload, title: 'Upload File', content: <div>Upload File Content</div> },
-    { open: createFolder, setOpen: setCreateFolder, title: 'Create Folder', content: <div>Create Folder Content</div> },
-    { open: createProject, setOpen: setCreateProject, title: 'Create Project', content: <div>Create Project Content</div> },
+    { open: upload, setOpen: setUpload, content: <FileUpload setUpload={setUpload}/> },
+    { open: createFolder, setOpen: setCreateFolder, content: <div>Create Folder Content</div> },
+    { open: createProject, setOpen: setCreateProject, content: <div>Create Project Content</div> },
   ]
 
   return (

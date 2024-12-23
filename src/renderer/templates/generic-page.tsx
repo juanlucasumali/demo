@@ -49,14 +49,13 @@ function PageHeaderWithButtons({
 function DialogManager({
   dialogs,
 }: {
-  dialogs: { open: boolean; setOpen: (state: boolean) => void; title: string; content: ReactNode }[]
+  dialogs: { open: boolean; setOpen: (state: boolean) => void; content: ReactNode }[]
 }) {
   return (
     <>
       {dialogs.map((dialog, index) => (
         <Dialog key={index} open={dialog.open} onOpenChange={dialog.setOpen}>
           <DialogContent>
-            <div>{dialog.title}</div>
             {dialog.content}
           </DialogContent>
         </Dialog>
@@ -78,7 +77,7 @@ export function GenericPage({
   description: string
   icon: LucideIcon
   buttons: { icon: LucideIcon; tooltip: string; onClick: () => void }[]
-  dialogs: { open: boolean; setOpen: (state: boolean) => void; title: string; content: ReactNode }[]
+  dialogs: { open: boolean; setOpen: (state: boolean) => void; content: ReactNode }[]
   children: ReactNode
 }) {
   return (

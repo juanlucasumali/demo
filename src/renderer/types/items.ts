@@ -11,7 +11,7 @@ export interface DemoItem {
     projectId: string;
     parentFolderId: string | null;
     filePath: string;
-    type: "folder" | "file"
+    type: string
 
     // File-specific fields
     format?: FileFormat;

@@ -95,13 +95,13 @@ export const columns: ColumnDef<DemoItem>[] = [
               <TagBadge tag={tags.status} property={"status"} />
   
               {/* 3. instruments */}
-              {tags.instruments.map((instrument) => (
+              {tags.instruments?.map((instrument) => (
                 <TagBadge tag={instrument} property={"instruments"} />
               ))}
   
               {/* 4. version */}
-              {tags.version.map((ver) => (
-                <TagBadge tag={ver} property={"version"} />
+              {tags.versions?.map((ver) => (
+                <TagBadge tag={ver} property={"versions"} />
               ))}
             </div>
           )}
@@ -171,7 +171,7 @@ export const columns: ColumnDef<DemoItem>[] = [
     ),
     cell: ({ row }) => {
       // format is optional, so we do a null check
-      const duration = row.getValue<DemoItem["duration"]>("duration")
+      const duration = row.original.duration
       return <span>{duration ? formatDuration(duration) : ""}</span>
     },
   },

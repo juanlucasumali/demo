@@ -19,17 +19,17 @@ export type InstrumentType = 'Vocals' | 'Drums' | 'Bass' | 'Keys' | 'Synth' | 'G
 export type VersionType = 'Dry' | 'Wet' | 'Edited' | 'Tuned' | 'Compressed' | 'Clean';
 
 export interface FileTags {
-fileType: FileTagType;
-status: StatusType;
-instruments: InstrumentType[];
-version: VersionType[];
+fileType: FileTagType | null;
+status: StatusType | null; 
+instruments: InstrumentType[] | [];
+versions: VersionType[] | [];
 }
 
 export const fileTagColors = {
 fileType: tagBgClasses.green,
 status: tagBgClasses.purple,
 instruments: tagBgClasses.blue,
-version: tagBgClasses.red
+versions: tagBgClasses.red
 } as const;
 
 

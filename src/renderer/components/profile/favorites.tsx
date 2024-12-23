@@ -1,6 +1,5 @@
-import React from "react";
 import { Card, CardContent } from "../ui/card";
-import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../ui/carousel";
+import { Carousel, CarouselContent } from "../ui/carousel";
 
 interface FavoritesProps {
 }

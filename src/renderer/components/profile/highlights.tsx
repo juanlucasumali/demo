@@ -29,7 +29,7 @@ export function Highlights({ }: HighlightsProps) {
           Highlights
         </div>
         <div className="content-center">
-      <Carousel className="w-full px-4">
+      <Carousel className="w-full px-4 md:pb-4 sm:pb-4">
           {/* Implement horizontal scrolling to get through */}
       <CarouselContent className="-ml-1">
         {Array.from({ length: 5 }).map((_, index) => (
@@ -43,6 +43,9 @@ export function Highlights({ }: HighlightsProps) {
               {/* <div className="pt-2 text-center text-xs text-muted-foreground">
                 Card Title
                 </div> */}
+            </div>
+            <div className="text-center text-xs text-muted-foreground pt-3 pb-5">
+              Title
             </div>
           </CarouselItem>
         ))}

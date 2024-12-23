@@ -24,7 +24,7 @@ export function FavoriteSongs({ }: FavoriteSongsProps) {
   }, [api])
 
     return (
-      <Carousel className="bg-muted/50 px-4 pt-4 pb-2 rounded-xl">
+      <Carousel className="bg-muted/50 px-4 pt-4 pb-2 rounded-xl md:pb-4 sm:pb-4">
           <div className="text-center pb-2 text-xs text-muted-foreground">
           Favorite Songs
           </div>

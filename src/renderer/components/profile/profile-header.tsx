@@ -1,5 +1,5 @@
 import { UserProfile } from "@renderer/types/users";
-import { ChevronDown, Ellipsis, Package, Plus, PlusCircle, Share, TriangleAlertIcon, User } from "lucide-react";
+import { Ellipsis, Package, Plus, Share, TriangleAlertIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";

@@ -32,8 +32,6 @@ import {
 } from "../ui/dropdown-menu"
 import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
-import { File, Folder, Package } from "lucide-react"
-import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog"
 
 interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
@@ -84,7 +82,7 @@ export function DataTable<DemoItem>({
     <div>
   
       {/* Search Filter and Action Buttons Container */}
-      <div className="flex flex-col lg:flex-row items-center py-4 justify-between space-y-4 lg:space-y-0">
+      <div className="flex flex-row items-center py-4 justify-between space-x-4 lg:space-y-0">
 
         {/* Search Filter */}
         <Input
@@ -98,42 +96,6 @@ export function DataTable<DemoItem>({
 
         {/* Buttons Container */}
         <div className="flex items-center space-x-2">
-        
-          {/* Upload File */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full lg:w-auto">
-                <File className="text-muted-foreground mr-2" /> Upload File
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              {/* Implement uploading file Dialog */}
-            </DialogContent>
-          </Dialog>
-          
-          {/* Create Folder */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full lg:w-auto">
-                <Folder className="text-muted-foreground mr-2" /> Create Folder
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              {/* Implement creating folder Dialog */}
-            </DialogContent>
-          </Dialog>
-
-          {/* Create Project */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full lg:w-auto">
-                <Package className="text-muted-foreground mr-2" /> Create Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              {/* Implement creating folder Dialog */}
-            </DialogContent>
-          </Dialog>
 
           {/* Column Filter */}
           <DropdownMenu>

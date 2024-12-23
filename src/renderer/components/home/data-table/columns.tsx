@@ -17,8 +17,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@renderer/components/ui/ava
 import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
 import { formatDuration } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
+import { useDataStore } from "@renderer/stores/items-store"
 
 export const columns: ColumnDef<DemoItem>[] = [
+
+  /* Hidden isStarred column for sorting */
+  {
+    id: "isStarred",
+    accessorKey: "isStarred",
+    header: () => (null),
+    enableSorting: true,
+    enableHiding: true,
+    cell: () => (null),
+  },
 
   {
     id: "select",
@@ -52,15 +63,22 @@ export const columns: ColumnDef<DemoItem>[] = [
       const type = row.original.type;
       const isStarred = row.original.isStarred;
       const tags = row.original.tags;
+      const toggleIsStarred = useDataStore((state) => state.toggleIsStarred);
   
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
           <div className="flex items-center gap-2 whitespace-nowrap">
-            {isStarred ? (
-              <Star className="h-4 w-4 text-muted-foreground fill-current" />
-            ) : (
-              <Star className="h-4 w-4 text-muted-foreground" />
-            )}
+              <div
+                onClick={() => toggleIsStarred(row.original.id)}
+                style={{ cursor: 'pointer' }}
+                title={isStarred ? 'Unstar' : 'Star'}
+              >
+                {isStarred ? (
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                ) : (
+                  <Star className="h-4 w-4 text-gray-400" />
+                )}
+              </div>
             {type === "folder" ? (
               <Folder className="h-4 w-4 text-muted-foreground fill-current" />
             ) : (

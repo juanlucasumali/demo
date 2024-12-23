@@ -5,6 +5,7 @@ export interface Project {
     id: string;
     createdAt: Date;
     lastModified: Date;
+    sharedWithMe: Date | null;
     name: string;
     description: string | null;
     isStarred: boolean;

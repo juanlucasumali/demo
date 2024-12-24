@@ -23,20 +23,20 @@ export function PageHeader({
   }, [projectId])
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 container mx-auto pt-10 px-10">
+    <div className="flex flex-col lg:flex-row lg:items-center items-start justify-between gap-4 container mx-auto pt-10 px-10">
       {/* Left Side: Icon and Text */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 lg:pb-0 pb-2">
         <div 
           className={`
-            flex size-12 items-center justify-center top-0 rounded-xl
+            flex size-16 items-center justify-center top-0 rounded-xl
             ${projectId ? '' : 'bg-muted'}
           `}
           style={projectId ? iconGradientStyle : undefined}
         >
-          {Icon && <Icon size={24} />}
+          {Icon && <Icon size={37} />}
         </div>
         <div className="flex flex-col gap-0.5">
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+          <h1 className="text-4xl font-bold tracking-tight">{title}</h1>
           {description && (
             <p className='text-sm text-muted-foreground'>
               {description}

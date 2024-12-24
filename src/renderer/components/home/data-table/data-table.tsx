@@ -32,6 +32,8 @@ import {
 } from "../../ui/dropdown-menu"
 import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
+import { SubHeader } from "@renderer/components/page/sub-header"
+import { File } from "lucide-react"
 
 interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
@@ -81,8 +83,10 @@ export function DataTable<DemoItem>({
   return (
     <div>
   
+      <SubHeader icon={File} subHeader="All files"/>
+
       {/* Search Filter and Action Buttons Container */}
-      <div className="flex flex-row items-center py-4 justify-between space-x-4 lg:space-y-0">
+      <div className="flex flex-row items-center pb-4 justify-between space-x-4 lg:space-y-0">
 
         {/* Search Filter */}
         <Input

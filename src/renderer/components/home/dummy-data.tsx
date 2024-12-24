@@ -8,7 +8,8 @@ import {
     {
       id: "folder-001",
       createdAt: new Date("2024-01-01T12:00:00Z"),
-      lastModified: new Date("2024-01-05T08:00:00Z"),
+      lastOpened: new Date("2024-01-05T08:00:00Z"),
+lastModified: new Date("2024-01-05T08:00:00Z"),
       name: "Vocal Recordings",
       isStarred: false,
       tags: {
@@ -33,7 +34,10 @@ description: "omg no wayyyy",
 username: "producer999",
         },
       ],
-      type: "folder"
+      type: "folder",
+      format: null,
+      size: null,
+      duration: null
       // format, size, duration are omitted → indicating folder-like behavior
     },
   
@@ -41,7 +45,8 @@ username: "producer999",
     {
       id: "file-101",
       createdAt: new Date("2024-01-02T10:15:00Z"),
-      lastModified: new Date("2024-01-03T11:20:00Z"),
+      lastOpened: new Date("2024-01-05T08:00:00Z"),
+lastModified: new Date("2024-01-03T11:20:00Z"),
       name: "LeadVocal_Take1",
       isStarred: false,
       tags: {
@@ -77,7 +82,8 @@ username: "producer999",
     {
       id: "folder-002",
       createdAt: new Date("2024-02-10T09:00:00Z"),
-      lastModified: new Date("2024-02-12T07:30:00Z"),
+      lastOpened: new Date("2024-01-05T08:00:00Z"),
+lastModified: new Date("2024-02-12T07:30:00Z"),
       name: "Instrumentals",
       isStarred: true,
       tags: {
@@ -110,7 +116,10 @@ description: "omg no wayyyy",
 username: "engineer555",
         },
       ],
-      type: "folder"
+      type: "folder",
+      format: null,
+      size: null,
+      duration: null
       // No file-specific fields
     },
   
@@ -118,7 +127,8 @@ username: "engineer555",
     {
       id: "file-201",
       createdAt: new Date("2024-02-10T09:05:00Z"),
-      lastModified: new Date("2024-02-10T09:06:00Z"),
+      lastOpened: new Date("2024-01-05T08:00:00Z"),
+lastModified: new Date("2024-02-10T09:06:00Z"),
       name: "GuitarStem.wav",
       isStarred: false,
       tags: {
@@ -162,7 +172,8 @@ username: "engineer555",
     {
       id: "file-202",
       createdAt: new Date("2024-02-11T10:00:00Z"),
-      lastModified: new Date("2024-02-11T12:45:00Z"),
+      lastOpened: new Date("2024-01-05T08:00:00Z"),
+lastModified: new Date("2024-02-11T12:45:00Z"),
       name: "DrumsStem_v2",
       isStarred: false,
       tags: {
@@ -206,7 +217,8 @@ username: "producer999",
     {
       id: "folder-003",
       createdAt: new Date("2024-03-01T08:00:00Z"),
-      lastModified: new Date("2024-03-05T18:00:00Z"),
+      lastOpened: new Date("2024-01-05T08:00:00Z"),
+lastModified: new Date("2024-03-05T18:00:00Z"),
       name: "Final Mixes",
       isStarred: true,
       tags: {
@@ -240,6 +252,9 @@ username: "producer999",
         },
       ],
       type: "folder",
+      format: null,
+      size: null,
+      duration: null
       // No file-specific fields
     },
   
@@ -247,7 +262,8 @@ username: "producer999",
     {
       id: "file-301",
       createdAt: new Date("2024-03-02T14:30:00Z"),
-      lastModified: new Date("2024-03-03T09:00:00Z"),
+      lastOpened: new Date("2024-01-05T08:00:00Z"),
+lastModified: new Date("2024-03-03T09:00:00Z"),
       name: "AlbumVersion_Master.mp3",
       isStarred: false,
       tags: {

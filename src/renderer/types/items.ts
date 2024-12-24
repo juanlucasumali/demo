@@ -5,6 +5,7 @@ export interface DemoItem {
     id: string;
     createdAt: Date;
     lastModified: Date;
+    lastOpened: Date;
     name: string;
     isStarred: boolean;
     tags: FileTags | null; 

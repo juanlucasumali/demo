@@ -51,6 +51,7 @@ export function UploadFile({ setUpload }: UploadFileProps) {
       id: "i1023923",
       createdAt: new Date(),
       lastModified: new Date(),
+      lastOpened: new Date(),
       name: fileName || file.name,
       isStarred: false,
       tags: tags, // Add logic for tags if needed

@@ -6,7 +6,7 @@ interface PageContentProps {
 
 export function PageContent({ children }: PageContentProps) {
   return (
-    <div className="min-h-[50vh] flex-1 rounded-xl md:min-h-min container mx-auto py-5 px-10">
+    <div className="min-h-[50vh] flex-1 rounded-xl md:min-h-min container mx-auto px-10">
         {children}
     </div>
   )

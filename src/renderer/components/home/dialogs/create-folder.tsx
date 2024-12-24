@@ -26,6 +26,7 @@ export function CreateFolder({ setCreateFolder }: CreateFolderProps) {
       id: "i1023923",
       createdAt: new Date(),
       lastModified: new Date(),
+      lastOpened: new Date(),
       name: folderName,
       isStarred: false,
       parentFolderId: null,

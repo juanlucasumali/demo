@@ -1,4 +1,3 @@
-// items-store.ts
 import { dummyData } from '@renderer/components/home/dummy-data';
 import { DemoItem } from '@renderer/types/items';
 import { create } from 'zustand';
@@ -7,6 +6,7 @@ interface ItemsStore {
   data: DemoItem[];
   toggleIsStarred: (id: string) => void;
   addItem: (item: DemoItem) => void;
+  removeItem: (id: string) => void;
 }
 
 export const useDataStore = create<ItemsStore>((set) => ({
@@ -20,5 +20,9 @@ export const useDataStore = create<ItemsStore>((set) => ({
   addItem: (item: DemoItem) =>
     set((state) => ({
       data: [...state.data, item],
+    })),
+  removeItem: (id: string) =>
+    set((state) => ({
+      data: state.data.filter((item) => item.id !== id),
     })),
 }));

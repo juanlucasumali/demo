@@ -23,7 +23,7 @@ function PageHeaderWithButtons({
   title: string
   description: string
   icon: LucideIcon
-  buttons: { icon: LucideIcon; tooltip: string; onClick: () => void }[]
+  buttons: { icon: LucideIcon; tooltip: string; onClick: () => void, title: string }[]
 }) {
   return (
     <PageHeader title={title} description={description} icon={Icon}>
@@ -32,7 +32,7 @@ function PageHeaderWithButtons({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="default" onClick={button.onClick}>
-                <button.icon />
+                <button.icon /> {button.title}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -76,7 +76,7 @@ export function GenericPage({
   title: string
   description: string
   icon: LucideIcon
-  buttons: { icon: LucideIcon; tooltip: string; onClick: () => void }[]
+  buttons: { icon: LucideIcon; tooltip: string; onClick: () => void, title: string }[]
   dialogs: { open: boolean; setOpen: (state: boolean) => void; content: ReactNode }[]
   children: ReactNode
 }) {

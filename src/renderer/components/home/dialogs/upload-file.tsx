@@ -10,11 +10,11 @@ import { useToast } from "@renderer/hooks/use-toast";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 
-interface FileUploadProps {
+interface UploadFileProps {
   setUpload: (upload: boolean) => void;
 }
 
-export function FileUpload({ setUpload }: FileUploadProps) {
+export function UploadFile({ setUpload }: UploadFileProps) {
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [tags, setTags] = useState<FileTags | null>({
@@ -54,7 +54,6 @@ export function FileUpload({ setUpload }: FileUploadProps) {
       name: fileName || file.name,
       isStarred: false,
       tags: tags, // Add logic for tags if needed
-      projectId: "default-project",
       parentFolderId: null,
       filePath: file.name, // Dummy path
       type: "file",
@@ -65,11 +64,11 @@ export function FileUpload({ setUpload }: FileUploadProps) {
       ownerAvatar: null, // Replace with actual avatar
       ownerUsername: "current-user", // Replace with actual username
       sharedWith: null,
+      projectId: null,
     };
 
     // Add the new item to the store
     addItem(newItem);
-    console.log("newItem", newItem)
     toast({
         title: "Success!",
         description: "File uploaded successfully.",
@@ -107,5 +106,3 @@ export function FileUpload({ setUpload }: FileUploadProps) {
     </form>
   );
 };
-
-export default FileUpload;

@@ -1,5 +1,5 @@
 import { UserProfile } from "@renderer/types/users";
-import { Ellipsis, Package, Plus, Share, TriangleAlertIcon } from "lucide-react";
+import { Ban, Ellipsis, Package, Plus, Share, TriangleAlertIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
@@ -60,6 +60,9 @@ export function ProfileHeader({
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-red-500" onSelect={() => console.log("Option 4 selected")}>
               <TriangleAlertIcon /> Report
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-red-500" onSelect={() => console.log("Option 4 selected")}>
+              <Ban /> Block
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

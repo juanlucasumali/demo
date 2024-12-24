@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash } from "lucide-react"
+import { Edit, File, Folder, Loader2, MoreHorizontal, RefreshCcw, Share, Star, Trash } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem } from "@renderer/types/items"
 import { Avatar, AvatarFallback, AvatarImage } from "@renderer/components/ui/avatar"
@@ -18,6 +18,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui
 import { formatDuration } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
 import { useDataStore } from "@renderer/stores/items-store"
+import { Dialog, DialogContent, DialogTrigger } from "@renderer/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@renderer/components/ui/alert-dialog"
+import { useState } from "react"
+import { useToast } from "@renderer/hooks/use-toast"
 
 export const columns: ColumnDef<DemoItem>[] = [
 
@@ -92,17 +96,17 @@ export const columns: ColumnDef<DemoItem>[] = [
               <TagBadge tag={tags.fileType} property={"fileType"} />
   
               {/* 2. status */}
-              <TagBadge tag={tags.status} property={"status"} />
+              {/* <TagBadge tag={tags.status} property={"status"} /> */}
   
               {/* 3. instruments */}
-              {tags.instruments?.map((instrument) => (
+              {/* {tags.instruments?.map((instrument) => (
                 <TagBadge tag={instrument} property={"instruments"} />
-              ))}
+              ))} */}
   
               {/* 4. version */}
-              {tags.versions?.map((ver) => (
+              {/* {tags.versions?.map((ver) => (
                 <TagBadge tag={ver} property={"versions"} />
-              ))}
+              ))} */}
             </div>
           )}
         </div>
@@ -206,11 +210,40 @@ export const columns: ColumnDef<DemoItem>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const item = row.original
-
+      const item = row.original;
+      const removeItem = useDataStore((state) => state.removeItem);
+      const [isDeleting, setIsDeleting] = useState(false);
+      const [open, setOpen] = useState(false);
+      const [dropdown, setDropdown] = useState(false);
+      const { toast } = useToast();
+  
+      const handleDelete = async (itemId) => {
+        try {
+          setIsDeleting(true); // Show the spinner
+          await removeItem(itemId);
+        } catch (error) {
+          //Handle errors in store/service
+          toast({
+            title: "Uh oh! Something went wrong.",
+            description: `Failed to delete item:, ${error}`,
+            variant: "destructive"
+          })
+        } finally {
+          setIsDeleting(false); // Hide the spinner
+          setDropdown(false);
+          setOpen(false);
+          //Handle success in store/service
+          toast({
+            title: "Success!",
+            description: "Item was successfully deleted.",
+            variant: "destructive"
+          })
+        }
+      };
+  
       return (
         <div className="text-end">
-          <DropdownMenu>
+          <DropdownMenu open={dropdown} onOpenChange={setDropdown}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
@@ -221,29 +254,62 @@ export const columns: ColumnDef<DemoItem>[] = [
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(item.id)}
               >
-                <Edit/> Edit
+                <Edit /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(item.id)}
               >
-                <Share/> Share
+                <Share /> Share
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(item.id)}
               >
-                <RefreshCcw/> Convert
+                <RefreshCcw /> Convert
               </DropdownMenuItem>
+  
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(item.id)}
-                className="text-red-500"
-              >
-                <Trash/> Delete
-              </DropdownMenuItem>
+  
+              <AlertDialog open={open} onOpenChange={setOpen}>
+                <AlertDialogTrigger>
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-red-500"
+                  >
+                    <Trash /> Delete
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete
+                      the selected item from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className={`bg-red-500 text-primary hover:bg-red-500 ${
+                        isDeleting ? "cursor-not-allowed opacity-50" : ""
+                      }`}
+                      disabled={isDeleting}
+                      onClick={(e) => handleDelete(row.original.id)}
+                    >
+                      {isDeleting ? (
+                        <span className="flex items-center">
+                          <Loader2 className="mr-2 h-4 w-4" /> Deleting...
+                        </span>
+                      ) : (
+                        "Delete"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      )
+      );
     },
   },
 ]

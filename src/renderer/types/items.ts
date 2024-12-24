@@ -8,15 +8,15 @@ export interface DemoItem {
     name: string;
     isStarred: boolean;
     tags: FileTags | null; 
-    projectId: string;
+    projectId: string | null;
     parentFolderId: string | null;
     filePath: string;
     type: string
 
     // File-specific fields
-    format?: FileFormat;
-    size?: number;
-    duration?: number;
+    format: FileFormat | null;
+    size: number | null;
+    duration: number | null;
 
     ownerId: string;
     ownerAvatar: string | null;

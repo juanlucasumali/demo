@@ -140,10 +140,10 @@ export function FileTagsDropdown({ tags, setTags }: FileTagsDropdownProps) {
             </DropdownMenuPortal>
           </DropdownMenuSub>
 
-          <DropdownMenuSeparator />
+          {/* <DropdownMenuSeparator /> */}
 
           {/* Status */}
-          <DropdownMenuSub>
+          {/* <DropdownMenuSub>
             <DropdownMenuSubTrigger>Status</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
@@ -168,10 +168,10 @@ export function FileTagsDropdown({ tags, setTags }: FileTagsDropdownProps) {
             </DropdownMenuPortal>
           </DropdownMenuSub>
 
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator /> */}
 
           {/* Instruments */}
-          <DropdownMenuSub>
+          {/* <DropdownMenuSub>
             <DropdownMenuSubTrigger>Instruments</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
@@ -200,10 +200,10 @@ export function FileTagsDropdown({ tags, setTags }: FileTagsDropdownProps) {
             </DropdownMenuPortal>
           </DropdownMenuSub>
 
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator /> */}
 
           {/* Versions */}
-          <DropdownMenuSub>
+          {/* <DropdownMenuSub>
             <DropdownMenuSubTrigger>Versions</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
@@ -219,7 +219,8 @@ export function FileTagsDropdown({ tags, setTags }: FileTagsDropdownProps) {
                 ))}
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
-          </DropdownMenuSub>
+          </DropdownMenuSub> */}
+
         </DropdownMenuContent>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="w-max"><Tag/>Edit tags</Button>

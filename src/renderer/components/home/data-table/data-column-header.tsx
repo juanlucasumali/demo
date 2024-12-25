@@ -28,6 +28,22 @@ export function DataTableColumnHeader<TData, TValue>({
     return <div className={cn(className)}>{title}</div>
   }
 
+  const handleSorting = (desc: boolean) => {
+    // Custom sorting logic based on column title
+    const columnId = column.id;
+
+    if (columnId === "size") {
+      // For size: toggle smallest to largest or largest to smallest
+      column.toggleSorting(desc);
+    } else if (columnId === "lastModified") {
+      // For lastModified: toggle oldest to newest or newest to oldest
+      column.toggleSorting(desc);
+    } else {
+      // Default behavior
+      column.toggleSorting(desc);
+    }
+  };
+
   return (
     <div className={cn("flex items-center space-x-2", className)}>
       <DropdownMenu modal={false}>
@@ -36,7 +52,7 @@ export function DataTableColumnHeader<TData, TValue>({
             variant="ghost"
             size="sm"
             className="-ml-3 h-8 data-[state=open]:bg-accent"
-            disabled={disabled} // Disable button if sort is false
+            disabled={disabled} // Disable button if sorting is false
           >
             <span>{title}</span>
             {!disabled && ( // Show icons only if sorting is enabled
@@ -51,13 +67,13 @@ export function DataTableColumnHeader<TData, TValue>({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
+          <DropdownMenuItem onClick={() => handleSorting(false)}>
             <ArrowUp className="h-3.5 w-3.5 text-muted-foreground/70" />
-            Asc
+            {column.id === "size" ? "Smallest First" : "Oldest First"}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
+          <DropdownMenuItem onClick={() => handleSorting(true)}>
             <ArrowDown className="h-3.5 w-3.5 text-muted-foreground/70" />
-            Desc
+            {column.id === "size" ? "Biggest First" : "Most Recent First"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
@@ -67,5 +83,5 @@ export function DataTableColumnHeader<TData, TValue>({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  )
+  );
 }

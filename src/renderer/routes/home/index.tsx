@@ -1,6 +1,6 @@
 import { columns } from '../../components/home/data-table/columns'
 import { DataTable } from '../../components/home/data-table/data-table'
-import { FilePlus, FolderPlus, HomeIcon } from 'lucide-react'
+import { FilePlus, FolderPlus, HomeIcon, Share } from 'lucide-react'
 import { useDataStore } from '@renderer/stores/items-store'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -14,6 +14,7 @@ import { UploadFile } from '@renderer/components/home/dialogs/upload-file'
 import { CreateFolder } from '@renderer/components/home/dialogs/create-folder'
 import { Recents } from '@renderer/components/home/recents'
 import { Activity } from '@renderer/components/home/activity'
+import { ShareDialog } from '@renderer/components/home/dialogs/share-dialog'
 
 export const Route = createFileRoute('/home/')({
   component: Home,
@@ -23,6 +24,7 @@ export default function Home() {
   const data = useDataStore((state) => state.data)
   const [upload, setUpload] = useState(false)
   const [createFolder, setCreateFolder] = useState(false)
+  const [share, setShare] = useState(false)
 
   const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
     dialogSetter(false)
@@ -37,28 +39,18 @@ export default function Home() {
         icon={HomeIcon}
       >
         {/* Header Buttons */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="default" onClick={() => setUpload(true)}>
-                <FilePlus /> Upload File
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Upload a file</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="default" onClick={() => setCreateFolder(true)}>
-                <FolderPlus /> Create Folder
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Create a folder</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Button variant="default" onClick={() => setUpload(true)}>
+          <FilePlus /> Upload
+        </Button>
+
+        <Button variant="default" onClick={() => setCreateFolder(true)}>
+          <FolderPlus /> Create New
+        </Button>
+
+        <Button variant="default" onClick={() => setShare(true)}>
+          <Share /> Share
+        </Button>
+
       </PageHeader>
 
       {/* Page Content */}
@@ -72,13 +64,20 @@ export default function Home() {
 
       {/* Dialogs */}
       <Dialog open={upload} onOpenChange={() => handleDialogClose(setUpload)}>
-        <DialogContent>
+        <DialogContent className="max-w-[375px]">
           <UploadFile setUpload={setUpload} />
         </DialogContent>
       </Dialog>
+
       <Dialog open={createFolder} onOpenChange={() => handleDialogClose(setCreateFolder)}>
-        <DialogContent>
+        <DialogContent className="max-w-[375px]">
           <CreateFolder setCreateFolder={setCreateFolder} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={share} onOpenChange={() => handleDialogClose(setShare)}>
+        <DialogContent className="max-w-[375px]">
+          <ShareDialog setShare={setShare} />
         </DialogContent>
       </Dialog>
     </PageMain>

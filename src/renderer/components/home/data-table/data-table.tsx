@@ -46,6 +46,7 @@ export function DataTable<DemoItem>({
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
+    { id: 'lastModified', desc: true }, // true first
   ]);
 
   // Handle sorting changes while ensuring isStarred remains the primary sort

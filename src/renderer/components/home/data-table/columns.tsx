@@ -194,6 +194,7 @@ export const columns: ColumnDef<DemoItem>[] = [
 
   {
     accessorKey: "size",
+    id: "size",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Size" />
     ),
@@ -209,6 +210,7 @@ export const columns: ColumnDef<DemoItem>[] = [
   
   {
     accessorKey: "lastModified",
+    id: "lastModified",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Last Modified" />
     ),

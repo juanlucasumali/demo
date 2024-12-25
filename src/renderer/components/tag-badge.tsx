@@ -1,4 +1,4 @@
-import { FileTag, tagBgClasses } from "@renderer/types/items";
+import { FileTag, tagBgClasses } from "@renderer/types/tags";
 import { Badge } from "./ui/badge";
 import { X } from "lucide-react";
 

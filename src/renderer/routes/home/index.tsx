@@ -16,6 +16,7 @@ import { Recents } from '@renderer/components/home/recents'
 import { Activity } from '@renderer/components/home/activity'
 import { ShareDialog } from '@renderer/components/home/dialogs/share-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
+import { CreateProject } from '@renderer/components/home/dialogs/create-project'
 
 export const Route = createFileRoute('/home/')({
   component: Home,
@@ -26,6 +27,7 @@ export default function Home() {
   const [upload, setUpload] = useState(false)
   const [createFolder, setCreateFolder] = useState(false)
   const [share, setShare] = useState(false)
+  const [createProject, setCreateProject] = useState(false)
 
   const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
     dialogSetter(false)
@@ -58,7 +60,7 @@ export default function Home() {
                 Create folder
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCreateProject(true)}>
                 <Box/>
                 Create project
                 <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
@@ -92,6 +94,7 @@ export default function Home() {
       <UploadFile setUpload={setUpload} upload={upload} handleDialogClose={handleDialogClose}/>
       <CreateFolder setCreateFolder={setCreateFolder} createFolder={createFolder} handleDialogClose={handleDialogClose}/>
       <ShareDialog setShare={setShare} share={share} handleDialogClose={handleDialogClose}/>
+      <CreateProject setCreateProject={setCreateProject} createProject={createProject} handleDialogClose={handleDialogClose}/>
     </PageMain>
   )
 }

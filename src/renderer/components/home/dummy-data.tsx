@@ -1,8 +1,8 @@
 import {
   DemoItem,
   FileFormat,
-  FileTag,
 } from '../../types/items'; // <-- Replace with the actual path to your types
+import { FileTag } from "@renderer/types/tags";
 
 export const dummyData: DemoItem[] = [
   {

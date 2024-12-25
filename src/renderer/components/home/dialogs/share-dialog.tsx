@@ -27,7 +27,8 @@ import {
   FormControl,
   FormMessage,
 } from "../../ui/form";
-import { FileFormat, FileTag } from "@renderer/types/items";
+import { FileFormat } from "@renderer/types/items";
+import { FileTag } from "@renderer/types/tags";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 

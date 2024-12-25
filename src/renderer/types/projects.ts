@@ -1,5 +1,5 @@
+import { ProjectTag } from "./tags";
 import { UserProfile } from "./users";
-import { ProjectTags } from "./tags";
 
 export interface Project {
     id: string;
@@ -9,7 +9,7 @@ export interface Project {
     name: string;
     description: string | null;
     isStarred: boolean;
-    tags: ProjectTags | null; 
+    tags: ProjectTag | null; 
 
     icon: string | null;
 

@@ -11,7 +11,7 @@ import {
 import { Button } from "../../ui/button";
 import TagBadge from "@renderer/components/tag-badge";
 import { Tag } from "lucide-react";
-import { FileTag } from "@renderer/types/items";
+import { FileTag } from "@renderer/types/tags";
 
 interface FileTagsDropdownProps {
   tags: FileTag | null;

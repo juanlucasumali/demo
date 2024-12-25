@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import FileTagsDropdown from "./file-tags-dropdown";
-import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
 import { useDataStore } from "@renderer/stores/items-store";
 import { FileFormat } from "@renderer/types/items";
 import { FileTags } from "@renderer/types/tags";
@@ -14,9 +14,11 @@ const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 
 interface ShareDialogProps {
   setShare: (upload: boolean) => void;
+  share: boolean;
+  handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
 }
 
-export function ShareDialog({ setShare }: ShareDialogProps) {
+export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogProps) {
   const [username, setUsername] = useState<string>('@');
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>("");
@@ -86,33 +88,37 @@ export function ShareDialog({ setShare }: ShareDialogProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <DialogHeader>
-        <DialogTitle>Share</DialogTitle>
-        <DialogDescription>
-          Lightning-fast, encrypted file transfers.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="grid gap-4 py-4">
-        <Label htmlFor="username" >
-          Send to
-        </Label>
-        <Input
-          id="username"
-          className="col-span-3 select-none"
-          value={username.startsWith('@') ? username : `@${username}`}
-          onChange={(e) => {
-            const value = e.target.value;
-            // Ensure the @ is always present
-            setUsername(value.startsWith('@') ? value : `@${value.replace(/^@/, '')}`);
-          }}
-        />
-      <Button variant={'secondary'} className="max-w-32"> Choose Files </Button>
-      </div>
-      <DialogFooter>
-        <Button variant={'outline'}> <Link/> Copy Link </Button>
-        <Button type='submit'> Send </Button>
-      </DialogFooter>
-    </form>
+    <Dialog open={share} onOpenChange={() => handleDialogClose(setShare)}>
+      <DialogContent className="max-w-[375px]">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Share</DialogTitle>
+            <DialogDescription>
+              Lightning-fast, encrypted file transfers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Label htmlFor="username" >
+              Send to
+            </Label>
+            <Input
+              id="username"
+              className="col-span-3 select-none"
+              value={username.startsWith('@') ? username : `@${username}`}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Ensure the @ is always present
+                setUsername(value.startsWith('@') ? value : `@${value.replace(/^@/, '')}`);
+              }}
+            />
+          <Button variant={'secondary'} className="max-w-32"> Choose Files </Button>
+          </div>
+          <DialogFooter>
+            <Button variant={'outline'}> <Link/> Copy Link </Button>
+            <Button type='submit'> Send </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

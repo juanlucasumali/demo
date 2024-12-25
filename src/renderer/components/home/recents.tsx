@@ -4,8 +4,8 @@ import { Card, CardContent } from "../ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../ui/carousel";
 import { useDataStore } from "@renderer/stores/items-store";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import macosFolderIcon from "src/renderer/assets/macos-folder.png";
-import macosSongIcon from "src/renderer/assets/macos-song.png";
+import folderImage from "../../assets/macos-folder.png";
+import fileImage from "../../assets/macos-song.png";
 
 export function Recents() {
   const data = useDataStore((state) => state.data);
@@ -35,34 +35,26 @@ export function Recents() {
             {recentItems.map((item) => (
               <CarouselItem
                 key={item.id}
-                className="basis-1/3 sm:basis-1/3 md:basis-1/3 lg:basis-1/5"
+                className="basis-1/3 md:basis-1/5 lg:basis-1/5"
               >
                 <div className="p-1">
                   <Tooltip>
                     <TooltipContent>
                       <div className="flex bottom flex-row gap-2">
-                        <Eye size={20} /> <Edit size={20} /> <Share size={20} />
+                        <Eye size={20}/> <Edit size={20}/> <Share size={20}/>
                       </div>
                     </TooltipContent>
                     <TooltipTrigger asChild>
-                      <Card className="border-none shadow-none">
-                        <CardContent className="flex flex-col items-center justify-center p-4">
-                          {item.type === "folder" ? (
-                            <img
-                              src={macosFolderIcon}
-                              alt="Folder"
-                              className="h-10 w-10"
-                            />
-                          ) : (
-                            <img
-                              src={macosSongIcon}
-                              alt="Song"
-                              className="h-10 w-10"
-                            />
-                          )}
-                          <span
+                      <Card className="border-none shadow-none min-w-30">
+                        <CardContent className="flex flex-col items-center justify-center p-0 min-h-full">
+                          <img
+                            src={item.type === "folder" ? folderImage : fileImage}
+                            alt={item.type === "folder" ? "Folder" : "File"}
+                            className="h-15 w-15"
+                          />
+                          <span 
                             className="mt-2 text-xs text-center font-light truncate text-ellipsis overflow-hidden"
-                            style={{ maxWidth: "calc(100% + 3rem)" }}
+                            style={{maxWidth: "calc(100% + 20px)"}}
                           >
                             {item.name}
                           </span>
@@ -74,8 +66,8 @@ export function Recents() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="-left-8" />
-          <CarouselNext className="-right-9" />
+          <CarouselPrevious className="-left-8"/>
+          <CarouselNext className="-right-9"/>
         </Carousel>
       </div>
     </div>

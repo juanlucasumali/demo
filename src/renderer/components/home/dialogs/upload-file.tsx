@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import FileTagsDropdown from "./file-tags-dropdown";
-import { DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
 import { useDataStore } from "@renderer/stores/items-store";
 import { FileFormat } from "@renderer/types/items";
 import { FileTags } from "@renderer/types/tags";
@@ -11,10 +11,12 @@ import { useToast } from "@renderer/hooks/use-toast";
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 
 interface UploadFileProps {
-  setUpload: (upload: boolean) => void;
+  setUpload: React.Dispatch<React.SetStateAction<boolean>>;
+  upload: boolean;
+  handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
 }
 
-export function UploadFile({ setUpload }: UploadFileProps) {
+export function UploadFile({ setUpload, upload, handleDialogClose }: UploadFileProps) {
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [tags, setTags] = useState<FileTags | null>({
@@ -83,27 +85,31 @@ export function UploadFile({ setUpload }: UploadFileProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <DialogHeader>
-        <DialogTitle className="pb-4">File Upload</DialogTitle>
-      </DialogHeader>
-      <Input
-        type="file"
-        id="file"
-        accept={allowedFormats.map((f) => `.${f}`).join(",")}
-        onChange={handleFileChange}
-        className="pt-1.5"
-      />
-      <Input
-        id="fileName"
-        placeholder="File Name"
-        value={fileName}
-        onChange={(e) => setFileName(e.target.value)}
-      />
-      <FileTagsDropdown tags={tags} setTags={setTags}/>
-      <Button type="submit" className="w-full">
-        Upload
-      </Button>
-    </form>
+    <Dialog open={upload} onOpenChange={() => handleDialogClose(setUpload)}>
+      <DialogContent className="max-w-[375px]">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle className="pb-4">File Upload</DialogTitle>
+          </DialogHeader>
+          <Input
+            type="file"
+            id="file"
+            accept={allowedFormats.map((f) => `.${f}`).join(",")}
+            onChange={handleFileChange}
+            className="pt-1.5"
+          />
+          <Input
+            id="fileName"
+            placeholder="File Name"
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
+          />
+          <FileTagsDropdown tags={tags} setTags={setTags}/>
+          <Button type="submit" className="w-full">
+            Upload
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };

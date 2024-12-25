@@ -4,15 +4,15 @@ import { Table, TableRow, TableCell, TableBody } from "../ui/table"; // Ensure y
 
 // Dummy notifications data
 const notifications = [
-  { id: 1, avatarUrl: "https://via.placeholder.com/40", avatarFallback: "JD", name: "John Doe", username: 'johndoe', notification: "Sent you a request" },
-  { id: 2, avatarUrl: "https://via.placeholder.com/40", avatarFallback: "AM", name: "Alice Miller", username: 'alicemills', notification: "Shared forty.mp3" },
-  { id: 3, avatarUrl: "https://via.placeholder.com/40", avatarFallback: "RS", name: "Robert Smith", username: 'robsmithy', notification: "Shared multiple files and folders" },
+  { id: 1, avatarUrl: "", avatarFallback: "JD", name: "John Doe", username: 'johndoe', notification: "Sent you a request" },
+  { id: 2, avatarUrl: "", avatarFallback: "AM", name: "Alice Miller", username: 'alicemills', notification: "Shared forty.mp3" },
+  { id: 3, avatarUrl: "", avatarFallback: "RS", name: "Robert Smith", username: 'robsmithy', notification: "Shared multiple files and folders" },
   // Add more dummy data here to simulate scrolling
 ];
 
 export function Activity() {
   return (
-    <Card className="lg:col-span-2 lg:mb-0 mb-8">
+    <Card className="lg:col-span-2 lg:mb-0 mb-8 shadow-none">
       <CardHeader className="py-4">
       <h1 className="text-base font-semibold tracking-tight">Activity</h1>
       </CardHeader>

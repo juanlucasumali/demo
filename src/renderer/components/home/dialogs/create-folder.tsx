@@ -1,15 +1,17 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
-import { DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
 import { useDataStore } from "@renderer/stores/items-store";
 import { useToast } from "@renderer/hooks/use-toast";
 
 interface CreateFolderProps {
   setCreateFolder: (createFolder: boolean) => void;
+  createFolder: boolean;
+  handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
 }
 
-export function CreateFolder({ setCreateFolder }: CreateFolderProps) {
+export function CreateFolder({ setCreateFolder, createFolder, handleDialogClose }: CreateFolderProps) {
   const [folderName, setFolderName] = useState<string>("");
   const { toast } = useToast();
   const addItem = useDataStore((state) => state.addItem);
@@ -57,19 +59,23 @@ export function CreateFolder({ setCreateFolder }: CreateFolderProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <DialogHeader>
-        <DialogTitle className="pb-4">Create a Folder</DialogTitle>
-      </DialogHeader>
-      <Input
-        id="folderName"
-        placeholder="Folder Name"
-        value={folderName}
-        onChange={(e) => setFolderName(e.target.value)}
-      />
-      <Button type="submit" className="w-full">
-        Create
-      </Button>
-    </form>
+    <Dialog open={createFolder} onOpenChange={() => handleDialogClose(setCreateFolder)}>
+      <DialogContent className="max-w-[375px]">
+          <form onSubmit={handleSubmit} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle className="pb-4">Create a Folder</DialogTitle>
+          </DialogHeader>
+          <Input
+            id="folderName"
+            placeholder="Folder Name"
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+          />
+          <Button type="submit" className="w-full">
+            Create
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };

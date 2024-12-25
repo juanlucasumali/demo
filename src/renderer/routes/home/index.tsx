@@ -40,15 +40,15 @@ export default function Home() {
       >
         {/* Header Buttons */}
         <Button variant="default" onClick={() => setUpload(true)}>
-          <FilePlus /> Upload
+          Upload
         </Button>
 
         <Button variant="default" onClick={() => setCreateFolder(true)}>
-          <FolderPlus /> Create New
+          Create New
         </Button>
 
         <Button variant="default" onClick={() => setShare(true)}>
-          <Share /> Share
+          Share
         </Button>
 
       </PageHeader>
@@ -63,23 +63,9 @@ export default function Home() {
       </PageContent>
 
       {/* Dialogs */}
-      <Dialog open={upload} onOpenChange={() => handleDialogClose(setUpload)}>
-        <DialogContent className="max-w-[375px]">
-          <UploadFile setUpload={setUpload} />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={createFolder} onOpenChange={() => handleDialogClose(setCreateFolder)}>
-        <DialogContent className="max-w-[375px]">
-          <CreateFolder setCreateFolder={setCreateFolder} />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={share} onOpenChange={() => handleDialogClose(setShare)}>
-        <DialogContent className="max-w-[375px]">
-          <ShareDialog setShare={setShare} />
-        </DialogContent>
-      </Dialog>
+      <UploadFile setUpload={setUpload} upload={upload} handleDialogClose={handleDialogClose}/>
+      <CreateFolder setCreateFolder={setCreateFolder} createFolder={createFolder} handleDialogClose={handleDialogClose}/>
+      <ShareDialog setShare={setShare} share={share} handleDialogClose={handleDialogClose}/>
     </PageMain>
   )
 }

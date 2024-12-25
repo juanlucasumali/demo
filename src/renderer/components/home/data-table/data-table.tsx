@@ -59,7 +59,7 @@ export function DataTable<DemoItem>({
   };
 
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({ isStarred: false })
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({ isStarred: false, select: false })
   const [rowSelection, setRowSelection] = React.useState({})
 
   const table = useReactTable({
@@ -103,7 +103,7 @@ export function DataTable<DemoItem>({
         <div className="flex items-center space-x-2">
 
         {/* Column Filter */}
-        <DropdownMenu modal={false}>
+        {/* <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full lg:w-auto">
               Columns
@@ -126,7 +126,7 @@ export function DataTable<DemoItem>({
                 </DropdownMenuCheckboxItem>
               ))}
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
         </div>
       </div>
 

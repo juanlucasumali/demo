@@ -265,7 +265,7 @@ export const columns: ColumnDef<DemoItem>[] = [
   
       return (
         <div className="text-end">
-          <DropdownMenu open={dropdown} onOpenChange={setDropdown}>
+          <DropdownMenu open={dropdown} onOpenChange={setDropdown} modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>

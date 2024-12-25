@@ -1,9 +1,11 @@
-import { Clock, Edit, Eye, File, Folder, Share } from "lucide-react";
+import { Clock, Edit, Eye, Share } from "lucide-react";
 import { SubHeader } from "../page/sub-header";
 import { Card, CardContent } from "../ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../ui/carousel";
 import { useDataStore } from "@renderer/stores/items-store";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import macosFolderIcon from "src/renderer/assets/macos-folder.png";
+import macosSongIcon from "src/renderer/assets/macos-song.png";
 
 export function Recents() {
   const data = useDataStore((state) => state.data);
@@ -37,35 +39,43 @@ export function Recents() {
               >
                 <div className="p-1">
                   <Tooltip>
-                  <TooltipContent>
-                  <div className="flex bottom flex-row gap-2">
-                      <Eye size={20}/> <Edit size={20}/> <Share size={20}/>
-                  </div>
-                  </TooltipContent>
-                <TooltipTrigger asChild>
-                  <Card className="border-none shadow-none">
-                    <CardContent className="flex flex-col items-center justify-center p-4">
-                      {item.type === "folder" ? (
-                        <Folder className="h-10 w-10 text-muted-foreground fill-current" />
-                      ) : (
-                        <File className="h-10 w-10" />
-                      )}
-                      <span 
-                          className="mt-2 text-xs text-center font-light truncate text-ellipsis overflow-hidden"
-                          style={{maxWidth: "calc(100% + 3rem)"}}
-                      >
-                        {item.name}
-                      </span>
-                    </CardContent>
-                  </Card>
-                  </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="flex bottom flex-row gap-2">
+                        <Eye size={20} /> <Edit size={20} /> <Share size={20} />
+                      </div>
+                    </TooltipContent>
+                    <TooltipTrigger asChild>
+                      <Card className="border-none shadow-none">
+                        <CardContent className="flex flex-col items-center justify-center p-4">
+                          {item.type === "folder" ? (
+                            <img
+                              src={macosFolderIcon}
+                              alt="Folder"
+                              className="h-10 w-10"
+                            />
+                          ) : (
+                            <img
+                              src={macosSongIcon}
+                              alt="Song"
+                              className="h-10 w-10"
+                            />
+                          )}
+                          <span
+                            className="mt-2 text-xs text-center font-light truncate text-ellipsis overflow-hidden"
+                            style={{ maxWidth: "calc(100% + 3rem)" }}
+                          >
+                            {item.name}
+                          </span>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
                   </Tooltip>
                 </div>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="-left-8"/>
-          <CarouselNext className="-right-9"/>
+          <CarouselPrevious className="-left-8" />
+          <CarouselNext className="-right-9" />
         </Carousel>
       </div>
     </div>

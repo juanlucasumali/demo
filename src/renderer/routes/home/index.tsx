@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@rende
 import { UploadFile } from '@renderer/components/home/dialogs/upload-file'
 import { CreateFolder } from '@renderer/components/home/dialogs/create-folder'
 import { Recents } from '@renderer/components/home/recents'
+import { Activity } from '@renderer/components/home/activity'
 
 export const Route = createFileRoute('/home/')({
   component: Home,
@@ -62,8 +63,9 @@ export default function Home() {
 
       {/* Page Content */}
       <PageContent>
-        <div className='grid grid-cols-2 gap-4'>
-        <Recents/>
+        <div className='lg:grid lg:grid-cols-5 gap-4'>
+          <Recents/>
+          <Activity/>
         </div>
         <DataTable columns={columns} data={data} />
       </PageContent>

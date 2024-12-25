@@ -206,6 +206,26 @@ export const columns: ColumnDef<DemoItem>[] = [
       return <div>{sizeInMb} MB</div>
     },
   },
+  
+  {
+    accessorKey: "lastModified",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Last Modified" />
+    ),
+    cell: ({ row }) => {
+      const lastModified = row.original.lastModified;
+      if (!lastModified) return "";
+  
+      // Format the date as "Dec 6, 2035"
+      const formattedDate = new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(new Date(lastModified));
+  
+      return <div>{formattedDate}</div>;
+    },
+  },
 
   {
     id: "actions",

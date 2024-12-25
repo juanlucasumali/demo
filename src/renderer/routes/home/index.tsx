@@ -1,6 +1,6 @@
 import { columns } from '../../components/home/data-table/columns'
 import { DataTable } from '../../components/home/data-table/data-table'
-import { FilePlus, FolderPlus, HomeIcon, Share } from 'lucide-react'
+import { Box, FilePlus, FolderPlus, HomeIcon, Share, User, UserCog } from 'lucide-react'
 import { useDataStore } from '@renderer/stores/items-store'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -15,6 +15,7 @@ import { CreateFolder } from '@renderer/components/home/dialogs/create-folder'
 import { Recents } from '@renderer/components/home/recents'
 import { Activity } from '@renderer/components/home/activity'
 import { ShareDialog } from '@renderer/components/home/dialogs/share-dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
 
 export const Route = createFileRoute('/home/')({
   component: Home,
@@ -43,9 +44,34 @@ export default function Home() {
           Upload
         </Button>
 
-        <Button variant="default" onClick={() => setCreateFolder(true)}>
-          Create New
-        </Button>
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="default">
+              Create New
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className='w-56' align='end' forceMount>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setCreateFolder(true)}>
+                <User/>
+                Create folder
+                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Box/>
+                Create project
+                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+                <UserCog/>
+                Create Request
+                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+              </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <Button variant="default" onClick={() => setShare(true)}>
           Share
@@ -55,7 +81,7 @@ export default function Home() {
 
       {/* Page Content */}
       <PageContent>
-        <div className='lg:grid lg:grid-cols-5 gap-4'>
+        <div className='lg:grid lg:grid-cols-5 gap-4 pt-8'>
           <Recents/>
           <Activity/>
         </div>

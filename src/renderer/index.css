@@ -48,7 +48,7 @@
 
     -webkit-scrollbar: none;
     -ms-overflow-style: none;
-    scrollbar-width: none
+    scrollbar-width: none;
   }
   .dark {
     --background: 0 0% 7%;

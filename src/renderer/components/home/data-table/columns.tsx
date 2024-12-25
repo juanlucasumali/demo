@@ -92,21 +92,7 @@ export const columns: ColumnDef<DemoItem>[] = [
           </div>
           {tags && (
             <div className="pl-2 flex gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
-              {/* 1. fileType */}
-              <TagBadge tag={tags.fileType} property={"fileType"} />
-  
-              {/* 2. status */}
-              {/* <TagBadge tag={tags.status} property={"status"} /> */}
-  
-              {/* 3. instruments */}
-              {/* {tags.instruments?.map((instrument) => (
-                <TagBadge tag={instrument} property={"instruments"} />
-              ))} */}
-  
-              {/* 4. version */}
-              {/* {tags.versions?.map((ver) => (
-                <TagBadge tag={ver} property={"versions"} />
-              ))} */}
+              <TagBadge tag={tags} />
             </div>
           )}
         </div>

@@ -1,14 +1,59 @@
+"use client";
+
 import { useState } from "react";
+import { z } from "zod";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import FileTagsDropdown from "./file-tags-dropdown";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@renderer/components/ui/dialog";
 import { useDataStore } from "@renderer/stores/items-store";
-import { FileFormat } from "@renderer/types/items";
-import { FileTags } from "@renderer/types/tags";
 import { useToast } from "@renderer/hooks/use-toast";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "../../ui/form";
+import { FileFormat } from "@renderer/types/items";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
+const maxFileNameLength = 100; // Set maximum length for file name
+const fileNamePattern = /^[a-zA-Z0-9_\-\.]+$/; // Allow only alphanumeric, underscores, hyphens, and dots
+
+// Define the schema using Zod
+const uploadFileSchema = z.object({
+  file: z
+    .custom<File>()
+    .refine(
+      (file) =>
+        file && allowedFormats.includes(file.name.split(".").pop() || ""),
+      {
+        message: `File format must be one of: ${allowedFormats.join(", ")}`,
+      }
+    ),
+  fileName: z
+    .string()
+    .min(1, { message: "File name is required." })
+    .max(maxFileNameLength, {
+      message: `File name must not exceed ${maxFileNameLength} characters.`,
+    })
+    .regex(fileNamePattern, {
+      message: "File name contains invalid characters. Only letters, numbers, underscores, hyphens, and dots are allowed.",
+    }),
+  tags: z.any().nullable(),
+});
+
+type UploadFileFormValues = z.infer<typeof uploadFileSchema>;
 
 interface UploadFileProps {
   setUpload: React.Dispatch<React.SetStateAction<boolean>>;
@@ -16,100 +61,133 @@ interface UploadFileProps {
   handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
 }
 
-export function UploadFile({ setUpload, upload, handleDialogClose }: UploadFileProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState<string>("");
-  const [tags, setTags] = useState<FileTags | null>({
-    fileType: null,
-    status: null,
-    instruments: [],
-    versions: []
-  });
+export function UploadFile({
+  setUpload,
+  upload,
+  handleDialogClose,
+}: UploadFileProps) {
   const { toast } = useToast();
   const addItem = useDataStore((state) => state.addItem);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Initialize react-hook-form with zod schema
+  const form = useForm<UploadFileFormValues>({
+    resolver: zodResolver(uploadFileSchema),
+    defaultValues: {
+      file: null,
+      fileName: "",
+      tags: null,
+    },
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      const fileExtension = selectedFile.name.split(".").pop();
-      if (fileExtension && allowedFormats.includes(fileExtension)) {
-        setFile(selectedFile);
-        setFileName(selectedFile.name);
-      } else {
-        alert(`Invalid file format. Allowed formats: ${allowedFormats.join(", ")}`);
-      }
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9_\-\.]/g, "_"); // Replace invalid characters
+      form.setValue("file", file, { shouldValidate: true });
+      form.setValue("fileName", sanitizedFileName, { shouldValidate: true });
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file) {
-      alert("Please upload a valid file.");
-      return;
-    }
-
+  const onSubmit: SubmitHandler<UploadFileFormValues> = (data) => {
     // Create a new item to add to the store
     const newItem = {
-      id: "i1023923",
+      id: `i${Date.now()}`, // Generate unique ID
       createdAt: new Date(),
       lastModified: new Date(),
       lastOpened: new Date(),
-      name: fileName || file.name,
+      name: data.fileName,
       isStarred: false,
-      tags: tags, // Add logic for tags if needed
+      tags: data.tags,
       parentFolderId: null,
-      filePath: file.name, // Dummy path
+      filePath: data.file.name,
       type: "file",
       duration: 1,
-      format: file.name.split(".").pop() as FileFormat,
-      size: file.size,
-      ownerId: "current-user-id", // Replace with actual user ID
-      ownerAvatar: null, // Replace with actual avatar
-      ownerUsername: "current-user", // Replace with actual username
+      format: data.file.name.split(".").pop() as FileFormat,
+      size: data.file.size,
+      ownerId: "current-user-id",
+      ownerAvatar: null,
+      ownerUsername: "current-user",
       sharedWith: null,
       projectId: null,
     };
 
-    // Add the new item to the store
     addItem(newItem);
+
     toast({
-        title: "Success!",
-        description: "File uploaded successfully.",
-        variant: "default",
-      })
+      title: "Success!",
+      description: "File uploaded successfully.",
+      variant: "default",
+    });
 
     // Reset the form
-    setFile(null);
-    setFileName("");
+    form.reset();
     setUpload(false);
+    setSelectedFile(null);
   };
 
   return (
     <Dialog open={upload} onOpenChange={() => handleDialogClose(setUpload)}>
       <DialogContent className="max-w-[375px]">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle className="pb-4">File Upload</DialogTitle>
-          </DialogHeader>
-          <Input
-            type="file"
-            id="file"
-            accept={allowedFormats.map((f) => `.${f}`).join(",")}
-            onChange={handleFileChange}
-            className="pt-1.5"
-          />
-          <Input
-            id="fileName"
-            placeholder="File Name"
-            value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
-          />
-          <FileTagsDropdown tags={tags} setTags={setTags}/>
-          <Button type="submit" className="w-full">
-            Upload
-          </Button>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle className="pb-4">File Upload</DialogTitle>
+            </DialogHeader>
+            <FormField
+              control={form.control}
+              name="file"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>File</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept={allowedFormats.map((f) => `.${f}`).join(",")}
+                      onChange={handleFileChange}
+                      className="pt-1.5"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="fileName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel >File Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter file name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tags</FormLabel>
+                  <FormControl>
+                    <FileTagsDropdown
+                      tags={field.value}
+                      setTags={(tags) => form.setValue("tags", tags)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full">
+              Upload
+            </Button>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
-};
+}

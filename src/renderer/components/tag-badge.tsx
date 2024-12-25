@@ -1,23 +1,21 @@
-import { FileTagType, InstrumentType, StatusType, VersionType, fileTagColors } from "@renderer/types/tags";
+import { FileTag, tagBgClasses } from "@renderer/types/items";
 import { Badge } from "./ui/badge";
 import { X } from "lucide-react";
 
 interface TagBadgeProps {
-  tag: FileTagType | StatusType | InstrumentType | VersionType | null;
-  property: string;
+  tag: FileTag;
   onRemove?: () => void;
 }
 
-export function TagBadge({ tag, property, onRemove }: TagBadgeProps) {
-  const hasRemove = onRemove !== undefined
+export function TagBadge({ tag, onRemove }: TagBadgeProps) {
   if (!tag) return
   return (
     <Badge
       variant="secondary"
-      className={`flex items-center gap-2 ${fileTagColors[property]}`}
+      className={`flex items-center gap-2 ${tagBgClasses.green}`}
     >
       {tag}
-      {hasRemove && <button
+      {onRemove && <button
         className="flex items-center justify-center rounded-full"
         onClick={(e) => {
           e.stopPropagation(); // Prevent triggering parent events

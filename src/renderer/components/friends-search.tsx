@@ -30,26 +30,35 @@ interface FriendsSearchProps {
 
   /** Setter for selected users */
   setSelectedUsers: React.Dispatch<React.SetStateAction<User[]>>;
+
+  /** Optional prop to enable single-select mode */
+  singleSelect?: boolean;
 }
 
 /**
  * A reusable component that handles searching for friends and selecting them.
  */
 export function FriendsSearch({
-  friendsList,
-  selectedUsers,
+  friendsList = [], // ensure default to empty array to avoid "undefined is not iterable"
+  selectedUsers = [], // likewise
   setSelectedUsers,
+  singleSelect = false, // default to multi-select mode
 }: FriendsSearchProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [isFocused, setIsFocused] = React.useState(false);
 
   // Filtered suggestions based on search term and exclude already selected users
   const suggestions = React.useMemo(() => {
+    if (!Array.isArray(friendsList) || !Array.isArray(selectedUsers)) return [];
+
     const filteredFriends = friendsList.filter(
       (user) => !selectedUsers.find((u) => u.id === user.id)
     );
+
     if (!searchTerm) {
       return filteredFriends.slice(0, 5);
     }
+
     const lower = searchTerm.toLowerCase();
     return filteredFriends
       .filter(
@@ -62,8 +71,12 @@ export function FriendsSearch({
 
   // Add user to selected
   const handleSelectUser = (user: User) => {
-    if (!selectedUsers.find((u) => u.id === user.id)) {
-      setSelectedUsers((prev) => [...prev, user]);
+    if (singleSelect) {
+      setSelectedUsers([user]); // Replace the current selection
+    } else {
+      if (!selectedUsers.find((u) => u.id === user.id)) {
+        setSelectedUsers((prev) => [...prev, user]);
+      }
     }
     setSearchTerm(""); // Clear search input after selecting
   };
@@ -75,7 +88,6 @@ export function FriendsSearch({
 
   return (
     <div className="space-y-2">
-      {/* Labels, headings, etc. can be here or in the parent */}
       <div className="flex items-center">
         <div className="flex -space-x-2">
           {selectedUsers.map((user) => (
@@ -111,29 +123,41 @@ export function FriendsSearch({
           placeholder="Search for a friend..."
           value={searchTerm}
           onValueChange={(val) => setSearchTerm(val)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => {
+            setTimeout(() => {
+              setIsFocused(false);
+            }, 150);
+          }}
         />
-        <CommandList>
-          <CommandEmpty>No friends found.</CommandEmpty>
-          <CommandGroup>
-            {suggestions.map((user) => (
-              <CommandItem key={user.id} onSelect={() => handleSelectUser(user)}>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-6 w-6">
-                    {user.avatarUrl ? (
-                      <AvatarImage src={user.avatarUrl} alt={user.username} />
-                    ) : (
-                      <AvatarFallback>{user.avatarFallback || "?"}</AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div>
-                    <div>{user.name}</div>
-                    <div className="text-sm text-muted-foreground">@{user.username}</div>
+        {(isFocused || searchTerm.length > 0) && (
+          <CommandList>
+            <CommandEmpty>No friends found.</CommandEmpty>
+            <CommandGroup>
+              {suggestions.map((user) => (
+                <CommandItem key={user.id} onSelect={() => handleSelectUser(user)}>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      {user.avatarUrl ? (
+                        <AvatarImage src={user.avatarUrl} alt={user.username} />
+                      ) : (
+                        <AvatarFallback>
+                          {user.avatarFallback || "?"}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div>
+                      <div>{user.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        @{user.username}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        )}
       </Command>
     </div>
   );

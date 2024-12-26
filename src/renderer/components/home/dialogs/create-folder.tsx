@@ -23,7 +23,7 @@ const folderSchema = z.object({
 type FolderFormValues = z.infer<typeof folderSchema>;
 
 interface CreateFolderProps {
-  setCreateFolder: (createFolder: boolean) => void;
+  setCreateFolder: React.Dispatch<React.SetStateAction<boolean>>;
   createFolder: boolean;
   handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
 }

@@ -74,7 +74,7 @@ export function UploadFile({
   const form = useForm<UploadFileFormValues>({
     resolver: zodResolver(uploadFileSchema),
     defaultValues: {
-      file: null,
+      file: undefined,
       fileName: "",
       tags: null,
     },

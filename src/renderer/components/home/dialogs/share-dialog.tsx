@@ -17,7 +17,6 @@ import {
 } from "@renderer/components/ui/dialog";
 import { useDataStore } from "@renderer/stores/items-store";
 import { useToast } from "@renderer/hooks/use-toast";
-import { Label } from "@renderer/components/ui/label";
 import { Link } from "lucide-react";
 import {
   Form,
@@ -53,7 +52,7 @@ const shareFileSchema = z.object({
 type ShareFileFormValues = z.infer<typeof shareFileSchema>;
 
 interface ShareDialogProps {
-  setShare: (upload: boolean) => void;
+  setShare: React.Dispatch<React.SetStateAction<boolean>>;
   share: boolean;
   handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
 }
@@ -70,7 +69,7 @@ export function ShareDialog({
     resolver: zodResolver(shareFileSchema),
     defaultValues: {
       username: "",
-      file: null,
+      file: undefined,
       tags: null,
     },
   });

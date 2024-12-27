@@ -53,7 +53,6 @@ export default function Home() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
-            <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => setCreateFolder(true)}>
                 <User/>

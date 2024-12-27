@@ -39,16 +39,29 @@ interface FriendsSearchProps {
  * A reusable component that handles searching for friends and selecting them.
  */
 export function FriendsSearch({
-  friendsList = [], // ensure default to empty array to avoid "undefined is not iterable"
-  selectedUsers = [], // likewise
+  friendsList = [],
+  selectedUsers = [],
   setSelectedUsers,
-  singleSelect = false, // default to multi-select mode
+  singleSelect = false,
 }: FriendsSearchProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isFocused, setIsFocused] = React.useState(false);
 
-  // Filtered suggestions based on search term and exclude already selected users
+  // Close the dropdown if clicking outside of container
+  React.useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filtered suggestions based on search term, excluding already selected
   const suggestions = React.useMemo(() => {
+    // Safety checks to avoid "undefined is not iterable"
     if (!Array.isArray(friendsList) || !Array.isArray(selectedUsers)) return [];
 
     const filteredFriends = friendsList.filter(
@@ -74,11 +87,13 @@ export function FriendsSearch({
     if (singleSelect) {
       setSelectedUsers([user]); // Replace the current selection
     } else {
+      // Only add if not already selected
       if (!selectedUsers.find((u) => u.id === user.id)) {
         setSelectedUsers((prev) => [...prev, user]);
       }
     }
-    setSearchTerm(""); // Clear search input after selecting
+    // NOTE: We do NOT setSearchTerm("") if you want the list to remain open
+    // setSearchTerm("");
   };
 
   // Remove user
@@ -118,19 +133,14 @@ export function FriendsSearch({
         </div>
       </div>
 
-      <Command className="border rounded">
+      <Command ref={containerRef}className="border rounded">
         <CommandInput
           placeholder="Search for a friend..."
           value={searchTerm}
-          onValueChange={(val) => setSearchTerm(val)}
+          onValueChange={setSearchTerm}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => {
-            setTimeout(() => {
-              setIsFocused(false);
-            }, 150);
-          }}
         />
-        {(isFocused || searchTerm.length > 0) && (
+        {isFocused && (
           <CommandList>
             <CommandEmpty>No friends found.</CommandEmpty>
             <CommandGroup>

@@ -18,6 +18,9 @@ import { Project } from "@renderer/types/projects";
 import folderImage from "../../../assets/macos-folder.png";
 import { Button } from "@renderer/components/ui/button";
 import { Textarea } from "@renderer/components/ui/textarea";
+import { FriendsSearch } from "@renderer/components/friends-search";
+import { friendsList } from "./request";
+import React from "react";
 
 const projectSchema = z.object({
   icon: z
@@ -39,6 +42,14 @@ const projectSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
+type User = {
+  id: string;
+  username: string;
+  name: string;
+  avatarUrl?: string;
+  avatarFallback?: string;
+};
+
 interface CreateProjectProps {
   createProject: boolean;
   setCreateProject: React.Dispatch<React.SetStateAction<boolean>>;
@@ -47,6 +58,7 @@ interface CreateProjectProps {
 
 export function CreateProject({ createProject, setCreateProject, handleDialogClose }: CreateProjectProps) {
   const { toast } = useToast();
+  const [selectedUsers, setSelectedUsers] = React.useState<User[]>([]);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -107,7 +119,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
               <FormField
                 control={form.control}
                 name="icon"
-                render={({ field }) => (
+                render={({ }) => (
                   <FormItem>
                     <div className="flex flex-col items-center space-y-2">
                       <img
@@ -147,30 +159,15 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="username">Share with</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                          @
-                        </span>
-                        <Input
-                          id="username"
-                          className="pl-8"
-                          placeholder="Enter username"
-                          spellCheck="false"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              
+              <FormLabel>Share with</FormLabel>
+              <FriendsSearch
+                friendsList={friendsList}
+                selectedUsers={selectedUsers}
+                setSelectedUsers={setSelectedUsers}
+                singleSelect={true}
               />
+
               <FormField
                 control={form.control}
                 name="description"

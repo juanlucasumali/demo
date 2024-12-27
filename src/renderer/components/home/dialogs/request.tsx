@@ -29,7 +29,7 @@ import { FriendsSearch } from "@renderer/components/friends-search";
 import { Textarea } from "@renderer/components/ui/textarea";
 
 // Example friend data
-const friendsList = [
+export const friendsList = [
   { id: "1", username: "lisa", name: "Lisa Simpson", avatarFallback: "LS" },
   { id: "2", username: "bart", name: "Bart Simpson", avatarFallback: "BS" },
   { id: "3", username: "maggie", name: "Maggie Simpson", avatarFallback: "MS" },

@@ -13,7 +13,6 @@ import {
 } from "@renderer/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
-import { Project } from "@renderer/types/projects";
 
 import folderImage from "@renderer/assets/macos-folder.png";
 import { Button } from "@renderer/components/ui/button";
@@ -22,6 +21,7 @@ import { FriendsSearch } from "@renderer/components/friends-search";
 import React from "react";
 import { UserProfile } from "@renderer/types/users";
 import { currentUser, friendsData } from "../home/dummy-data";
+import { DemoItem, ItemType } from "@renderer/types/items";
 
 const projectSchema = z.object({
   icon: z
@@ -71,12 +71,11 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
   };
 
   const handleSubmit: SubmitHandler<ProjectFormValues> = (data) => {
-    const newProject: Project = {
+    const newProject: DemoItem = {
       id: `project-${Date.now()}`,
       createdAt: new Date(),
       lastModified: new Date(),
       lastOpened: new Date(),
-      sharedWithMe: new Date(),
       name: data.name,
       description: data.description,
       isStarred: false,
@@ -84,6 +83,13 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
       icon: data.icon?.name || "default-folder",
       owner: currentUser,
       sharedWith: [],
+      projectId: null,
+      parentFolderId: null,
+      filePath: "",
+      type: ItemType.PROJECT,
+      format: null,
+      size: null,
+      duration: null,
     };
 
     toast({

@@ -22,7 +22,8 @@ export const Route = createFileRoute('/home/')({
 })
 
 export default function Home() {
-  const data = useItemsStore((state) => state.data)
+  const filesAndFolders = useItemsStore((state) => state.filesAndFolders);
+
   const [upload, setUpload] = useState(false)
   const [createFolder, setCreateFolder] = useState(false)
   const [share, setShare] = useState(false)
@@ -87,7 +88,7 @@ export default function Home() {
           <Activity/>
         </div>
         <SubHeader icon={File} subHeader="All files"/>
-        <DataTable columns={createColumns()} data={data} />
+        <DataTable columns={createColumns()} data={filesAndFolders} />
       </PageContent>
 
       {/* Dialogs */}

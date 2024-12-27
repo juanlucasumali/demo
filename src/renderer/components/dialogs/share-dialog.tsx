@@ -5,7 +5,6 @@ import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import {
   Dialog,
   DialogContent,
@@ -15,16 +14,13 @@ import {
 } from "../ui/dialog";
 import {
   Form,
-  FormControl,
-  FormField,
-  FormItem,
   FormLabel,
-  FormMessage,
+
 } from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
 import { useItemsStore } from "@renderer/stores/items-store";
 import { Link } from "lucide-react";
-import { FileFormat } from "@renderer/types/items";
+import { FileFormat, ItemType } from "@renderer/types/items";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { currentUser, friendsData } from "../home/dummy-data";
@@ -62,13 +58,6 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
     defaultValues: { file: undefined },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      form.setValue("file", file, { shouldValidate: true });
-    }
-  };
-
   // On Submit
   const onSubmit: SubmitHandler<ShareFileFormValues> = (data) => {
     const newItem = {
@@ -81,13 +70,15 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
       tags: null,
       parentFolderId: null,
       filePath: data.file?.name,
-      type: "file",
+      type: ItemType.FILE,
       duration: 1,
       format: (data.file?.name.split(".").pop() as FileFormat) || "mp3",
       size: data.file?.size ?? 0,
       owner: currentUser,
       sharedWith: selectedUsers,
       projectId: null,
+      description: null,
+      icon: null,
     };
 
     addItem(newItem);

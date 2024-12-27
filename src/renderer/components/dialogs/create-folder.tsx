@@ -12,6 +12,7 @@ import { currentUser, friendsData } from "../home/dummy-data";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { useState } from "react";
+import { ItemType } from "@renderer/types/items";
 
 // Validation schema for folder name
 const folderSchema = z.object({
@@ -65,7 +66,7 @@ export function CreateFolder({
       isStarred: false,
       parentFolderId: null,
       filePath: data.folderName, // Dummy path
-      type: "folder",
+      type: ItemType.FOLDER,
       duration: null,
       format: null,
       owner: currentUser,
@@ -73,6 +74,8 @@ export function CreateFolder({
       tags: null,
       projectId: null,
       size: null,
+      description: null,
+      icon: null,
     };
 
     addItem(newItem);

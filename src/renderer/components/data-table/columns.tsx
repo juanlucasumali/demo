@@ -60,6 +60,35 @@ export const createColumns = (
       cell: () => null,
     },
 
+    // Hidden tags column
+    {
+      id: "tags",
+      accessorKey: "tags",
+      header: () => null,
+      enableSorting: true,
+      enableHiding: true,
+      cell: () => null,
+    },
+
+    // Hidden icon column
+    {
+      id: "icon",
+      accessorKey: "icon",
+      header: () => null,
+      enableSorting: true,
+      enableHiding: true,
+      cell: () => null,
+    },
+
+    // Hidden type column
+    {
+      id: "type",
+      accessorKey: "type",
+      header: () => null,
+      enableSorting: true,
+      enableHiding: true,
+      cell: () => null,
+    },
 
   {
     accessorKey: "name",
@@ -91,7 +120,7 @@ export const createColumns = (
             ) : (
               <File className="h-4 w-4 text-muted-foreground" />
             )}
-            <span className="font-medium">{row.getValue("name")}</span>
+            <span className="font-medium truncate max-w-[8rem]">{row.getValue("name")}</span>
           </div>
           {tags && (
             <div className="pl-2 flex gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">

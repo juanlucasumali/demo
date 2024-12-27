@@ -7,13 +7,6 @@ import {
 } from "lucide-react"
 
 import { Button } from "@renderer/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@renderer/components/ui/select"
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>
@@ -33,28 +26,6 @@ export function DataTablePagination<TData>({
 
       {/* Bottom Row: Pagination Controls */}
       <div className="flex flex-col lg:flex-row items-center space-y-4 lg:space-y-0 lg:space-x-8 w-full lg:w-auto">
-        
-        {/* Rows Per Page Selector */}
-        <div className="flex items-center justify-center space-x-2 w-full lg:w-auto">
-          <p className="text-sm font-medium">Rows per page</p>
-          <Select
-            value={`${table.getState().pagination.pageSize}`}
-            onValueChange={(value) => {
-              table.setPageSize(Number(value))
-            }}
-          >
-            <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
-            </SelectTrigger>
-            <SelectContent side="top">
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
         {/* Page Info */}
         <div className="flex w-full lg:w-auto items-center justify-center text-sm font-medium">

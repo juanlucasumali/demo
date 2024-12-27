@@ -25,8 +25,6 @@ import {
 } from "@renderer/components/ui/table"
 import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
-import { SubHeader } from "@renderer/components/page-layout/sub-header"
-import { File } from "lucide-react"
 import { cn } from "@renderer/lib/utils"
 import { GridItem } from "./grid-item"
 
@@ -37,6 +35,7 @@ interface DataTableProps<DemoItem> {
   enableStarToggle?: boolean
   enableActions?: boolean
   viewMode?: 'table' | 'grid'
+  pageSize?: number
 }
 
 export function DataTable<DemoItem>({
@@ -45,7 +44,8 @@ export function DataTable<DemoItem>({
   enableSelection = false,
   enableStarToggle = true,
   enableActions = true,
-  viewMode = 'table'
+  viewMode = 'table',
+  pageSize = 10
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -65,9 +65,16 @@ export function DataTable<DemoItem>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     isStarred: false,
     select: enableSelection,
-    actions: !enableActions
+    actions: enableActions,
+    type: false,
+    icon: false,
+    tags: false,
   })
   const [rowSelection, setRowSelection] = React.useState({})
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: pageSize
+  })
 
   const table = useReactTable({
     data,
@@ -80,11 +87,13 @@ export function DataTable<DemoItem>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination
     },
   })
 
@@ -151,7 +160,7 @@ export function DataTable<DemoItem>({
             </TableBody>
           </Table>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <GridItem

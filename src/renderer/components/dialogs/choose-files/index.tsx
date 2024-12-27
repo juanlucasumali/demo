@@ -16,7 +16,9 @@ export function ChooseFilesDialog({
   open,
   onOpenChange
 }: ChooseFilesDialogProps) {
-  const data = useItemsStore((state) => state.data)
+  const filesAndFolders = useItemsStore((state) => state.filesAndFolders);
+  const projects = useItemsStore((state) => state.projects);
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-4xl">
@@ -35,15 +37,22 @@ export function ChooseFilesDialog({
           <TabsContent value="files">
             <DataTable 
               columns={createColumns(false, true, false)} // disable star toggle and actions, enable selection
-              data={data}
+              data={filesAndFolders}
+              enableSelection={true}
+              enableStarToggle={false}
+              enableActions={false}
+            />
+          </TabsContent>
+          <TabsContent value="projects">
+            <DataTable 
+              columns={createColumns(false, true, false)} // disable star toggle and actions, enable selection
+              data={projects}
               enableSelection={true}
               enableStarToggle={false}
               enableActions={false}
               viewMode="grid"
+              pageSize={8}
             />
-          </TabsContent>
-          <TabsContent value="projects">
-            
           </TabsContent>
         </Tabs>
 

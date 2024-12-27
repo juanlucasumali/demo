@@ -24,7 +24,7 @@ import {
   FormControl,
   FormMessage,
 } from "../ui/form";
-import { FileFormat } from "@renderer/types/items";
+import { FileFormat, ItemType } from "@renderer/types/items";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { currentUser, friendsData } from "../home/dummy-data";
@@ -105,13 +105,15 @@ export function UploadFile({
       tags: data.tags,
       parentFolderId: null,
       filePath: data.file.name,
-      type: "file",
+      type: ItemType.FILE,
       duration: 1,
       format: data.file.name.split(".").pop() as FileFormat,
       size: data.file.size,
       owner: currentUser,
       sharedWith: selectedUsers,
       projectId: null,
+      description: null,
+      icon: null,
     };
 
     addItem(newItem);

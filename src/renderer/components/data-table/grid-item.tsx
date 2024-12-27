@@ -1,9 +1,8 @@
 import { Row } from "@tanstack/react-table"
 import { Checkbox } from "@renderer/components/ui/checkbox"
-import { generateGradientStyle } from "@renderer/lib/utils"
-import { useMemo } from "react"
 import TagBadge from "@renderer/components/tag-badge"
 import { FileTag } from "@renderer/types/tags"
+import folderImage from "@renderer/assets/macos-folder.png";
 
 interface GridItemProps<TData> {
   row: Row<TData>;
@@ -16,9 +15,9 @@ export function GridItem<DemoItem>({
   isSelected, 
   onSelectionChange 
 }: GridItemProps<DemoItem>) {
-  const iconGradientStyle = useMemo(() => {
-    return generateGradientStyle(row.id)
-  }, [row.id])
+
+  console.log(row.original)
+  console.log(row.getValue("tags"))
 
   return (
     <div 
@@ -27,28 +26,31 @@ export function GridItem<DemoItem>({
     >
       {/* Icon/Thumbnail */}
       <div 
-        className="w-32 h-32 rounded-2xl mb-4 flex items-center justify-center text-4xl"
-        style={iconGradientStyle}
+        className="w-32 h-32 rounded-2xl mb-2 flex items-center justify-center text-4xl"
       >
-        {row.getValue("icon")}
+        {row.getValue("icon") ? (
+          <img src={row.getValue("icon")} alt="Icon" className="w-full h-full object-cover" />
+        ) : (
+          <img src={folderImage} alt="Folder Icon" className="w-full h-full object-cover" />
+        )}
       </div>
 
       {/* Title */}
-      <h3 className="font-medium text-lg mb-3 text-center line-clamp-1">
+      <h3 className="font-normal text-sm mb-1 text-center truncate max-w-[8rem]">
         {row.getValue("name")}
       </h3>
 
       {/* Bottom Row: Checkbox and Tag */}
-      <div className="flex items-center justify-between w-full px-2">
+      <div className="flex items-center justify-center w-full space-x-2">
         <Checkbox
           checked={isSelected}
           onCheckedChange={onSelectionChange}
           aria-label={`Select ${row.getValue("name")}`}
         />
         
-        {row.original.tags as FileTag && (
-          <div className="flex-pshrink-0">
-            <TagBadge tag={row.original.tags} />
+        {row.getValue("tags") as FileTag && (
+          <div className="flex-shrink-0">
+            <TagBadge tag={row.getValue("tags")} />
           </div>
         )}
       </div>

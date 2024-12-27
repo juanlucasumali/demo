@@ -39,6 +39,7 @@ export function ChooseFilesDialog({
               enableSelection={true}
               enableStarToggle={false}
               enableActions={false}
+              viewMode="grid"
             />
           </TabsContent>
           <TabsContent value="projects">

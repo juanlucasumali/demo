@@ -1,5 +1,5 @@
-import { PageContent } from '@renderer/components/page/page-content'
-import { PageMain } from '@renderer/components/page/page-main'
+import { PageContent } from '@renderer/components/page-layout/page-content'
+import { PageMain } from '@renderer/components/page-layout/page-main'
 import { createFileRoute } from '@tanstack/react-router'
 import { ProfileHeader } from '@renderer/components/profile/profile-header'
 import { user } from '@renderer/components/sidebar/nav-user'

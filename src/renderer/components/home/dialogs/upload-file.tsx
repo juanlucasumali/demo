@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,13 +25,16 @@ import {
   FormMessage,
 } from "../../ui/form";
 import { FileFormat } from "@renderer/types/items";
+import { FriendsSearch } from "@renderer/components/friends-search";
+import { UserProfile } from "@renderer/types/users";
+import { friendsData } from "../dummy-data";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 const maxFileNameLength = 100; // Set maximum length for file name
 const fileNamePattern = /^[a-zA-Z0-9_\-\.]+$/; // Allow only alphanumeric, underscores, hyphens, and dots
 
 // Define the schema using Zod
-const uploadFileSchema = z.object({
+const fileUploadSchema = z.object({
   file: z
     .custom<File>()
     .refine(
@@ -53,9 +56,9 @@ const uploadFileSchema = z.object({
   tags: z.any().nullable(),
 });
 
-type UploadFileFormValues = z.infer<typeof uploadFileSchema>;
+type FileUploadFormValues = z.infer<typeof fileUploadSchema>;
 
-interface UploadFileProps {
+interface FileUploadProps {
   setUpload: React.Dispatch<React.SetStateAction<boolean>>;
   upload: boolean;
   handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
@@ -65,14 +68,15 @@ export function UploadFile({
   setUpload,
   upload,
   handleDialogClose,
-}: UploadFileProps) {
+}: FileUploadProps) {
   const { toast } = useToast();
   const addItem = useDataStore((state) => state.addItem);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
 
   // Initialize react-hook-form with zod schema
-  const form = useForm<UploadFileFormValues>({
-    resolver: zodResolver(uploadFileSchema),
+  const form = useForm<FileUploadFormValues>({
+    resolver: zodResolver(fileUploadSchema),
     defaultValues: {
       file: undefined,
       fileName: "",
@@ -90,8 +94,11 @@ export function UploadFile({
     }
   };
 
-  const onSubmit: SubmitHandler<UploadFileFormValues> = (data) => {
+  const onSubmit: SubmitHandler<FileUploadFormValues> = (data) => {
     // Create a new item to add to the store
+
+    if (!selectedFile) return;
+
     const newItem = {
       id: `i${Date.now()}`, // Generate unique ID
       createdAt: new Date(),
@@ -138,7 +145,7 @@ export function UploadFile({
             <FormField
               control={form.control}
               name="file"
-              render={({ field }) => (
+              render={({ }) => (
                 <FormItem>
                   <FormLabel>File</FormLabel>
                   <FormControl>
@@ -171,7 +178,6 @@ export function UploadFile({
               name="tags"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tags</FormLabel>
                   <FormControl>
                     <FileTagsDropdown
                       tags={field.value}
@@ -181,6 +187,12 @@ export function UploadFile({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+            <FormLabel>Share with</FormLabel>
+            <FriendsSearch
+              friendsList={friendsData}
+              selectedUsers={selectedUsers}
+              setSelectedUsers={setSelectedUsers}
             />
             <Button type="submit" className="w-full">
               Upload

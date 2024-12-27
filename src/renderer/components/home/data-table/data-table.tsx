@@ -32,7 +32,7 @@ import {
 } from "../../ui/dropdown-menu"
 import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
-import { SubHeader } from "@renderer/components/page/sub-header"
+import { SubHeader } from "@renderer/components/page-layout/sub-header"
 import { File } from "lucide-react"
 
 interface DataTableProps<DemoItem> {

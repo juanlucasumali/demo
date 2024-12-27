@@ -12,24 +12,17 @@ import {
 } from "./ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { X } from "lucide-react";
-
-type User = {
-  id: string;
-  username: string;
-  name: string;
-  avatarUrl?: string;
-  avatarFallback?: string;
-};
+import { UserProfile } from "@renderer/types/users";
 
 interface FriendsSearchProps {
   /** A list of all possible friends to choose from */
-  friendsList: User[];
+  friendsList: UserProfile[];
 
   /** A list of currently selected users */
-  selectedUsers: User[];
+  selectedUsers: UserProfile[];
 
   /** Setter for selected users */
-  setSelectedUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  setSelectedUsers: React.Dispatch<React.SetStateAction<UserProfile[]>>;
 
   /** Optional prop to enable single-select mode */
   singleSelect?: boolean;
@@ -83,7 +76,7 @@ export function FriendsSearch({
   }, [friendsList, selectedUsers, searchTerm]);
 
   // Add user to selected
-  const handleSelectUser = (user: User) => {
+  const handleSelectUser = (user: UserProfile) => {
     if (singleSelect) {
       setSelectedUsers([user]); // Replace the current selection
     } else {
@@ -102,7 +95,7 @@ export function FriendsSearch({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 !mt-0 !mb-4">
       <div className="flex items-center">
         <div className="flex -space-x-2">
           {selectedUsers.map((user) => (
@@ -110,10 +103,9 @@ export function FriendsSearch({
               <TooltipTrigger asChild>
                 <div className="cursor-pointer">
                   <Avatar className="h-11 w-11 border-2 border-background">
-                    <AvatarImage src={user.avatarUrl || ""} alt={user.username} />
+                    <AvatarImage src={user.avatar || ""} alt={user.username} />
                     <AvatarFallback>
-                      {user.avatarFallback ||
-                        user.username?.[0]?.toUpperCase() ||
+                      {user.username[0]?.toUpperCase() ||
                         "U"}
                     </AvatarFallback>
                   </Avatar>
@@ -148,11 +140,11 @@ export function FriendsSearch({
                 <CommandItem key={user.id} onSelect={() => handleSelectUser(user)}>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      {user.avatarUrl ? (
-                        <AvatarImage src={user.avatarUrl} alt={user.username} />
+                      {user.avatar ? (
+                        <AvatarImage src={user.avatar} alt={user.username} />
                       ) : (
                         <AvatarFallback>
-                          {user.avatarFallback || "?"}
+                          {user.username[0]?.toUpperCase() || "?"}
                         </AvatarFallback>
                       )}
                     </Avatar>

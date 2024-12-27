@@ -19,8 +19,9 @@ import folderImage from "../../../assets/macos-folder.png";
 import { Button } from "@renderer/components/ui/button";
 import { Textarea } from "@renderer/components/ui/textarea";
 import { FriendsSearch } from "@renderer/components/friends-search";
-import { friendsList } from "./request";
 import React from "react";
+import { UserProfile } from "@renderer/types/users";
+import { friendsData } from "../dummy-data";
 
 const projectSchema = z.object({
   icon: z
@@ -42,14 +43,6 @@ const projectSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
-type User = {
-  id: string;
-  username: string;
-  name: string;
-  avatarUrl?: string;
-  avatarFallback?: string;
-};
-
 interface CreateProjectProps {
   createProject: boolean;
   setCreateProject: React.Dispatch<React.SetStateAction<boolean>>;
@@ -58,7 +51,7 @@ interface CreateProjectProps {
 
 export function CreateProject({ createProject, setCreateProject, handleDialogClose }: CreateProjectProps) {
   const { toast } = useToast();
-  const [selectedUsers, setSelectedUsers] = React.useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -115,7 +108,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
             <DialogHeader>
               <DialogTitle>Create a project</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4">
+            <div className="space-y-2">
               <FormField
                 control={form.control}
                 name="icon"
@@ -150,7 +143,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="pb-4">
                     <FormLabel htmlFor="name">Name</FormLabel>
                     <FormControl>
                       <Input id="name" placeholder="Project name" {...field} />
@@ -162,10 +155,9 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
               
               <FormLabel>Share with</FormLabel>
               <FriendsSearch
-                friendsList={friendsList}
+                friendsList={friendsData}
                 selectedUsers={selectedUsers}
                 setSelectedUsers={setSelectedUsers}
-                singleSelect={true}
               />
 
               <FormField
@@ -187,7 +179,9 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
                   </FormItem>
                 )}
               />
-              <Button type="submit">Create Project</Button>
+              <div className="pt-2">
+                <Button className="w-full" type="submit">Create Project</Button>
+              </div>
             </div>
           </form>
         </Form>

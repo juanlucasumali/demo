@@ -1,5 +1,5 @@
 import { Clock, Edit, Eye, Share } from "lucide-react";
-import { SubHeader } from "../page/sub-header";
+import { SubHeader } from "../page-layout/sub-header";
 import { Card, CardContent } from "../ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../ui/carousel";
 import { useDataStore } from "@renderer/stores/items-store";

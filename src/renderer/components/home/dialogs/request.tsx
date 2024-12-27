@@ -5,7 +5,6 @@ import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -23,22 +22,11 @@ import {
 } from "../../../components/ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
 import { useDataStore } from "@renderer/stores/items-store";
-import { File, FileQuestion, Folder, Link, Package } from "lucide-react";
-import { FileFormat } from "@renderer/types/items";
+import { File, Folder, Link, Package } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { Textarea } from "@renderer/components/ui/textarea";
-
-// Example friend data
-export const friendsList = [
-  { id: "1", username: "lisa", name: "Lisa Simpson", avatarFallback: "LS" },
-  { id: "2", username: "bart", name: "Bart Simpson", avatarFallback: "BS" },
-  { id: "3", username: "maggie", name: "Maggie Simpson", avatarFallback: "MS" },
-  { id: "4", username: "milhouse", name: "Milhouse Van Houten", avatarFallback: "MH" },
-  { id: "5", username: "moe", name: "Moe Szyslak", avatarFallback: "M" },
-  { id: "6", username: "skinner", name: "Seymour Skinner", avatarFallback: "SS" },
-];
-
-const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
+import { friendsData } from "../dummy-data";
+import { UserProfile } from "@renderer/types/users";
 
 const shareFileSchema = z.object({
     description: z
@@ -47,14 +35,6 @@ const shareFileSchema = z.object({
 });
 
 type ShareFileFormValues = z.infer<typeof shareFileSchema>;
-
-type User = {
-  id: string;
-  username: string;
-  name: string;
-  avatarUrl?: string;
-  avatarFallback?: string;
-};
 
 interface RequestDialogProps {
   setRequest: React.Dispatch<React.SetStateAction<boolean>>;
@@ -73,7 +53,7 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
   };
 
   // State for multi-select user sharing
-  const [selectedUsers, setSelectedUsers] = React.useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
 
   // React Hook Form setup
   const form = useForm<ShareFileFormValues>({
@@ -133,7 +113,6 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
               <DialogTitle>Request</DialogTitle>
               <DialogDescription>Ask for access or media</DialogDescription>
             </DialogHeader>
-            <div className="space-y-2">
                 
             <div className="flex gap-x-4 justify-center pb-2">
                 <Button
@@ -177,7 +156,7 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
               <FormLabel>Request from</FormLabel>
               {/* Use the new FriendsSearch component here */}
               <FriendsSearch
-                friendsList={friendsList}
+                friendsList={friendsData}
                 selectedUsers={selectedUsers}
                 setSelectedUsers={setSelectedUsers}
                 singleSelect={true}
@@ -210,7 +189,6 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
                 </Button>
                 <Button type="submit">Send</Button>
               </div>
-            </div>
           </form>
         </Form>
       </DialogContent>

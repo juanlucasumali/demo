@@ -1,3 +1,4 @@
+import { UserProfile } from '@renderer/types/users';
 import {
   DemoItem,
   FileFormat,
@@ -248,4 +249,13 @@ export const dummyData: DemoItem[] = [
       duration: 200,
       type: "file",
   },
+];
+
+export const friendsData: UserProfile[] = [
+{ id: "1", username: "lisa", name: "Lisa Simpson", avatar: null, email: "lisa@example.com", description: "Loves jazz music." },
+{ id: "2", username: "bart", name: "Bart Simpson", avatar: null, email: "bart@example.com", description: "Prankster in chief." },
+{ id: "3", username: "maggie", name: "Maggie Simpson", avatar: null, email: "maggie@example.com", description: "Silent but wise." },
+{ id: "4", username: "milhouse", name: "Milhouse Van Houten", avatar: null, email: "milhouse@example.com", description: "Bart's best friend." },
+{ id: "5", username: "moe", name: "Moe Szyslak", avatar: null, email: "moe@example.com", description: "Owns Moe's Tavern." },
+{ id: "6", username: "skinner", name: "Seymour Skinner", avatar: null, email: "skinner@example.com", description: "Principal at Springfield Elementary." },
 ];

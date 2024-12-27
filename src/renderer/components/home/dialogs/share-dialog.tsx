@@ -26,16 +26,8 @@ import { useDataStore } from "@renderer/stores/items-store";
 import { Link } from "lucide-react";
 import { FileFormat } from "@renderer/types/items";
 import { FriendsSearch } from "@renderer/components/friends-search";
-
-// Example friend data
-const friendsList = [
-  { id: "1", username: "lisa", name: "Lisa Simpson", avatarFallback: "LS" },
-  { id: "2", username: "bart", name: "Bart Simpson", avatarFallback: "BS" },
-  { id: "3", username: "maggie", name: "Maggie Simpson", avatarFallback: "MS" },
-  { id: "4", username: "milhouse", name: "Milhouse Van Houten", avatarFallback: "MH" },
-  { id: "5", username: "moe", name: "Moe Szyslak", avatarFallback: "M" },
-  { id: "6", username: "skinner", name: "Seymour Skinner", avatarFallback: "SS" },
-];
+import { UserProfile } from "@renderer/types/users";
+import { friendsData } from "../dummy-data";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 
@@ -49,14 +41,6 @@ const shareFileSchema = z.object({
 
 type ShareFileFormValues = z.infer<typeof shareFileSchema>;
 
-type User = {
-  id: string;
-  username: string;
-  name: string;
-  avatarUrl?: string;
-  avatarFallback?: string;
-};
-
 interface ShareDialogProps {
   setShare: React.Dispatch<React.SetStateAction<boolean>>;
   share: boolean;
@@ -68,7 +52,7 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
   const addItem = useDataStore((state) => state.addItem);
 
   // State for multi-select user sharing
-  const [selectedUsers, setSelectedUsers] = React.useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
 
   // React Hook Form setup
   const form = useForm<ShareFileFormValues>({
@@ -132,7 +116,7 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
               <FormLabel>Share with</FormLabel>
               {/* Use the new FriendsSearch component here */}
               <FriendsSearch
-                friendsList={friendsList}
+                friendsList={friendsData}
                 selectedUsers={selectedUsers}
                 setSelectedUsers={setSelectedUsers}
               />

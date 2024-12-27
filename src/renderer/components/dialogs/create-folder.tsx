@@ -39,7 +39,7 @@ export function CreateFolder({
   handleDialogClose,
 }: CreateFolderProps) {
   const { toast } = useToast();
-  const addItem = useItemsStore((state) => state.addItem);
+  const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
 
   // Initialize React Hook Form with Zod schema
@@ -78,7 +78,7 @@ export function CreateFolder({
       icon: null,
     };
 
-    addItem(newItem);
+    addFileOrFolder(newItem);
 
     toast({
       title: "Success!",

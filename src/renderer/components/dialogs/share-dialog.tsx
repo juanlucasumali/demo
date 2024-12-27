@@ -46,7 +46,7 @@ interface ShareDialogProps {
 
 export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogProps) {
   const { toast } = useToast();
-  const addItem = useItemsStore((state) => state.addItem);
+  const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
 
   // State for multi-select user sharing
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
@@ -81,7 +81,7 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
       icon: null,
     };
 
-    addItem(newItem);
+    addFileOrFolder(newItem);
 
     toast({
       title: "Success!",

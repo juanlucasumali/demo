@@ -66,7 +66,7 @@ export function UploadFile({
   handleDialogClose,
 }: FileUploadProps) {
   const { toast } = useToast();
-  const addItem = useItemsStore((state) => state.addItem);
+  const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
 
@@ -116,7 +116,7 @@ export function UploadFile({
       icon: null,
     };
 
-    addItem(newItem);
+    addFileOrFolder(newItem);
 
     toast({
       title: "Success!",

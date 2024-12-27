@@ -8,10 +8,10 @@ import folderImage from "../../assets/macos-folder.png";
 import fileImage from "../../assets/macos-song.png";
 
 export function Recents() {
-  const data = useItemsStore((state) => state.data);
+  const filesAndFolders = useItemsStore((state) => state.filesAndFolders);
 
   // Sort the data by the more recent of `lastOpened` or `lastModified`
-  const sortedData = [...data].sort((a, b) =>
+  const sortedData = [...filesAndFolders].sort((a, b) =>
     Math.max(new Date(b.lastOpened).getTime(), new Date(b.lastModified).getTime()) -
     Math.max(new Date(a.lastOpened).getTime(), new Date(a.lastModified).getTime())
   );

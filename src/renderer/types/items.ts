@@ -26,7 +26,7 @@ export interface DemoItem {
     tags: FileTag | null; 
     projectId: string | null;
     parentFolderId: string | null;
-    filePath: string;
+    filePath: string | null;
     type: ItemType;
 
 

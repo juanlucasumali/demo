@@ -1,63 +1,92 @@
-import { dummyDemoItems } from '@renderer/components/home/dummy-data';
+import { dummyDemoItems, dummyProjectItems } from '@renderer/components/home/dummy-data';
 import { DemoItem } from '@renderer/types/items';
 import { create } from 'zustand';
 
 interface ItemsStore {
-  data: DemoItem[];
-  // Data selectors
+  // Separate storage for files/folders and projects
   filesAndFolders: DemoItem[];
   projects: DemoItem[];
+  
+  // Computed state
   starredItems: DemoItem[];
+  
   // Actions
   toggleIsStarred: (id: string) => void;
-  addItem: (item: DemoItem) => void;
+  addFileOrFolder: (item: DemoItem) => void;
+  addProject: (item: DemoItem) => void;
   removeItem: (id: string) => void;
   updateItem: (updatedItem: DemoItem) => void;
 }
 
 export const useItemsStore = create<ItemsStore>((set, get) => ({
-  data: dummyDemoItems,
+  // Initialize with separated data
+  filesAndFolders: dummyDemoItems,
+  projects: dummyProjectItems,
+  
+  // Compute starred items from both arrays
+  starredItems: [...dummyDemoItems, ...dummyProjectItems].filter(item => item.isStarred),
 
-  // Pre-computed selectors using derived state
-  filesAndFolders: dummyDemoItems.filter(item => item.type === "file" || item.type === "folder"),
-  projects: dummyDemoItems.filter(item => item.type === "project"),
-  starredItems: dummyDemoItems.filter(item => item.isStarred),
-
-  // Update actions to maintain computed properties
   toggleIsStarred: (id: string) =>
     set((state) => {
-      const newData = state.data.map((item) =>
+      const newFilesAndFolders = state.filesAndFolders.map((item) =>
         item.id === id ? { ...item, isStarred: !item.isStarred } : item
       );
+      
+      const newProjects = state.projects.map((item) =>
+        item.id === id ? { ...item, isStarred: !item.isStarred } : item
+      );
+
       return {
-        data: newData,
-        starredItems: newData.filter(item => item.isStarred),
-        filesAndFolders: newData.filter(item => item.type === "file" || item.type === "folder"),
-        projects: newData.filter(item => item.type === "project"),
+        filesAndFolders: newFilesAndFolders,
+        projects: newProjects,
+        starredItems: [...newFilesAndFolders, ...newProjects].filter(item => item.isStarred),
       };
     }),
 
-  // Other actions similarly need to update computed properties
-  addItem: (item: DemoItem) =>
+  addFileOrFolder: (item: DemoItem) =>
     set((state) => {
-      const newData = [...state.data, item];
+      const newFilesAndFolders = [...state.filesAndFolders, item];
       return {
-        data: newData,
-        filesAndFolders: newData.filter(item => item.type === "file" || item.type === "folder"),
-        projects: newData.filter(item => item.type === "project"),
-        starredItems: newData.filter(item => item.isStarred),
+        filesAndFolders: newFilesAndFolders,
+        starredItems: [...newFilesAndFolders, ...state.projects].filter(item => item.isStarred),
+      };
+    }),
+
+  addProject: (item: DemoItem) =>
+    set((state) => {
+      const newProjects = [...state.projects, item];
+      return {
+        projects: newProjects,
+        starredItems: [...state.filesAndFolders, ...newProjects].filter(item => item.isStarred),
       };
     }),
 
   removeItem: (id: string) =>
-    set((state) => ({
-      data: state.data.filter((item) => item.id !== id),
-    })),
+    set((state) => {
+      const newFilesAndFolders = state.filesAndFolders.filter(item => item.id !== id);
+      const newProjects = state.projects.filter(item => item.id !== id);
+      
+      return {
+        filesAndFolders: newFilesAndFolders,
+        projects: newProjects,
+        starredItems: [...newFilesAndFolders, ...newProjects].filter(item => item.isStarred),
+      };
+    }),
 
   updateItem: (updatedItem: DemoItem) =>
-    set((state) => ({
-      data: state.data.map((item) =>
+    set((state) => {
+      const newFilesAndFolders = state.filesAndFolders.map(item =>
         item.id === updatedItem.id ? { ...item, ...updatedItem } : item
-      ),
-    })),
+      );
+      
+      const newProjects = state.projects.map(item =>
+        item.id === updatedItem.id ? { ...item, ...updatedItem } : item
+      );
+
+      return {
+        filesAndFolders: newFilesAndFolders,
+        projects: newProjects,
+        starredItems: [...newFilesAndFolders, ...newProjects].filter(item => item.isStarred),
+      };
+    }),
 }));

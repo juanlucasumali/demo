@@ -44,7 +44,7 @@ interface RequestDialogProps {
 
 export function RequestDialog({ setRequest, request, handleDialogClose }: RequestDialogProps) {
   const { toast } = useToast();
-  const addItem = useItemsStore((state) => state.addItem);
+  const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
 
   const [selectedType, setSelectedType] = React.useState("file");
 

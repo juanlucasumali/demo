@@ -19,43 +19,47 @@ import TagBadge from "@renderer/components/tag-badge"
 import { useItemsStore } from "@renderer/stores/items-store"
 import { useState } from "react"
 import { useToast } from "@renderer/hooks/use-toast"
-import { DeleteDialog } from "../../dialogs/delete-dialog"
-import { EditFileDialog } from "../../dialogs/edit-file"
+import { DeleteDialog } from "@renderer/components/dialogs/delete-dialog"
+import { EditFileDialog } from "@renderer/components/dialogs/edit-file"
+import { Checkbox } from "@renderer/components/ui/checkbox"
 
-export const columns: ColumnDef<DemoItem>[] = [
+export const createColumns = (
+  enableStarToggle: boolean = true,
+  enableSelection: boolean = false,
+  enableActions: boolean = true
+): ColumnDef<DemoItem>[] => {
+  const baseColumns: ColumnDef<DemoItem>[] = [
+    // Selection column
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
 
-  /* Hidden isStarred column for sorting */
-  {
-    id: "isStarred",
-    accessorKey: "isStarred",
-    header: () => (null),
-    enableSorting: true,
-    enableHiding: true,
-    cell: () => (null),
-  },
+    // Hidden isStarred column
+    {
+      id: "isStarred",
+      accessorKey: "isStarred",
+      header: () => null,
+      enableSorting: true,
+      enableHiding: true,
+      cell: () => null,
+    },
 
-  // {
-  //   id: "select",
-  //   header: ({ table }) => (
-  //     <Checkbox
-  //       checked={
-  //         table.getIsAllPageRowsSelected() ||
-  //         (table.getIsSomePageRowsSelected() && "indeterminate")
-  //       }
-  //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-  //       aria-label="Select all"
-  //     />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <Checkbox
-  //       checked={row.getIsSelected()}
-  //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-  //       aria-label="Select row"
-  //     />
-  //   ),
-  //   enableSorting: false,
-  //   enableHiding: false,
-  // },
 
   {
     accessorKey: "name",
@@ -71,17 +75,17 @@ export const columns: ColumnDef<DemoItem>[] = [
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
           <div className="flex items-center gap-2 whitespace-nowrap">
-              <div
-                onClick={() => toggleIsStarred(row.original.id)}
-                style={{ cursor: 'pointer' }}
-                title={isStarred ? 'Unstar' : 'Star'}
-              >
-                {isStarred ? (
-                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                ) : (
-                  <Star className="h-4 w-4 text-gray-400" />
-                )}
-              </div>
+            <div
+              onClick={enableStarToggle ? () => toggleIsStarred(row.original.id) : undefined}
+              style={{ cursor: enableStarToggle ? 'pointer' : 'default' }}
+              title={enableStarToggle ? (isStarred ? 'Unstar' : 'Star') : undefined}
+            >
+              {isStarred ? (
+                <Star className="h-4 w-4 text-yellow-500 fill-current" />
+              ) : (
+                <Star className="h-4 w-4 text-gray-400" />
+              )}
+            </div>
             {type === "folder" ? (
               <Folder className="h-4 w-4 text-muted-foreground fill-current" />
             ) : (
@@ -207,80 +211,86 @@ export const columns: ColumnDef<DemoItem>[] = [
       return <div>{formattedDate}</div>;
     },
   },
+]
 
-  {
+
+if (enableActions) {
+  baseColumns.push({
     id: "actions",
     cell: ({ row }) => {
       const item = row.original;
       const removeItem = useItemsStore((state) => state.removeItem);
       const [isDeleting, setIsDeleting] = useState(false);
       const [editFile, setEditFile] = useState(false);
-      const [open, setOpen] = useState(false);
-      const [dropdown, setDropdown] = useState(false);
-      const { toast } = useToast();
-  
-      const handleDelete = async () => {
-        try {
-          setIsDeleting(true);
-          await removeItem(item.id);
-          setDropdown(false);
-          setOpen(false);
-          toast({
-            title: "Success!",
-            description: "Item was successfully deleted.",
-            variant: "destructive"
-          });
-        } catch (error) {
-          toast({
-            title: "Uh oh! Something went wrong.",
-            description: `Failed to delete item: ${error}`,
-            variant: "destructive"
-          });
-        } finally {
-          setIsDeleting(false);
-        }
-      };
-  
-      return (
-        <div className="text-end">
-          <DropdownMenu open={dropdown} onOpenChange={setDropdown} modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditFile(true)}>
-                <Edit /> Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(item.id)}
-              >
-                <Share /> Share
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(item.id)}
-              >
-                <RefreshCcw /> Convert
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DeleteDialog 
-                open={open}
-                onOpenChange={setOpen}
-                onDelete={handleDelete}
-                isDeleting={isDeleting}
-              />
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <EditFileDialog
-            editFile={editFile}
-            setEditFile={setEditFile}
-            existingFile={item}
-            handleDialogClose={setDropdown}
-          />
-        </div>
+    const [open, setOpen] = useState(false);
+    const [dropdown, setDropdown] = useState(false);
+    const { toast } = useToast();
+
+    const handleDelete = async () => {
+      try {
+        setIsDeleting(true);
+        await removeItem(item.id);
+        setDropdown(false);
+        setOpen(false);
+        toast({
+          title: "Success!",
+          description: "Item was successfully deleted.",
+          variant: "destructive"
+        });
+      } catch (error) {
+        toast({
+          title: "Uh oh! Something went wrong.",
+          description: `Failed to delete item: ${error}`,
+          variant: "destructive"
+        });
+      } finally {
+        setIsDeleting(false);
+      }
+    };
+
+    return (
+      <div className="text-end">
+        <DropdownMenu open={dropdown} onOpenChange={setDropdown} modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setEditFile(true)}>
+              <Edit /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(item.id)}
+            >
+              <Share /> Share
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(item.id)}
+            >
+              <RefreshCcw /> Convert
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DeleteDialog 
+              open={open}
+              onOpenChange={setOpen}
+              onDelete={handleDelete}
+              isDeleting={isDeleting}
+            />
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <EditFileDialog
+          editFile={editFile}
+          setEditFile={setEditFile}
+          existingFile={item}
+          handleDialogClose={setDropdown}
+        />
+      </div>
       );
     },
-  }
-]
+  })
+}
+
+return baseColumns
+}

@@ -22,7 +22,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../ui/table"
+} from "@renderer/components/ui/table"
 import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
 import { SubHeader } from "@renderer/components/page-layout/sub-header"
@@ -31,11 +31,17 @@ import { File } from "lucide-react"
 interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
   data: DemoItem[]
+  enableSelection?: boolean
+  enableStarToggle?: boolean
+  enableActions?: boolean
 }
 
 export function DataTable<DemoItem>({
   columns,
   data,
+  enableSelection = false,
+  enableStarToggle = true,
+  enableActions = true,
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -52,7 +58,11 @@ export function DataTable<DemoItem>({
   };
 
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({ isStarred: false, select: false })
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    isStarred: false,
+    select: enableSelection,
+    actions: !enableActions
+  })
   const [rowSelection, setRowSelection] = React.useState({})
 
   const table = useReactTable({
@@ -77,8 +87,6 @@ export function DataTable<DemoItem>({
   return (
     <div>
   
-      <SubHeader icon={File} subHeader="All files"/>
-
       {/* Search Filter and Action Buttons Container */}
       <div className="flex flex-row items-center pb-4 justify-between space-x-4 lg:space-y-0">
 

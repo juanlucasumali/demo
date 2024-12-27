@@ -1,6 +1,4 @@
-import { columns } from '../../components/home/data-table/columns'
-import { DataTable } from '../../components/home/data-table/data-table'
-import { Box, HomeIcon, User, UserCog } from 'lucide-react'
+import { Box, File, HomeIcon, User, UserCog } from 'lucide-react'
 import { useItemsStore } from '@renderer/stores/items-store'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -16,7 +14,9 @@ import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
 import { CreateProject } from '@renderer/components/dialogs/create-project'
 import { RequestDialog } from '@renderer/components/dialogs/request'
-
+import { DataTable } from '@renderer/components/data-table/data-table'
+import { createColumns } from '@renderer/components/data-table/columns'
+import { SubHeader } from '@renderer/components/page-layout/sub-header'
 export const Route = createFileRoute('/home/')({
   component: Home,
 })
@@ -86,7 +86,8 @@ export default function Home() {
           <Recents/>
           <Activity/>
         </div>
-        <DataTable columns={columns} data={data} />
+        <SubHeader icon={File} subHeader="All files"/>
+        <DataTable columns={createColumns()} data={data} />
       </PageContent>
 
       {/* Dialogs */}

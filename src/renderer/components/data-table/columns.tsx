@@ -90,6 +90,16 @@ export const createColumns = (
       cell: () => null,
     },
 
+    // Hidden sharedWith column
+    {
+      id: "sharedWith",
+      accessorKey: "sharedWith",
+      header: () => null,
+      enableSorting: true,
+      enableHiding: true,
+      cell: () => null,
+    },
+
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -133,7 +143,7 @@ export const createColumns = (
   },
 
   {
-    accessorKey: "collaborators",
+    accessorKey: "friends",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Shared With" disabled={true}/>
     ),
@@ -141,13 +151,13 @@ export const createColumns = (
       // 1. Extract the owner info
       const owner = row.original.owner
   
-      // 2. Extract the collaborators array (may be null or empty)
-      const collaborators = row.original.sharedWith ?? []
+      // 2. Extract the friends array (may be null or empty)
+      const friends = row.original.sharedWith ?? []
   
-      // 3. Make a combined array: owner first, then collaborators
+      // 3. Make a combined array: owner first, then friends
       const profiles = [
         owner,
-        ...collaborators,
+        ...friends,
       ]
   
       return (

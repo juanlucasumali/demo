@@ -30,7 +30,7 @@ export function ChooseFilesDialog({
         </AlertDialogHeader>
 
         <Tabs defaultValue="files" >
-          <TabsList className="flex flex-row justify-start pb-2">
+          <TabsList className="flex flex-row justify-start mb-2">
             <TabsTrigger value="files">All Files</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
           </TabsList>

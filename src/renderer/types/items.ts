@@ -28,8 +28,6 @@ export interface DemoItem {
     size: number | null;
     duration: number | null;
 
-    ownerId: string;
-    ownerAvatar: string | null;
-    ownerUsername: string;
+    owner: UserProfile;
     sharedWith: UserProfile[] | null
 }

@@ -1,28 +1,28 @@
 import { columns } from '../../components/home/data-table/columns'
 import { DataTable } from '../../components/home/data-table/data-table'
 import { Box, HomeIcon, User, UserCog } from 'lucide-react'
-import { useDataStore } from '@renderer/stores/items-store'
+import { useItemsStore } from '@renderer/stores/items-store'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
 import { Button } from '@renderer/components/ui/button'
-import { UploadFile } from '@renderer/components/home/dialogs/upload-file'
-import { CreateFolder } from '@renderer/components/home/dialogs/create-folder'
+import { UploadFile } from '@renderer/components/dialogs/upload-file'
+import { CreateFolder } from '@renderer/components/dialogs/create-folder'
 import { Recents } from '@renderer/components/home/recents'
 import { Activity } from '@renderer/components/home/activity'
-import { ShareDialog } from '@renderer/components/home/dialogs/share-dialog'
+import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
-import { CreateProject } from '@renderer/components/home/dialogs/create-project'
-import { RequestDialog } from '@renderer/components/home/dialogs/request'
+import { CreateProject } from '@renderer/components/dialogs/create-project'
+import { RequestDialog } from '@renderer/components/dialogs/request'
 
 export const Route = createFileRoute('/home/')({
   component: Home,
 })
 
 export default function Home() {
-  const data = useDataStore((state) => state.data)
+  const data = useItemsStore((state) => state.data)
   const [upload, setUpload] = useState(false)
   const [createFolder, setCreateFolder] = useState(false)
   const [share, setShare] = useState(false)

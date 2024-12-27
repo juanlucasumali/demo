@@ -4,14 +4,14 @@ import * as React from "react";
 import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "../../../components/ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "../../../components/ui/dialog";
+} from "../ui/dialog";
 import {
   Form,
   FormControl,
@@ -19,13 +19,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../../components/ui/form";
+} from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
-import { useDataStore } from "@renderer/stores/items-store";
+import { useItemsStore } from "@renderer/stores/items-store";
 import { File, Folder, Link, Package } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { Textarea } from "@renderer/components/ui/textarea";
-import { friendsData } from "../dummy-data";
+import { friendsData } from "../home/dummy-data";
 import { UserProfile } from "@renderer/types/users";
 
 const shareFileSchema = z.object({
@@ -44,7 +44,7 @@ interface RequestDialogProps {
 
 export function RequestDialog({ setRequest, request, handleDialogClose }: RequestDialogProps) {
   const { toast } = useToast();
-  const addItem = useDataStore((state) => state.addItem);
+  const addItem = useItemsStore((state) => state.addItem);
 
   const [selectedType, setSelectedType] = React.useState("file");
 
@@ -152,7 +152,7 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
                 </Button>
             </div>
                 
-
+            <div>
               <FormLabel>Request from</FormLabel>
               {/* Use the new FriendsSearch component here */}
               <FriendsSearch
@@ -161,6 +161,7 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
                 setSelectedUsers={setSelectedUsers}
                 singleSelect={true}
               />
+            </div>
 
               <FormField
                 control={form.control}

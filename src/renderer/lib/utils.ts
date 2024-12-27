@@ -63,3 +63,5 @@ export const formatDate = (date: Date) => {
     year: 'numeric'
   })
 }
+
+export const maxFileNameLength = 100; // Set maximum length for file name

@@ -2,13 +2,13 @@ import { Clock, Edit, Eye, Share } from "lucide-react";
 import { SubHeader } from "../page-layout/sub-header";
 import { Card, CardContent } from "../ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../ui/carousel";
-import { useDataStore } from "@renderer/stores/items-store";
+import { useItemsStore } from "@renderer/stores/items-store";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import folderImage from "../../assets/macos-folder.png";
 import fileImage from "../../assets/macos-song.png";
 
 export function Recents() {
-  const data = useDataStore((state) => state.data);
+  const data = useItemsStore((state) => state.data);
 
   // Sort the data by the more recent of `lastOpened` or `lastModified`
   const sortedData = [...data].sort((a, b) =>

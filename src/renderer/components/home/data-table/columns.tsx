@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@renderer/components/ui/button"
-import { Checkbox } from "@renderer/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,18 +9,18 @@ import {
   DropdownMenuTrigger,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, File, Folder, Loader2, MoreHorizontal, RefreshCcw, Share, Star, Trash } from "lucide-react"
+import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem } from "@renderer/types/items"
 import { Avatar, AvatarFallback, AvatarImage } from "@renderer/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
 import { formatDuration } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
-import { useDataStore } from "@renderer/stores/items-store"
-import { Dialog, DialogContent, DialogTrigger } from "@renderer/components/ui/dialog"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@renderer/components/ui/alert-dialog"
+import { useItemsStore } from "@renderer/stores/items-store"
 import { useState } from "react"
 import { useToast } from "@renderer/hooks/use-toast"
+import { DeleteDialog } from "../../dialogs/delete-dialog"
+import { EditFileDialog } from "../../dialogs/edit-file"
 
 export const columns: ColumnDef<DemoItem>[] = [
 
@@ -67,7 +66,7 @@ export const columns: ColumnDef<DemoItem>[] = [
       const type = row.original.type;
       const isStarred = row.original.isStarred;
       const tags = row.original.tags;
-      const toggleIsStarred = useDataStore((state) => state.toggleIsStarred);
+      const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
   
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
@@ -107,20 +106,14 @@ export const columns: ColumnDef<DemoItem>[] = [
     ),
     cell: ({ row }) => {
       // 1. Extract the owner info
-      const ownerId = row.original.ownerId
-      const ownerAvatar = row.original.ownerAvatar
-      const ownerUsername = row.original.ownerUsername
+      const owner = row.original.owner
   
       // 2. Extract the collaborators array (may be null or empty)
       const collaborators = row.original.sharedWith ?? []
   
       // 3. Make a combined array: owner first, then collaborators
       const profiles = [
-        {
-          id: ownerId,
-          avatar: ownerAvatar,
-          username: ownerUsername,
-        },
+        owner,
         ...collaborators,
       ]
   
@@ -219,33 +212,32 @@ export const columns: ColumnDef<DemoItem>[] = [
     id: "actions",
     cell: ({ row }) => {
       const item = row.original;
-      const removeItem = useDataStore((state) => state.removeItem);
+      const removeItem = useItemsStore((state) => state.removeItem);
       const [isDeleting, setIsDeleting] = useState(false);
+      const [editFile, setEditFile] = useState(false);
       const [open, setOpen] = useState(false);
       const [dropdown, setDropdown] = useState(false);
       const { toast } = useToast();
   
-      const handleDelete = async (itemId) => {
+      const handleDelete = async () => {
         try {
-          setIsDeleting(true); // Show the spinner
-          await removeItem(itemId);
-        } catch (error) {
-          //Handle errors in store/service
-          toast({
-            title: "Uh oh! Something went wrong.",
-            description: `Failed to delete item:, ${error}`,
-            variant: "destructive"
-          })
-        } finally {
-          setIsDeleting(false); // Hide the spinner
+          setIsDeleting(true);
+          await removeItem(item.id);
           setDropdown(false);
           setOpen(false);
-          //Handle success in store/service
           toast({
             title: "Success!",
             description: "Item was successfully deleted.",
             variant: "destructive"
-          })
+          });
+        } catch (error) {
+          toast({
+            title: "Uh oh! Something went wrong.",
+            description: `Failed to delete item: ${error}`,
+            variant: "destructive"
+          });
+        } finally {
+          setIsDeleting(false);
         }
       };
   
@@ -259,9 +251,7 @@ export const columns: ColumnDef<DemoItem>[] = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(item.id)}
-              >
+              <DropdownMenuItem onClick={() => setEditFile(true)}>
                 <Edit /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -274,50 +264,23 @@ export const columns: ColumnDef<DemoItem>[] = [
               >
                 <RefreshCcw /> Convert
               </DropdownMenuItem>
-  
               <DropdownMenuSeparator />
-  
-              <AlertDialog open={open} onOpenChange={setOpen}>
-                <AlertDialogTrigger>
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="text-red-500"
-                  >
-                    <Trash /> Delete
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      the selected item from our servers.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className={`bg-red-500 text-primary hover:bg-red-500 ${
-                        isDeleting ? "cursor-not-allowed opacity-50" : ""
-                      }`}
-                      disabled={isDeleting}
-                      onClick={(e) => handleDelete(row.original.id)}
-                    >
-                      {isDeleting ? (
-                        <span className="flex items-center">
-                          <Loader2 className="mr-2 h-4 w-4" /> Deleting...
-                        </span>
-                      ) : (
-                        "Delete"
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <DeleteDialog 
+                open={open}
+                onOpenChange={setOpen}
+                onDelete={handleDelete}
+                isDeleting={isDeleting}
+              />
             </DropdownMenuContent>
           </DropdownMenu>
+          <EditFileDialog
+            editFile={editFile}
+            setEditFile={setEditFile}
+            existingFile={item}
+            handleDialogClose={setDropdown}
+          />
         </div>
       );
     },
-  },
+  }
 ]

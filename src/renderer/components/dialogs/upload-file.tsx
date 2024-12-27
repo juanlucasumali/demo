@@ -5,8 +5,8 @@ import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Button } from "../../ui/button";
-import { Input } from "../../ui/input";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import FileTagsDropdown from "./file-tags-dropdown";
 import {
   Dialog,
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@renderer/components/ui/dialog";
-import { useDataStore } from "@renderer/stores/items-store";
+import { useItemsStore } from "@renderer/stores/items-store";
 import { useToast } from "@renderer/hooks/use-toast";
 import {
   Form,
@@ -23,15 +23,14 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from "../../ui/form";
+} from "../ui/form";
 import { FileFormat } from "@renderer/types/items";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
-import { friendsData } from "../dummy-data";
+import { currentUser, friendsData } from "../home/dummy-data";
+import { maxFileNameLength } from "@renderer/lib/utils";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
-const maxFileNameLength = 100; // Set maximum length for file name
-const fileNamePattern = /^[a-zA-Z0-9_\-\.]+$/; // Allow only alphanumeric, underscores, hyphens, and dots
 
 // Define the schema using Zod
 const fileUploadSchema = z.object({
@@ -49,9 +48,6 @@ const fileUploadSchema = z.object({
     .min(1, { message: "File name is required." })
     .max(maxFileNameLength, {
       message: `File name must not exceed ${maxFileNameLength} characters.`,
-    })
-    .regex(fileNamePattern, {
-      message: "File name contains invalid characters. Only letters, numbers, underscores, hyphens, and dots are allowed.",
     }),
   tags: z.any().nullable(),
 });
@@ -70,7 +66,7 @@ export function UploadFile({
   handleDialogClose,
 }: FileUploadProps) {
   const { toast } = useToast();
-  const addItem = useDataStore((state) => state.addItem);
+  const addItem = useItemsStore((state) => state.addItem);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
 
@@ -113,10 +109,8 @@ export function UploadFile({
       duration: 1,
       format: data.file.name.split(".").pop() as FileFormat,
       size: data.file.size,
-      ownerId: "current-user-id",
-      ownerAvatar: null,
-      ownerUsername: "current-user",
-      sharedWith: null,
+      owner: currentUser,
+      sharedWith: selectedUsers,
       projectId: null,
     };
 
@@ -132,6 +126,7 @@ export function UploadFile({
     form.reset();
     setUpload(false);
     setSelectedFile(null);
+    setSelectedUsers([]);
   };
 
   return (
@@ -188,12 +183,14 @@ export function UploadFile({
                 </FormItem>
               )}
             />
-            <FormLabel>Share with</FormLabel>
-            <FriendsSearch
-              friendsList={friendsData}
-              selectedUsers={selectedUsers}
-              setSelectedUsers={setSelectedUsers}
-            />
+            <div >
+              <FormLabel>Share with</FormLabel>
+              <FriendsSearch
+                friendsList={friendsData}
+                selectedUsers={selectedUsers}
+                setSelectedUsers={setSelectedUsers}
+              />
+            </div>
             <Button type="submit" className="w-full">
               Upload
             </Button>

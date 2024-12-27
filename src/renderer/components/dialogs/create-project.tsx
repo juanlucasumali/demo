@@ -4,24 +4,24 @@ import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Input } from "../../ui/input";
+import { Input } from "../ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@renderer/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../../ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
 import { Project } from "@renderer/types/projects";
 
-import folderImage from "../../../assets/macos-folder.png";
+import folderImage from "@renderer/assets/macos-folder.png";
 import { Button } from "@renderer/components/ui/button";
 import { Textarea } from "@renderer/components/ui/textarea";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import React from "react";
 import { UserProfile } from "@renderer/types/users";
-import { friendsData } from "../dummy-data";
+import { currentUser, friendsData } from "../home/dummy-data";
 
 const projectSchema = z.object({
   icon: z
@@ -81,9 +81,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
       isStarred: false,
       tags: null,
       icon: data.icon?.name || "default-folder",
-      ownerId: "current-user-id",
-      ownerAvatar: null,
-      ownerUsername: data.username,
+      owner: currentUser,
       sharedWith: [],
     };
 

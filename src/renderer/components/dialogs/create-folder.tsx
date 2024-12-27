@@ -3,11 +3,15 @@
 import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "../../ui/button";
-import { Input } from "../../ui/input";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
-import { useDataStore } from "@renderer/stores/items-store";
+import { useItemsStore } from "@renderer/stores/items-store";
 import { useToast } from "@renderer/hooks/use-toast";
+import { currentUser, friendsData } from "../home/dummy-data";
+import { FriendsSearch } from "@renderer/components/friends-search";
+import { UserProfile } from "@renderer/types/users";
+import { useState } from "react";
 
 // Validation schema for folder name
 const folderSchema = z.object({
@@ -34,7 +38,8 @@ export function CreateFolder({
   handleDialogClose,
 }: CreateFolderProps) {
   const { toast } = useToast();
-  const addItem = useDataStore((state) => state.addItem);
+  const addItem = useItemsStore((state) => state.addItem);
+  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
 
   // Initialize React Hook Form with Zod schema
   const {
@@ -63,10 +68,8 @@ export function CreateFolder({
       type: "folder",
       duration: null,
       format: null,
-      ownerId: "current-user-id", // Replace with actual user ID
-      ownerAvatar: null, // Replace with actual avatar
-      ownerUsername: "current-user", // Replace with actual username
-      sharedWith: null,
+      owner: currentUser,
+      sharedWith: selectedUsers,
       tags: null,
       projectId: null,
       size: null,
@@ -83,12 +86,13 @@ export function CreateFolder({
     // Reset the form and close dialog
     reset();
     setCreateFolder(false);
+    setSelectedUsers([]);
   };
 
   return (
     <Dialog open={createFolder} onOpenChange={() => handleDialogClose(setCreateFolder)}>
       <DialogContent className="max-w-[375px]">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-4">
           <DialogHeader>
             <DialogTitle className="pb-4">Create a Folder</DialogTitle>
           </DialogHeader>
@@ -102,10 +106,18 @@ export function CreateFolder({
               <p className="text-red-500 text-sm mt-1">{errors.folderName.message}</p>
             )}
           </div>
-          <Button type="submit" className="w-full">
+          <div >
+            <DialogHeader>Share with</DialogHeader>
+            <FriendsSearch
+              friendsList={friendsData}
+              selectedUsers={selectedUsers}
+              setSelectedUsers={setSelectedUsers}
+            />
+          </div>
+          <Button onClick={handleSubmit(onSubmit)} className="w-full">
             Create
           </Button>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

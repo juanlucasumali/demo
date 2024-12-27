@@ -4,15 +4,15 @@ import * as React from "react";
 import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "../../../components/ui/dialog";
+} from "../ui/dialog";
 import {
   Form,
   FormControl,
@@ -20,14 +20,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../../components/ui/form";
+} from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
-import { useDataStore } from "@renderer/stores/items-store";
+import { useItemsStore } from "@renderer/stores/items-store";
 import { Link } from "lucide-react";
 import { FileFormat } from "@renderer/types/items";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
-import { friendsData } from "../dummy-data";
+import { currentUser, friendsData } from "../home/dummy-data";
+import { ChooseFilesDialog } from "./choose-files";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 
@@ -49,10 +50,11 @@ interface ShareDialogProps {
 
 export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogProps) {
   const { toast } = useToast();
-  const addItem = useDataStore((state) => state.addItem);
+  const addItem = useItemsStore((state) => state.addItem);
 
   // State for multi-select user sharing
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
+  const [chooseFiles, setChooseFiles] = React.useState(false);
 
   // React Hook Form setup
   const form = useForm<ShareFileFormValues>({
@@ -83,10 +85,8 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
       duration: 1,
       format: (data.file?.name.split(".").pop() as FileFormat) || "mp3",
       size: data.file?.size ?? 0,
-      ownerId: "current-user-id",
-      ownerAvatar: null,
-      ownerUsername: "current-user",
-      sharedWith: null,
+      owner: currentUser,
+      sharedWith: selectedUsers,
       projectId: null,
     };
 
@@ -104,10 +104,11 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
   };
 
   return (
-    <Dialog open={share} onOpenChange={() => handleDialogClose(setShare)}>
-      <DialogContent className="max-w-[400px]">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <>
+      <Dialog open={share} onOpenChange={() => handleDialogClose(setShare)}>
+        <DialogContent className="max-w-[400px]">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
               <DialogTitle>Share</DialogTitle>
               <DialogDescription>Lightning-fast, encrypted file transfers.</DialogDescription>
@@ -121,24 +122,15 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
                 setSelectedUsers={setSelectedUsers}
               />
 
-              <FormField
-                control={form.control}
-                name="file"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="file">File</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="file"
-                        type="file"
-                        accept={allowedFormats.map((f) => `.${f}`).join(",")}
-                        onChange={handleFileChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Choose Files Dialog */}
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setChooseFiles(true)}
+              >
+                Choose Files
+              </Button>
 
               <div className="flex justify-between pt-2">
                 <Button variant="outline" type="button">
@@ -152,5 +144,11 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
         </Form>
       </DialogContent>
     </Dialog>
+
+    <ChooseFilesDialog
+        open={chooseFiles}
+        onOpenChange={setChooseFiles}
+      />
+    </>
   );
 }

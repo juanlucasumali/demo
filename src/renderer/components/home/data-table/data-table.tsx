@@ -23,13 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from "../../ui/table"
-import { Button } from "@renderer/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "../../ui/dropdown-menu"
 import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
 import { SubHeader } from "@renderer/components/page-layout/sub-header"
@@ -101,32 +94,6 @@ export function DataTable<DemoItem>({
 
         {/* Buttons Container */}
         <div className="flex items-center space-x-2">
-
-        {/* Column Filter */}
-        {/* <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full lg:w-auto">
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter(column => column.getCanHide() && column.id !== "isStarred") // Exclude 'isStarred'
-              .map(column => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    column.toggleVisibility(!!value)
-                  }
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu> */}
         </div>
       </div>
 

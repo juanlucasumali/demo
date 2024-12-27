@@ -7,8 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-} from "../../ui/dropdown-menu";
-import { Button } from "../../ui/button";
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
 import TagBadge from "@renderer/components/tag-badge";
 import { Tag } from "lucide-react";
 import { FileTag } from "@renderer/types/tags";
@@ -24,19 +24,7 @@ export function FileTagsDropdown({ tags, setTags }: FileTagsDropdownProps) {
   const removeTag = () => setTags(null);
 
   return (
-    <div className="w-full space-y-2">
-      {/* Tag Input Row */}
-      <div
-        className="flex flex-wrap items-center gap-2 rounded-md bg-background px-3 pb-2"
-        onClick={() => dropdownRef.current?.focus()}
-      >
-        {tags && (
-          <TagBadge
-            tag={tags}
-            onRemove={removeTag}
-          />
-        )}
-      </div>
+    <div className="w-full space-y-2 flex flex-row">
 
       {/* Dropdown Menu */}
       <DropdownMenu>
@@ -64,6 +52,19 @@ export function FileTagsDropdown({ tags, setTags }: FileTagsDropdownProps) {
           <Button variant="outline" className="w-max"><Tag /> Edit Tags</Button>
         </DropdownMenuTrigger>
       </DropdownMenu>
+
+      {/* Tag Input Row */}
+      <div
+        className="flex flex-wrap items-center gap-2 rounded-md bg-background px-3 pb-2"
+        onClick={() => dropdownRef.current?.focus()}
+      >
+        {tags && (
+          <TagBadge
+            tag={tags}
+            onRemove={removeTag}
+          />
+        )}
+      </div>
     </div>
   );
 }

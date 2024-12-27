@@ -15,6 +15,9 @@ import { X } from "lucide-react";
 import { UserProfile } from "@renderer/types/users";
 
 interface FriendsSearchProps {
+  /** Owner that will always appear first and can't be removed */
+  owner?: UserProfile;
+
   /** A list of all possible friends to choose from */
   friendsList: UserProfile[];
 
@@ -32,6 +35,7 @@ interface FriendsSearchProps {
  * A reusable component that handles searching for friends and selecting them.
  */
 export function FriendsSearch({
+  owner,
   friendsList = [],
   selectedUsers = [],
   setSelectedUsers,
@@ -91,6 +95,9 @@ export function FriendsSearch({
 
   // Remove user
   const handleRemoveUser = (userId: string) => {
+    // Don't remove if it's the owner
+    if (owner?.id === userId) return;
+    
     setSelectedUsers((prev) => prev.filter((u) => u.id !== userId));
   };
 
@@ -98,6 +105,27 @@ export function FriendsSearch({
     <div className="space-y-2 !mt-0 !mb-4">
       <div className="flex items-center">
         <div className="flex -space-x-2">
+
+          {/* Show owner first if exists */}
+          {owner && <Tooltip key={owner.id}>
+            <TooltipTrigger asChild>
+              <div className="cursor-default">
+                <Avatar className="h-11 w-11 border-2 border-background">
+                  <AvatarImage src={owner.avatar || ""} alt={owner.username} />
+                  <AvatarFallback>
+                    {owner.username[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <div className="flex items-center gap-1">
+                <span>{owner.name}</span>
+                <span className="text-xs text-muted-foreground">(Owner)</span>
+              </div>
+            </TooltipContent>
+          </Tooltip>}
+          
           {selectedUsers.map((user) => (
             <Tooltip key={user.id}>
               <TooltipTrigger asChild>

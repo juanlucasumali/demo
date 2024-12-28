@@ -9,21 +9,27 @@ import { UserProfile } from "@renderer/types/users"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@renderer/components/ui/dropdown-menu"
 import { cn } from "@renderer/lib/utils"
+import { Link } from "@tanstack/react-router"
 
 interface GridItemProps<TData> {
   row: Row<TData>;
-  isSelected: boolean
-  onSelectionChange: (checked: boolean) => void
+  isSelected: boolean;
+  onSelectionChange: (checked: boolean) => void;
+  enableSelection?: boolean;
+  enableRowLink?: boolean;
 }
 
 export function GridItem<DemoItem>({ 
   row, 
   isSelected, 
-  onSelectionChange 
+  onSelectionChange, 
+  enableSelection, 
+  enableRowLink = true
 }: GridItemProps<DemoItem>) {
   const owner = row.getValue("owner") as UserProfile;
   const sharedWith = row.getValue("sharedWith") as UserProfile[] | null;
   const hasCollaborators = !row.getValue("icon") && sharedWith && sharedWith.length > 0;
+  const itemId = row.getValue("id") as string;
 
   const avatarPositions = [
     "top-[8px] right-[-12px] z-[2]",    // First avatar (top right corner)
@@ -33,13 +39,14 @@ export function GridItem<DemoItem>({
     "top-[45px] right-[-22px] z-[1]",   // Fifth avatar (below third)
   ];
 
-  return (
+  const content = (
     <div 
     className={cn(
         "group relative flex flex-col items-center p-4 rounded-lg border hover:shadow-md",
         "transition-all duration-200",
         "hover:bg-muted/50",
-        "data-[state=selected]:bg-muted"
+        "data-[state=selected]:bg-muted",
+        enableRowLink && "cursor-pointer"
     )}
     data-state={isSelected ? "selected" : undefined}
     >
@@ -139,11 +146,13 @@ export function GridItem<DemoItem>({
 
       {/* Bottom Row: Checkbox and Tag */}
       <div className="flex items-center justify-center w-full space-x-2">
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onSelectionChange}
-          aria-label={`Select ${row.getValue("name")}`}
-        />
+        {enableSelection && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onSelectionChange}
+            aria-label={`Select ${row.getValue("name")}`}
+          />
+        )}
         
         {row.getValue("tags") as FileTag && (
           <div className="flex-shrink-0">
@@ -152,5 +161,14 @@ export function GridItem<DemoItem>({
         )}
       </div>
     </div>
-  )
+  );
+
+  return enableRowLink ? (
+    <Link 
+      to={`/projects/${itemId}`}
+      className="no-underline text-foreground"
+    >
+      {content}
+    </Link>
+  ) : content;
 } 

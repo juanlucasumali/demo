@@ -57,6 +57,16 @@ export const createColumns = ({
       enableHiding: false,
     },
 
+    // Hidden id column
+    {
+      id: "id",
+      accessorKey: "id",
+      header: () => null,
+      enableSorting: true,
+      enableHiding: true,
+      cell: () => null,
+    },
+
     // Hidden isStarred column
     {
       id: "isStarred",

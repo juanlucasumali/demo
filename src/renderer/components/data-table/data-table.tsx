@@ -33,6 +33,7 @@ interface DataTableProps<DemoItem> {
   data: DemoItem[]
   enableSelection?: boolean
   enableActions?: boolean
+  enableRowLink?: boolean
   viewMode?: 'table' | 'grid'
   pageSize?: number
   onSelectionChange?: (selectedItems: DemoItem[]) => void
@@ -47,7 +48,8 @@ export function DataTable<DemoItem>({
   viewMode = 'table',
   pageSize = 10,
   onSelectionChange,
-  initialSelectedItems = []
+  initialSelectedItems = [],
+  enableRowLink
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -73,6 +75,7 @@ export function DataTable<DemoItem>({
     tags: false,
     owner: false,
     sharedWith: false,
+    id: false,
   })
   const [rowSelection, setRowSelection] = React.useState(() => {
     if (!initialSelectedItems?.length) return {};
@@ -222,6 +225,8 @@ export function DataTable<DemoItem>({
                   row={row}
                   isSelected={row.getIsSelected()}
                   onSelectionChange={(checked) => row.toggleSelected(!!checked)}
+                  enableSelection={enableSelection}
+                  enableRowLink={enableRowLink}
                 />
               ))
             ) : (

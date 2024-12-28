@@ -79,6 +79,7 @@ export function ChooseFilesDialog({
               pageSize={8}
               onSelectionChange={setSelectedItems}
               initialSelectedItems={selectedItems}
+              enableRowLink={false}
             />
           </TabsContent>
         </Tabs>

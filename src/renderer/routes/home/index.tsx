@@ -87,7 +87,7 @@ export default function Home() {
           <Recents/>
           <Activity/>
         </div>
-        <SubHeader icon={File} subHeader="All files"/>
+        <SubHeader subHeader="All files"/>
         <DataTable columns={createColumns()} data={filesAndFolders} />
       </PageContent>
 

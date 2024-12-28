@@ -117,16 +117,6 @@ export const createColumns = ({
       cell: () => null,
     },
 
-    // Hidden sharedWith column
-    {
-      id: "sharedWith",
-      accessorKey: "sharedWith",
-      header: () => null,
-      enableSorting: true,
-      enableHiding: true,
-      cell: () => null,
-    },
-
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -170,7 +160,8 @@ export const createColumns = ({
   },
 
   {
-    accessorKey: "friends",
+    id: "sharedWith",
+    accessorKey: "sharedWith",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Shared With" disabled={true}/>
     ),

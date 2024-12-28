@@ -22,7 +22,7 @@ export function Recents() {
   return (
     <div className="pb-8 lg:col-span-3 content-center mt-4">
       <div>
-        <SubHeader icon={Clock} subHeader="Recents" />
+        <SubHeader subHeader="Recents" />
       </div>
       <div className="flex justify-center">
         <Carousel

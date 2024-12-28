@@ -34,6 +34,7 @@ interface DataTableProps<DemoItem> {
   enableSelection?: boolean
   enableActions?: boolean
   enableRowLink?: boolean
+  enableSharedWith?: boolean
   viewMode?: 'table' | 'grid'
   pageSize?: number
   onSelectionChange?: (selectedItems: DemoItem[]) => void
@@ -45,6 +46,7 @@ export function DataTable<DemoItem>({
   data,
   enableSelection = false,
   enableActions = true,
+  enableSharedWith = true,
   viewMode = 'table',
   pageSize = 10,
   onSelectionChange,
@@ -70,13 +72,13 @@ export function DataTable<DemoItem>({
     isStarred: false,
     select: enableSelection,
     actions: enableActions,
+    sharedWith: enableSharedWith,
     type: false,
     icon: false,
     tags: false,
     owner: false,
-    sharedWith: false,
     id: false,
-  })
+})
   const [rowSelection, setRowSelection] = React.useState(() => {
     if (!initialSelectedItems?.length) return {};
     

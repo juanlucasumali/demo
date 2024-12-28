@@ -5,14 +5,15 @@ import { X } from "lucide-react";
 interface TagBadgeProps {
   tag: FileTag;
   onRemove?: () => void;
+  className?: string;
 }
 
-export function TagBadge({ tag, onRemove }: TagBadgeProps) {
+export function TagBadge({ tag, onRemove, className }: TagBadgeProps) {
   if (!tag) return
   return (
     <Badge
       variant="secondary"
-      className={`flex items-center gap-2 ${tagBgClasses.green}`}
+      className={`flex items-center gap-2 ${tagBgClasses.green} ${className}`}
     >
       {tag}
       {onRemove && <button

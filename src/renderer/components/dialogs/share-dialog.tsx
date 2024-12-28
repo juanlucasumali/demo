@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from "../ui/dialog";
 import { useToast } from "@renderer/hooks/use-toast";
-import { File, FolderOpen, Link, Package, X } from "lucide-react";
+import { File, FolderOpen, Link, Box, X } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { friendsData } from "../home/dummy-data";
@@ -82,7 +82,7 @@ export function ShareDialog({
       case ItemType.FOLDER:
         return <FolderOpen className="h-4 w-4" />;
       case ItemType.PROJECT:
-        return <Package className="h-4 w-4" />;
+        return <Box className="h-4 w-4" />;
     }
   };
 
@@ -149,7 +149,7 @@ export function ShareDialog({
                           disabled={!groupedItems.projects.length}
                           className="flex items-center gap-2"
                         >
-                          <Package className="h-4 w-4" />
+                          <Box className="h-4 w-4" />
                           Projects ({groupedItems.projects.length})
                         </TabsTrigger>
                       </TabsList>

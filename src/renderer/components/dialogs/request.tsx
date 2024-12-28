@@ -22,7 +22,7 @@ import {
 } from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
 import { useItemsStore } from "@renderer/stores/items-store";
-import { File, Folder, Link, Package } from "lucide-react";
+import { Box, File, Folder, Link } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { Textarea } from "@renderer/components/ui/textarea";
 import { friendsData } from "../home/dummy-data";
@@ -147,7 +147,7 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
                         handleSelect("project");
                     }}
                 >
-                    <Package className="!h-5 !w-5" />
+                    <Box className="!h-5 !w-5" />
                     Project
                 </Button>
             </div>

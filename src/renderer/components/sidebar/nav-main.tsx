@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, PackageIcon, Star } from "lucide-react"
+import { Box, Home, Star } from "lucide-react"
 
 import {
   SidebarGroup,
@@ -31,7 +31,7 @@ export function NavMain({}: {
       <SidebarMenuItem>
         <Link to="/projects">
           <SidebarMenuButton tooltip={'Projects'} isActive={currentRoute === '/projects'}>
-              <PackageIcon />
+              <Box />
               <span>{'Projects'}</span>
           </SidebarMenuButton>
         </Link>

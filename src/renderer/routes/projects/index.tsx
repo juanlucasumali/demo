@@ -1,24 +1,27 @@
 import { PageHeader } from '@renderer/components/page-layout/page-header'
-import { Package } from 'lucide-react'
+import { Box } from 'lucide-react'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
-import { ProjectList } from '@renderer/components/projects/project-list'
-import { dummyProjects } from '@renderer/components/projects/dummy-projects'
 import { createFileRoute } from '@tanstack/react-router'
+import { useItemsStore } from '@renderer/stores/items-store'
+import { DataTable } from '@renderer/components/data-table/data-table'
+import { createColumns } from '@renderer/components/data-table/columns'
+import { Button } from '@renderer/components/ui/button'
+import { CreateProject } from '@renderer/components/dialogs/create-project'
+import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/projects/')({
   component: Projects,
 })
 
-const displayPreferences = {
-  tags: true,
-  createdAt: false,
-  lastModified: false,
-}
-
 export default function Projects() {
-  function toggleStar(id: string, currentValue: boolean): Promise<void> {
-    throw new Error('Function not implemented.')
+  const projects = useItemsStore((state) => state.projects);
+  const [createProject, setCreateProject] = useState(false)
+  const [share, setShare] = useState(false)
+
+  const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
+    dialogSetter(false)
   }
 
   return (
@@ -26,16 +29,42 @@ export default function Projects() {
       <PageHeader
         title={'Projects'}
         description={'What will you create today?'}
-        icon={Package}
-      />
+        icon={Box}
+      >
+        <Button variant="default" onClick={() => setCreateProject(true)}>
+          Create Project
+        </Button>
+
+        <Button variant="default" onClick={() => setShare(true)}>
+          Share
+        </Button>
+      </PageHeader>
 
       <PageContent>
-        <ProjectList
-          projects={dummyProjects}
-          toggleStar={toggleStar}
-          displayPreferences={displayPreferences}
+        <DataTable
+          columns={createColumns({
+            enableStarToggle: true,
+            enableActions: true,
+          })}
+          data={projects}
+          enableSelection={false}
+          enableActions={true}
+          viewMode="grid"
+          pageSize={12}
         />
       </PageContent>
+
+      {/* Dialogs */}
+      <CreateProject 
+        setCreateProject={setCreateProject} 
+        createProject={createProject} 
+        handleDialogClose={handleDialogClose}
+      />
+      <ShareDialog 
+        setShare={setShare} 
+        share={share} 
+        handleDialogClose={handleDialogClose}
+      />
     </PageMain>
   )
 }

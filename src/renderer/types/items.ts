@@ -28,14 +28,11 @@ export interface DemoItem {
     parentFolderId: string | null;
     filePath: string | null;
     type: ItemType;
-
-
     format: FileFormat | null;
     size: number | null;
     duration: number | null;
     description: string | null;
     icon: string | null;
-
     owner: UserProfile;
     sharedWith: UserProfile[] | null
 }

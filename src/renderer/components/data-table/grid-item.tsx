@@ -119,7 +119,7 @@ export function GridItem<DemoItem>({
                                 {user.username[0]?.toUpperCase() || "U"}
                               </AvatarFallback>
                             </Avatar>
-                            {user.username}
+                            @{user.username}
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>

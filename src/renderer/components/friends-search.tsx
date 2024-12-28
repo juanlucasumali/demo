@@ -49,6 +49,16 @@ export function FriendsSearch({
   React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        // Check if clicking on an interactive element
+        const target = e.target as HTMLElement;
+        const isButton = target.closest('button');
+        const isInput = target.closest('input');
+        
+        // If clicking on another interactive element, don't close the dropdown
+        if (isButton || isInput) {
+          return;
+        }
+        
         setIsFocused(false);
       }
     }
@@ -120,7 +130,7 @@ export function FriendsSearch({
             </TooltipTrigger>
             <TooltipContent side="top">
               <div className="flex items-center gap-1">
-                <span>{owner.name}</span>
+                <span>{owner.username}</span>
                 <span className="text-xs text-muted-foreground">(Owner)</span>
               </div>
             </TooltipContent>
@@ -141,7 +151,7 @@ export function FriendsSearch({
               </TooltipTrigger>
               <TooltipContent side="top">
                 <div className="flex items-center gap-1">
-                  <span>{user.name}</span>
+                  <span>{user.username}</span>
                   <X
                     className="h-4 w-4 cursor-pointer text-red-500"
                     onClick={() => handleRemoveUser(user.id)}

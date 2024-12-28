@@ -90,6 +90,16 @@ export const createColumns = (
       cell: () => null,
     },
 
+    // Hidden owner column
+    {
+      id: "owner",
+      accessorKey: "owner",
+      header: () => null,
+      enableSorting: true,
+      enableHiding: true,
+      cell: () => null,
+    },
+
     // Hidden sharedWith column
     {
       id: "sharedWith",
@@ -154,27 +164,41 @@ export const createColumns = (
       // 2. Extract the friends array (may be null or empty)
       const friends = row.original.sharedWith ?? []
   
-      // 3. Make a combined array: owner first, then friends
-      const profiles = [
-        owner,
-        ...friends,
-      ]
-  
       return (
         <div className="flex items-center">
           {/* Container for overlapping avatars */}
           <div className="flex -space-x-3">
-            {profiles.map((profile) => (
+            {/* Show owner first */}
+            {owner && (
+              <Tooltip key={owner.id}>
+                <TooltipTrigger asChild>
+                  <div className="cursor-default">
+                    <Avatar className="h-8 w-8 border-2 border-background">
+                      <AvatarImage src={owner.avatar || ""} alt={owner.username} />
+                      <AvatarFallback>
+                        {owner.username[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <div className="flex items-center gap-1">
+                    <span>{owner.username}</span>
+                    <span className="text-xs text-muted-foreground">(Owner)</span>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* Show other collaborators */}
+            {friends.map((profile) => (
               <Tooltip key={profile.id}>
                 <TooltipTrigger asChild>
                   <div className="cursor-pointer">
                     <Avatar className="h-8 w-8 border-2 border-background">
-                      <AvatarImage
-                        src={profile.avatar || ""}
-                        alt={profile.username}
-                      />
+                      <AvatarImage src={profile.avatar || ""} alt={profile.username} />
                       <AvatarFallback>
-                        {profile.username?.[0]?.toUpperCase() || "U"}
+                        {profile.username[0]?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </div>

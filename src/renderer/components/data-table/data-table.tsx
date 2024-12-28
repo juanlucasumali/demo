@@ -69,6 +69,7 @@ export function DataTable<DemoItem>({
     type: false,
     icon: false,
     tags: false,
+    owner: false,
   })
   const [rowSelection, setRowSelection] = React.useState({})
   const [pagination, setPagination] = React.useState({

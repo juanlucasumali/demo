@@ -22,6 +22,7 @@ import { useToast } from "@renderer/hooks/use-toast"
 import { DeleteDialog } from "@renderer/components/dialogs/delete-dialog"
 import { EditFileDialog } from "@renderer/components/dialogs/edit-file"
 import { Checkbox } from "@renderer/components/ui/checkbox"
+import { ShareDialog } from "@renderer/components/dialogs/share-dialog"
 
 interface ColumnOptions {
   enableStarToggle?: boolean;
@@ -291,71 +292,83 @@ if (enableActions) {
       const removeItem = useItemsStore((state) => state.removeItem);
       const [isDeleting, setIsDeleting] = useState(false);
       const [editFile, setEditFile] = useState(false);
-    const [open, setOpen] = useState(false);
-    const [dropdown, setDropdown] = useState(false);
-    const { toast } = useToast();
+      const [open, setOpen] = useState(false);
+      const [dropdown, setDropdown] = useState(false);
+      const [share, setShare] = useState(false);
+      const { toast } = useToast();
 
-    const handleDelete = async () => {
-      try {
-        setIsDeleting(true);
-        await removeItem(item.id);
+      const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
+        dialogSetter(false);
         setDropdown(false);
-        setOpen(false);
-        toast({
-          title: "Success!",
-          description: "Item was successfully deleted.",
-          variant: "destructive"
-        });
-      } catch (error) {
-        toast({
-          title: "Uh oh! Something went wrong.",
-          description: `Failed to delete item: ${error}`,
-          variant: "destructive"
-        });
-      } finally {
-        setIsDeleting(false);
-      }
-    };
+      };
 
-    return (
-      <div className="text-end">
-        <DropdownMenu open={dropdown} onOpenChange={setDropdown} modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setEditFile(true)}>
-              <Edit /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(item.id)}
-            >
-              <Share /> Share
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(item.id)}
-            >
-              <RefreshCcw /> Convert
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DeleteDialog 
-              open={open}
-              onOpenChange={setOpen}
-              onDelete={handleDelete}
-              isDeleting={isDeleting}
-            />
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <EditFileDialog
-          editFile={editFile}
-          setEditFile={setEditFile}
-          existingFile={item}
-          handleDialogClose={setDropdown}
-        />
-      </div>
+      const handleDelete = async () => {
+        try {
+          setIsDeleting(true);
+          await removeItem(item.id);
+          setDropdown(false);
+          setOpen(false);
+          toast({
+            title: "Success!",
+            description: "Item was successfully deleted.",
+            variant: "destructive"
+          });
+        } catch (error) {
+          toast({
+            title: "Uh oh! Something went wrong.",
+            description: `Failed to delete item: ${error}`,
+            variant: "destructive"
+          });
+        } finally {
+          setIsDeleting(false);
+        }
+      };
+
+      return (
+        <div className="text-end">
+          <DropdownMenu open={dropdown} onOpenChange={setDropdown} modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setEditFile(true)}>
+                <Edit /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShare(true)}>
+                <Share /> Share
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(item.id)}
+              >
+                <RefreshCcw /> Convert
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DeleteDialog 
+                open={open}
+                onOpenChange={setOpen}
+                onDelete={handleDelete}
+                isDeleting={isDeleting}
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <EditFileDialog
+            editFile={editFile}
+            setEditFile={setEditFile}
+            existingFile={item}
+            handleDialogClose={setDropdown}
+          />
+
+          <ShareDialog 
+            share={share}
+            setShare={setShare}
+            handleDialogClose={handleDialogClose}
+            initialItem={item}
+          />
+        </div>
       );
     },
   })

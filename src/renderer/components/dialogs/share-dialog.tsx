@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from "../ui/dialog";
 import { useToast } from "@renderer/hooks/use-toast";
-import { File, FolderOpen, Link, Package } from "lucide-react";
+import { File, FolderOpen, Link, Package, X } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { friendsData } from "../home/dummy-data";
@@ -24,13 +24,21 @@ interface ShareDialogProps {
   setShare: React.Dispatch<React.SetStateAction<boolean>>;
   share: boolean;
   handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
+  initialItem?: DemoItem;
 }
 
-export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogProps) {
+export function ShareDialog({ 
+  setShare, 
+  share, 
+  handleDialogClose,
+  initialItem 
+}: ShareDialogProps) {
   const { toast } = useToast();
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
   const [chooseFiles, setChooseFiles] = React.useState(false);
-  const [selectedItems, setSelectedItems] = React.useState<DemoItem[]>([]);
+  const [selectedItems, setSelectedItems] = React.useState<DemoItem[]>(
+    initialItem ? [initialItem] : []
+  );
 
   const handleConfirmSelection = (items: DemoItem[]) => {
     setSelectedItems(items);
@@ -53,6 +61,10 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
     setSelectedItems([]);
     setSelectedUsers([]);
     setShare(false);
+  };
+
+  const handleRemoveItem = (itemId: string) => {
+    setSelectedItems(prev => prev.filter(item => item.id !== itemId));
   };
 
   // Group selected items by type
@@ -96,64 +108,95 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
 
               {selectedItems.length > 0 && (
                 <div>
-                  <DialogTitle className="text-sm mb-2">Selected Items</DialogTitle>
-                  <Tabs defaultValue="files" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger 
-                        value="files"
-                        disabled={!groupedItems.files.length}
-                        className="flex items-center gap-2"
+                  <DialogTitle className="text-sm mb-2">{initialItem ? `Selected Item` : `Selected Items`}</DialogTitle>
+                  {initialItem ? (
+                    // Single item view
+                    <div className="w-full rounded-md border p-2">
+                      <div 
+                        className={cn(
+                          "flex items-center justify-between gap-2 p-2 rounded-md",
+                          "bg-muted/30"
+                        )}
                       >
-                        <File className="h-4 w-4" />
-                        Files ({groupedItems.files.length})
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="folders"
-                        disabled={!groupedItems.folders.length}
-                        className="flex items-center gap-2"
-                      >
-                        <FolderOpen className="h-4 w-4" />
-                        Folders ({groupedItems.folders.length})
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="projects"
-                        disabled={!groupedItems.projects.length}
-                        className="flex items-center gap-2"
-                      >
-                        <Package className="h-4 w-4" />
-                        Projects ({groupedItems.projects.length})
-                      </TabsTrigger>
-                    </TabsList>
-                    <ScrollArea className="h-[120px] w-full rounded-md border p-2 mt-2">
-                      {Object.entries(groupedItems).map(([type, items]) => (
-                        <TabsContent key={type} value={type} className="m-0">
-                          {items.map((item) => (
-                            <div 
-                              key={item.id}
-                              className={cn(
-                                "flex items-center gap-2 p-2 rounded-md",
-                                "hover:bg-muted/50 transition-colors"
-                              )}
-                            >
-                              {renderItemIcon(item.type)}
-                              <span className="text-sm truncate">{item.name}</span>
-                            </div>
-                          ))}
-                        </TabsContent>
-                      ))}
-                    </ScrollArea>
-                  </Tabs>
+                        <div className="flex items-center gap-2 min-w-0">
+                          {renderItemIcon(initialItem.type)}
+                          <span className="text-sm truncate">{initialItem.name}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Multiple items view with tabs (existing code)
+                    <Tabs defaultValue="files" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger 
+                          value="files"
+                          disabled={!groupedItems.files.length}
+                          className="flex items-center gap-2"
+                        >
+                          <File className="h-4 w-4" />
+                          Files ({groupedItems.files.length})
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="folders"
+                          disabled={!groupedItems.folders.length}
+                          className="flex items-center gap-2"
+                        >
+                          <FolderOpen className="h-4 w-4" />
+                          Folders ({groupedItems.folders.length})
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="projects"
+                          disabled={!groupedItems.projects.length}
+                          className="flex items-center gap-2"
+                        >
+                          <Package className="h-4 w-4" />
+                          Projects ({groupedItems.projects.length})
+                        </TabsTrigger>
+                      </TabsList>
+                      <ScrollArea className="h-[120px] w-full rounded-md border p-2 mt-2">
+                        {Object.entries(groupedItems).map(([type, items]) => (
+                          <TabsContent key={type} value={type} className="m-0">
+                            {items.map((item) => (
+                              <div 
+                                key={item.id}
+                                className={cn(
+                                  "flex items-center justify-between gap-2 p-2 rounded-md group",
+                                  "hover:bg-muted/50 transition-colors"
+                                )}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {renderItemIcon(item.type)}
+                                  <span className="text-sm truncate">{item.name}</span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => handleRemoveItem(item.id)}
+                                >
+                                  <X className="h-4 w-4" />
+                                  <span className="sr-only">Remove {item.name}</span>
+                                </Button>
+                              </div>
+                            ))}
+                          </TabsContent>
+                        ))}
+                      </ScrollArea>
+                    </Tabs>
+                  )}
                 </div>
               )}
 
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setChooseFiles(true)}
-              >
-                {selectedItems.length > 0 ? "Add more files" : "Choose files"}
-              </Button>
+              {!initialItem && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setChooseFiles(true)}
+                >
+                  {selectedItems.length > 0 ? "Add more files" : "Choose files"}
+                </Button>
+              )}
 
               <div className="flex justify-between pt-2">
                 <Button variant="outline" type="button">
@@ -172,12 +215,14 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
         </DialogContent>
       </Dialog>
 
-      <ChooseFilesDialog
-        open={chooseFiles}
-        onOpenChange={setChooseFiles}
-        onConfirm={handleConfirmSelection}
-        initialSelections={selectedItems}
-      />
+      {!initialItem && (
+        <ChooseFilesDialog
+          open={chooseFiles}
+          onOpenChange={setChooseFiles}
+          onConfirm={handleConfirmSelection}
+          initialSelections={selectedItems}
+        />
+      )}
     </>
   );
 }

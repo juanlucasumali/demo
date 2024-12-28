@@ -3,7 +3,7 @@ import { useItemsStore } from '@renderer/stores/items-store'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
-import { Box, Play, Plus, Share } from 'lucide-react'
+import { Box, Play, Plus, Share, Upload, FileSearch } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
@@ -14,6 +14,9 @@ import { EditProjectDialog } from '@renderer/components/dialogs/edit-project'
 import { cn } from '@renderer/lib/utils'
 import { SubHeader } from '@renderer/components/page-layout/sub-header'
 import { CreateCollection } from '@renderer/components/dialogs/create-collection'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
+import { UploadFile } from '@renderer/components/dialogs/upload-file'
+import { ChooseFilesDialog } from '@renderer/components/dialogs/choose-files'
 
 // Define route params interface
 interface ProjectParams {
@@ -59,12 +62,20 @@ function ProjectPage() {
   const [share, setShare] = useState(false)
   const [editProject, setEditProject] = useState(false)
   const [createCollection, setCreateCollection] = useState(false)
+  const [upload, setUpload] = useState(false)
+  const [chooseFiles, setChooseFiles] = useState(false)
+  const [selectedItems, setSelectedItems] = useState<DemoItem[]>([])
+
+  const handleConfirmSelection = (items: DemoItem[]) => {
+    setSelectedItems(items);
+  };
 
   const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
     dialogSetter(false)
   }
 
-// Handle case where project is not found
+
+  // Handle case where project is not found
   if (!project) {
     return (
       <PageMain>
@@ -86,13 +97,35 @@ function ProjectPage() {
         tag={project.tags}
         owner={project.owner}
         sharedWith={project.sharedWith}
+        className='min-w-[1000px]'
       >
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="default">
+              Add Files
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className='w-56' align='end' forceMount>
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setUpload(true)}>
+                <Upload className="h-4 w-4 mr-2"/>
+                Upload file
+                <DropdownMenuShortcut>⇧⌘U</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setChooseFiles(true)}>
+                <FileSearch className="h-4 w-4 mr-2"/>
+                Choose files
+                <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button 
           variant="default" 
           onClick={() => setShare(true)}
           className="flex items-center gap-2"
         >
-          <Share className="h-4 w-4" />
           Share
         </Button>
 
@@ -108,7 +141,7 @@ function ProjectPage() {
       <PageContent>
         <div className="flex gap-6 md:flex-row flex-col pt-4">
           {/* Navigation Sidebar */}
-          <div className="w-60 flex-shrink-0">
+          <div className="w-48 flex-shrink-0">
             <div className="sticky top-0">
               <div>
                 <SubHeader subHeader="Collections" />
@@ -181,6 +214,21 @@ function ProjectPage() {
         setCreateCollection={setCreateCollection}
         createCollection={createCollection}
         handleDialogClose={handleDialogClose}
+      />
+
+      <UploadFile
+        setUpload={setUpload}
+        upload={upload}
+        handleDialogClose={handleDialogClose}
+        location="project"
+      />
+
+      <ChooseFilesDialog
+        open={chooseFiles}
+        onOpenChange={setChooseFiles}
+        onConfirm={handleConfirmSelection}
+        initialSelections={[]}
+        location="project"
       />
     </PageMain>
   )

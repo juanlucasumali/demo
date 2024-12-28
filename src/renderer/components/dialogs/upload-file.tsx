@@ -58,12 +58,14 @@ interface FileUploadProps {
   setUpload: React.Dispatch<React.SetStateAction<boolean>>;
   upload: boolean;
   handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
+  location: "project" | "home";
 }
 
 export function UploadFile({
   setUpload,
   upload,
   handleDialogClose,
+  location,
 }: FileUploadProps) {
   const { toast } = useToast();
   const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
@@ -114,6 +116,7 @@ export function UploadFile({
       projectId: null,
       description: null,
       icon: null,
+      collectionId: null,
     };
 
     addFileOrFolder(newItem);
@@ -162,7 +165,7 @@ export function UploadFile({
               name="fileName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel >File Name</FormLabel>
+                  <FormLabel>File Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter file name" {...field} />
                   </FormControl>
@@ -185,14 +188,20 @@ export function UploadFile({
                 </FormItem>
               )}
             />
-            <div >
-              <FormLabel>Share with</FormLabel>
-              <FriendsSearch
-                friendsList={friendsData}
-                selectedUsers={selectedUsers}
-                setSelectedUsers={setSelectedUsers}
-              />
-            </div>
+            {location === "home" ? (
+              <div>
+                <FormLabel>Share with</FormLabel>
+                <FriendsSearch
+                  friendsList={friendsData}
+                  selectedUsers={selectedUsers}
+                  setSelectedUsers={setSelectedUsers}
+                />
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                This file will be automatically shared with all project members.
+              </div>
+            )}
             <Button type="submit" className="w-full">
               Upload
             </Button>

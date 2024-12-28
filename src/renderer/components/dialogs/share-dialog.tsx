@@ -221,6 +221,7 @@ export function ShareDialog({
           onOpenChange={setChooseFiles}
           onConfirm={handleConfirmSelection}
           initialSelections={selectedItems}
+          location="home"
         />
       )}
     </>

@@ -90,6 +90,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
       format: null,
       size: null,
       duration: null,
+      collectionId: null,
     };
 
     toast({

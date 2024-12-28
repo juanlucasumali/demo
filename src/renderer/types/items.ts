@@ -18,21 +18,27 @@ export enum ItemType {
 
 export interface DemoItem {
     id: string;
+    projectId: string | null;
+    parentFolderId: string | null;
+    collectionId: string | null;
+
     createdAt: Date;
     lastModified: Date;
     lastOpened: Date;
-    name: string;
-    isStarred: boolean;
-    tags: FileTag | null; 
-    projectId: string | null;
-    parentFolderId: string | null;
-    filePath: string | null;
+
     type: ItemType;
+
+    icon: string | null;
+    name: string;
+    description: string | null;
+    tags: FileTag | null; 
+    isStarred: boolean;
+    
     format: FileFormat | null;
     size: number | null;
     duration: number | null;
-    description: string | null;
-    icon: string | null;
+    filePath: string | null;
+    
     owner: UserProfile;
     sharedWith: UserProfile[] | null
 }

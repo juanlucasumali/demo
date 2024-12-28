@@ -44,6 +44,7 @@ export const dummyDemoItems: DemoItem[] = [
     duration: null,
     description: "Collection of vocal recordings for the project",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-101",
@@ -64,6 +65,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "First take of the lead vocals",
     icon: null,
+    collectionId: null,
   },
   {
     id: "folder-002",
@@ -84,6 +86,7 @@ export const dummyDemoItems: DemoItem[] = [
     duration: null,
     description: "All instrumental stems and recordings",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-201",
@@ -104,6 +107,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "Clean guitar stem recording",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-202",
@@ -124,6 +128,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "Second version of the drum stem",
     icon: null,
+    collectionId: null,
   },
   {
     id: "folder-003",
@@ -144,6 +149,7 @@ export const dummyDemoItems: DemoItem[] = [
     duration: null,
     description: "Final mixed versions of the tracks",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-301",
@@ -164,6 +170,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "Mastered version for the album",
     icon: null,
+    collectionId: null,
   },
   {
     id: "folder-004",
@@ -184,6 +191,7 @@ export const dummyDemoItems: DemoItem[] = [
     duration: null,
     description: "Folder containing brainstorming and concept files",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-401",
@@ -204,6 +212,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "Initial concept sketches for the project",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-402",
@@ -224,6 +233,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "Budget planning sheet for the project",
     icon: null,
+    collectionId: null,
   },
   {
     id: "folder-005",
@@ -244,6 +254,7 @@ export const dummyDemoItems: DemoItem[] = [
     duration: null,
     description: "Tracks used as references for inspiration",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-501",
@@ -264,6 +275,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "Track that served as a reference for the project's style",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-502",
@@ -284,6 +296,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "Guide for vocal processing techniques",
     icon: null,
+    collectionId: null,
   },
   {
     id: "folder-006",
@@ -304,6 +317,7 @@ export const dummyDemoItems: DemoItem[] = [
     duration: null,
     description: "Tracks not used in the final production",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-601",
@@ -324,6 +338,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "An alternate version of the track",
     icon: null,
+    collectionId: null,
   },
   {
     id: "file-602",
@@ -344,6 +359,7 @@ export const dummyDemoItems: DemoItem[] = [
     type: ItemType.FILE,
     description: "Experimental synth-based track",
     icon: null,
+    collectionId: null,
   },
 ];
 
@@ -367,6 +383,7 @@ export const dummyProjectItems: DemoItem[] = [
       duration: null,
       description: "Dark R&B track with atmospheric electronic elements",
       icon: null,
+      collectionId: null,
     },
     {
       id: "project-002",
@@ -387,6 +404,7 @@ export const dummyProjectItems: DemoItem[] = [
       duration: null,
       description: "High-energy trap beat with drill influences",
       icon: null,
+      collectionId: null,
     },
     {
       id: "project-003",
@@ -407,6 +425,7 @@ export const dummyProjectItems: DemoItem[] = [
       duration: null,
       description: "Ambient soundscape with ethereal synths and textures",
       icon: null,
+      collectionId: null,
     },
     {
       id: "project-004",
@@ -427,6 +446,7 @@ export const dummyProjectItems: DemoItem[] = [
       duration: null,
       description: "Modern jazz fusion with electronic elements",
       icon: null,
+      collectionId: null,
     },
     {
       id: "project-005",
@@ -447,5 +467,6 @@ export const dummyProjectItems: DemoItem[] = [
       duration: null,
       description: "80s inspired synthwave with modern production",
       icon: null,
+      collectionId: null,
     }
   ]

@@ -92,7 +92,7 @@ export default function Home() {
       </PageContent>
 
       {/* Dialogs */}
-      <UploadFile setUpload={setUpload} upload={upload} handleDialogClose={handleDialogClose}/>
+      <UploadFile setUpload={setUpload} upload={upload} handleDialogClose={handleDialogClose} location="home"/>
       <CreateFolder setCreateFolder={setCreateFolder} createFolder={createFolder} handleDialogClose={handleDialogClose}/>
       <ShareDialog setShare={setShare} share={share} handleDialogClose={handleDialogClose}/>
       <CreateProject setCreateProject={setCreateProject} createProject={createProject} handleDialogClose={handleDialogClose}/>

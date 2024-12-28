@@ -14,13 +14,15 @@ interface ChooseFilesDialogProps {
   onOpenChange: (open: boolean) => void
   onConfirm: (selectedItems: DemoItem[]) => void
   initialSelections?: DemoItem[]
+  location: "home" | "project"
 }
 
 export function ChooseFilesDialog({
   open,
   onOpenChange,
   onConfirm,
-  initialSelections = []
+  initialSelections = [],
+  location
 }: ChooseFilesDialogProps) {
   const filesAndFolders = useItemsStore((state) => state.filesAndFolders);
   const projects = useItemsStore((state) => state.projects);
@@ -42,15 +44,15 @@ export function ChooseFilesDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Choose Files</AlertDialogTitle>
           <AlertDialogDescription>
-            Select files to include in your project
+            {location === "project" ? "Select files to include in your project" : "Select files to share"}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <Tabs defaultValue="files" >
-          <TabsList className="flex flex-row justify-start mb-2">
+          {location === "home" && <TabsList className="flex flex-row justify-start mb-2">
             <TabsTrigger value="files">All Files</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
-          </TabsList>
+          </TabsList>}
           <TabsContent value="files">
             <DataTable 
               columns={createColumns({
@@ -88,7 +90,7 @@ export function ChooseFilesDialog({
           <AlertDialogCancel asChild>
             <Button variant="outline">Cancel</Button>
           </AlertDialogCancel>
-          <Button onClick={handleConfirm}>Confirm Selection</Button>
+          <Button onClick={handleConfirm}>{location === "project" ? "Add to project" : "Confirm Selection"}</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

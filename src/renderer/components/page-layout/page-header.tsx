@@ -1,4 +1,4 @@
-import { generateGradientStyle } from "../../lib/utils"
+import { cn, generateGradientStyle } from "../../lib/utils"
 import { LucideIcon } from "lucide-react";
 import { useMemo, ReactNode } from "react"
 import { FileTag } from "@renderer/types/tags"
@@ -18,6 +18,7 @@ interface PageHeaderProps {
   owner?: UserProfile
   sharedWith?: UserProfile[] | null
   children?: ReactNode
+  className?: string
 }
 
 export function PageHeader({ 
@@ -28,7 +29,8 @@ export function PageHeader({
   tag,
   owner,
   sharedWith = [],
-  children
+  children,
+  className
 }: PageHeaderProps) {
   const iconGradientStyle = useMemo(() => {
     if (!projectId) return
@@ -36,7 +38,7 @@ export function PageHeader({
   }, [projectId])
 
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center items-start justify-between gap-4 container mx-auto pt-10 px-10 min-w-[900px]">
+    <div className={cn("flex flex-col lg:flex-row lg:items-center items-start justify-between gap-4 container mx-auto pt-10 px-10", className)}>
       {/* Left Side: Icon and Text */}
       <div className="flex items-center gap-4 lg:pb-0 pb-2 min-w-[400px]">
         <div 

@@ -70,6 +70,7 @@ export function CreateCollection({
       size: null,
       description: null,
       icon: null,
+      collectionId: null,
     };
 
     addFileOrFolder(newItem);

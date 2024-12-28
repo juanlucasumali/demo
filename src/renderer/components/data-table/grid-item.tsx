@@ -72,7 +72,7 @@ export function GridItem<DemoItem>({
                       </TooltipTrigger>
                       <TooltipContent side="top">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs">{owner.username}</span>
+                          <span className="text-xs">@{owner.username}</span>
                           <span className="text-xs text-muted-foreground">(Owner)</span>
                         </div>
                       </TooltipContent>
@@ -93,7 +93,7 @@ export function GridItem<DemoItem>({
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top">
-                        <p className="text-xs">{user.username}</p>
+                        <p className="text-xs">@{user.username}</p>
                       </TooltipContent>
                     </Tooltip>
                   ))}

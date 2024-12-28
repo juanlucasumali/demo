@@ -79,12 +79,14 @@ export function FriendsSearch({
       return filteredFriends.slice(0, 5);
     }
 
-    const lower = searchTerm.toLowerCase();
+    // Remove @ symbol from search term if present
+    const cleanSearchTerm = searchTerm.replace('@', '').toLowerCase();
+    
     return filteredFriends
       .filter(
         (user) =>
-          user.username.toLowerCase().includes(lower) ||
-          user.name.toLowerCase().includes(lower)
+          user.username.toLowerCase().includes(cleanSearchTerm) ||
+          user.name.toLowerCase().includes(cleanSearchTerm)
       )
       .slice(0, 5);
   }, [friendsList, selectedUsers, searchTerm]);
@@ -151,7 +153,7 @@ export function FriendsSearch({
               </TooltipTrigger>
               <TooltipContent side="top">
                 <div className="flex items-center gap-1">
-                  <span>{user.username}</span>
+                  <span>@{user.username}</span>
                   <X
                     className="h-4 w-4 cursor-pointer text-red-500"
                     onClick={() => handleRemoveUser(user.id)}
@@ -165,7 +167,7 @@ export function FriendsSearch({
 
       <Command ref={containerRef}className="border rounded">
         <CommandInput
-          placeholder="Search for a friend..."
+          placeholder="@"
           value={searchTerm}
           onValueChange={setSearchTerm}
           onFocus={() => setIsFocused(true)}

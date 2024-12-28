@@ -1,9 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { z } from "zod";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -12,31 +9,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../ui/dialog";
-import {
-  Form,
-  FormLabel,
-
-} from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
-import { useItemsStore } from "@renderer/stores/items-store";
-import { Link } from "lucide-react";
-import { FileFormat, ItemType } from "@renderer/types/items";
+import { File, FolderOpen, Link, Package } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
-import { currentUser, friendsData } from "../home/dummy-data";
+import { friendsData } from "../home/dummy-data";
 import { ChooseFilesDialog } from "./choose-files";
-
-const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
-
-const shareFileSchema = z.object({
-  file: z
-    .custom<File>()
-    .refine((file) => file && allowedFormats.includes(file.name.split(".").pop() || ""), {
-      message: `File format must be one of: ${allowedFormats.join(", ")}`,
-    }),
-});
-
-type ShareFileFormValues = z.infer<typeof shareFileSchema>;
+import { DemoItem, ItemType } from "@renderer/types/items";
+import { ScrollArea } from "../ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { cn } from "@renderer/lib/utils";
 
 interface ShareDialogProps {
   setShare: React.Dispatch<React.SetStateAction<boolean>>;
@@ -46,81 +28,131 @@ interface ShareDialogProps {
 
 export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogProps) {
   const { toast } = useToast();
-  const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
-
-  // State for multi-select user sharing
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
   const [chooseFiles, setChooseFiles] = React.useState(false);
+  const [selectedItems, setSelectedItems] = React.useState<DemoItem[]>([]);
 
-  // React Hook Form setup
-  const form = useForm<ShareFileFormValues>({
-    resolver: zodResolver(shareFileSchema),
-    defaultValues: { file: undefined },
-  });
+  const handleConfirmSelection = (items: DemoItem[]) => {
+    setSelectedItems(items);
+  };
 
-  // On Submit
-  const onSubmit: SubmitHandler<ShareFileFormValues> = (data) => {
-    const newItem = {
-      id: `i${Date.now()}`,
-      createdAt: new Date(),
-      lastModified: new Date(),
-      lastOpened: new Date(),
-      name: data.file?.name,
-      isStarred: false,
-      tags: null,
-      parentFolderId: null,
-      filePath: data.file?.name,
-      type: ItemType.FILE,
-      duration: 1,
-      format: (data.file?.name.split(".").pop() as FileFormat) || "mp3",
-      size: data.file?.size ?? 0,
-      owner: currentUser,
-      sharedWith: selectedUsers,
-      projectId: null,
-      description: null,
-      icon: null,
-    };
-
-    addFileOrFolder(newItem);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Simulate sending data
+    console.log("Sharing the following items:", selectedItems);
+    console.log("With users:", selectedUsers);
 
     toast({
       title: "Success!",
-      description: "File shared successfully.",
+      description: `Shared ${selectedItems.length} items with ${selectedUsers.length} users.`,
       variant: "default",
     });
 
-    form.reset();
+    // Reset form
+    setSelectedItems([]);
     setSelectedUsers([]);
     setShare(false);
+  };
+
+  // Group selected items by type
+  const groupedItems = React.useMemo(() => {
+    const files = selectedItems.filter(item => item.type === ItemType.FILE);
+    const folders = selectedItems.filter(item => item.type === ItemType.FOLDER);
+    const projects = selectedItems.filter(item => item.type === ItemType.PROJECT);
+    return { files, folders, projects };
+  }, [selectedItems]);
+
+  const renderItemIcon = (type: ItemType) => {
+    switch (type) {
+      case ItemType.FILE:
+        return <File className="h-4 w-4" />;
+      case ItemType.FOLDER:
+        return <FolderOpen className="h-4 w-4" />;
+      case ItemType.PROJECT:
+        return <Package className="h-4 w-4" />;
+    }
   };
 
   return (
     <>
       <Dialog open={share} onOpenChange={() => handleDialogClose(setShare)}>
         <DialogContent className="max-w-[400px]">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <DialogHeader>
               <DialogTitle>Share</DialogTitle>
               <DialogDescription>Lightning-fast, encrypted file transfers.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-2">
-              <FormLabel>Share with</FormLabel>
-              {/* Use the new FriendsSearch component here */}
-              <FriendsSearch
-                friendsList={friendsData}
-                selectedUsers={selectedUsers}
-                setSelectedUsers={setSelectedUsers}
-              />
 
-              {/* Choose Files Dialog */}
+            <div className="space-y-4">
+              <div>
+                <DialogTitle className="text-sm mb-2">Share with</DialogTitle>
+                <FriendsSearch
+                  friendsList={friendsData}
+                  selectedUsers={selectedUsers}
+                  setSelectedUsers={setSelectedUsers}
+                />
+              </div>
+
+              {selectedItems.length > 0 && (
+                <div>
+                  <DialogTitle className="text-sm mb-2">Selected Items</DialogTitle>
+                  <Tabs defaultValue="files" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger 
+                        value="files"
+                        disabled={!groupedItems.files.length}
+                        className="flex items-center gap-2"
+                      >
+                        <File className="h-4 w-4" />
+                        Files ({groupedItems.files.length})
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="folders"
+                        disabled={!groupedItems.folders.length}
+                        className="flex items-center gap-2"
+                      >
+                        <FolderOpen className="h-4 w-4" />
+                        Folders ({groupedItems.folders.length})
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="projects"
+                        disabled={!groupedItems.projects.length}
+                        className="flex items-center gap-2"
+                      >
+                        <Package className="h-4 w-4" />
+                        Projects ({groupedItems.projects.length})
+                      </TabsTrigger>
+                    </TabsList>
+                    <ScrollArea className="h-[120px] w-full rounded-md border p-2 mt-2">
+                      {Object.entries(groupedItems).map(([type, items]) => (
+                        <TabsContent key={type} value={type} className="m-0">
+                          {items.map((item) => (
+                            <div 
+                              key={item.id}
+                              className={cn(
+                                "flex items-center gap-2 p-2 rounded-md",
+                                "hover:bg-muted/50 transition-colors"
+                              )}
+                            >
+                              {renderItemIcon(item.type)}
+                              <span className="text-sm truncate">{item.name}</span>
+                            </div>
+                          ))}
+                        </TabsContent>
+                      ))}
+                    </ScrollArea>
+                  </Tabs>
+                </div>
+              )}
+
               <Button 
                 type="button" 
                 variant="outline" 
                 className="w-full"
                 onClick={() => setChooseFiles(true)}
               >
-                Choose Files
+                {selectedItems.length > 0 ? "Add more files" : "Choose files"}
               </Button>
 
               <div className="flex justify-between pt-2">
@@ -128,17 +160,23 @@ export function ShareDialog({ setShare, share, handleDialogClose }: ShareDialogP
                   <Link className="mr-2 h-4 w-4" />
                   Copy Link
                 </Button>
-                <Button type="submit">Send</Button>
+                <Button 
+                  type="submit"
+                  disabled={selectedItems.length === 0 || selectedUsers.length === 0}
+                >
+                  Send
+                </Button>
               </div>
             </div>
           </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
 
-    <ChooseFilesDialog
+      <ChooseFilesDialog
         open={chooseFiles}
         onOpenChange={setChooseFiles}
+        onConfirm={handleConfirmSelection}
+        initialSelections={selectedItems}
       />
     </>
   );

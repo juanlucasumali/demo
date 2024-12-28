@@ -20,9 +20,6 @@ const folderSchema = z.object({
     .string()
     .min(1, { message: "Folder name is required." })
     .max(50, { message: "Folder name must not exceed 50 characters." })
-    .regex(/^[a-zA-Z0-9_\- ]+$/, {
-      message: "Folder name contains invalid characters. Only letters, numbers, spaces, underscores, and hyphens are allowed.",
-    }),
 });
 
 type FolderFormValues = z.infer<typeof folderSchema>;

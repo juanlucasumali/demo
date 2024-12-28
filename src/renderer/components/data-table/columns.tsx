@@ -23,11 +23,17 @@ import { DeleteDialog } from "@renderer/components/dialogs/delete-dialog"
 import { EditFileDialog } from "@renderer/components/dialogs/edit-file"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 
-export const createColumns = (
-  enableStarToggle: boolean = true,
-  enableSelection: boolean = false,
-  enableActions: boolean = true
-): ColumnDef<DemoItem>[] => {
+interface ColumnOptions {
+  enableStarToggle?: boolean;
+  enableTags?: boolean;
+  enableActions?: boolean;
+}
+
+export const createColumns = ({
+  enableStarToggle = true,
+  enableTags = true,
+  enableActions = true,
+}: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
     {
@@ -140,9 +146,9 @@ export const createColumns = (
             ) : (
               <File className="h-4 w-4 text-muted-foreground" />
             )}
-            <span className="font-medium truncate max-w-[8rem]">{row.getValue("name")}</span>
+            <span className="font-medium truncate max-w-[15rem]">{row.getValue("name")}</span>
           </div>
-          {tags && (
+          {enableTags && tags && (
             <div className="pl-2 flex gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
               <TagBadge tag={tags} />
             </div>
@@ -183,7 +189,7 @@ export const createColumns = (
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <div className="flex items-center gap-1">
-                    <span>{owner.username}</span>
+                    <span>@{owner.username}</span>
                     <span className="text-xs text-muted-foreground">(Owner)</span>
                   </div>
                 </TooltipContent>
@@ -204,7 +210,7 @@ export const createColumns = (
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  {profile.username}
+                  @{profile.username}
                 </TooltipContent>
               </Tooltip>
             ))}

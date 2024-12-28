@@ -6,18 +6,35 @@ import { useItemsStore } from "@renderer/stores/items-store"
 import { Tabs, TabsTrigger, TabsList, TabsContent } from "@renderer/components/ui/tabs"
 import { createColumns } from "@renderer/components/data-table/columns"
 import { DataTable } from "@renderer/components/data-table/data-table"
+import { DemoItem } from "@renderer/types/items"
+import { useState, useEffect } from "react"
 
 interface ChooseFilesDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onConfirm: (selectedItems: DemoItem[]) => void
+  initialSelections?: DemoItem[]
 }
 
 export function ChooseFilesDialog({
   open,
-  onOpenChange
+  onOpenChange,
+  onConfirm,
+  initialSelections = []
 }: ChooseFilesDialogProps) {
   const filesAndFolders = useItemsStore((state) => state.filesAndFolders);
   const projects = useItemsStore((state) => state.projects);
+  const [selectedItems, setSelectedItems] = useState<DemoItem[]>(initialSelections);
+
+  // Update selected items when initialSelections changes
+  useEffect(() => {
+    setSelectedItems(initialSelections);
+  }, [initialSelections]);
+
+  const handleConfirm = () => {
+    onConfirm(selectedItems);
+    onOpenChange(false);
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -36,23 +53,32 @@ export function ChooseFilesDialog({
           </TabsList>
           <TabsContent value="files">
             <DataTable 
-              columns={createColumns(false, true, false)} // disable star toggle and actions, enable selection
+              columns={createColumns({
+                enableStarToggle: false,
+                enableActions: false,
+                enableTags: false
+              })}
               data={filesAndFolders}
               enableSelection={true}
-              enableStarToggle={false}
               enableActions={false}
               pageSize={8}
+              onSelectionChange={setSelectedItems}
+              initialSelectedItems={selectedItems}
             />
           </TabsContent>
           <TabsContent value="projects">
             <DataTable 
-              columns={createColumns(false, true, false)} // disable star toggle and actions, enable selection
+              columns={createColumns({
+                enableStarToggle: false,
+                enableActions: false,
+              })}
               data={projects}
               enableSelection={true}
-              enableStarToggle={false}
               enableActions={false}
               viewMode="grid"
               pageSize={8}
+              onSelectionChange={setSelectedItems}
+              initialSelectedItems={selectedItems}
             />
           </TabsContent>
         </Tabs>
@@ -61,7 +87,7 @@ export function ChooseFilesDialog({
           <AlertDialogCancel asChild>
             <Button variant="outline">Cancel</Button>
           </AlertDialogCancel>
-          <Button>Confirm Selection</Button>
+          <Button onClick={handleConfirm}>Confirm Selection</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

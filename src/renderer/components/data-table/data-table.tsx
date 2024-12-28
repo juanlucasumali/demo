@@ -32,20 +32,22 @@ interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
   data: DemoItem[]
   enableSelection?: boolean
-  enableStarToggle?: boolean
   enableActions?: boolean
   viewMode?: 'table' | 'grid'
   pageSize?: number
+  onSelectionChange?: (selectedItems: DemoItem[]) => void
+  initialSelectedItems?: DemoItem[]
 }
 
 export function DataTable<DemoItem>({
   columns,
   data,
   enableSelection = false,
-  enableStarToggle = true,
   enableActions = true,
   viewMode = 'table',
-  pageSize = 10
+  pageSize = 10,
+  onSelectionChange,
+  initialSelectedItems = []
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -70,8 +72,30 @@ export function DataTable<DemoItem>({
     icon: false,
     tags: false,
     owner: false,
+    sharedWith: false,
   })
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [rowSelection, setRowSelection] = React.useState(() => {
+    if (!initialSelectedItems?.length) return {};
+    
+    return initialSelectedItems.reduce((acc, item) => {
+      const rowIndex = data.findIndex(dataItem => 
+        (dataItem as any).id === (item as any).id
+      );
+      if (rowIndex !== -1) {
+        acc[rowIndex] = true;
+      }
+      return acc;
+    }, {} as Record<string, boolean>);
+  });
+
+  // Keep track of all selected items, not just the ones in the current view
+  const [allSelectedItems, setAllSelectedItems] = React.useState<DemoItem[]>(initialSelectedItems);
+
+  // Update allSelectedItems when initialSelectedItems changes
+  React.useEffect(() => {
+    setAllSelectedItems(initialSelectedItems);
+  }, [initialSelectedItems]);
+
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: pageSize
@@ -87,7 +111,36 @@ export function DataTable<DemoItem>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updater) => {
+      const newSelection = typeof updater === 'function' 
+        ? updater(rowSelection)
+        : updater;
+      
+      setRowSelection(newSelection);
+      
+      if (onSelectionChange) {
+        // Get newly selected/deselected items from the current view
+        const selectedRows = table.getRowModel().rows.filter(row => {
+          const rowId = row.id;
+          return newSelection[rowId];
+        });
+        const currentViewSelectedItems = selectedRows.map(row => row.original as DemoItem);
+        
+        // Get IDs of items in current view
+        const currentViewIds = data.map((item: any) => item.id);
+        
+        // Keep previously selected items that are not in current view
+        const previouslySelectedItems = allSelectedItems.filter(
+          item => !currentViewIds.includes((item as any).id)
+        );
+        
+        // Combine with newly selected items
+        const newSelectedItems = [...previouslySelectedItems, ...currentViewSelectedItems];
+        
+        setAllSelectedItems(newSelectedItems);
+        onSelectionChange(newSelectedItems);
+      }
+    },
     onPaginationChange: setPagination,
     state: {
       sorting,

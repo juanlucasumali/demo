@@ -10,6 +10,8 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
+
 CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
 
 COMMENT ON SCHEMA "public" IS 'standard public schema';
@@ -218,6 +220,16 @@ ALTER TABLE ONLY "public"."shared_items"
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
+CREATE POLICY "No manual deletion" ON "public"."users" FOR DELETE TO "authenticated" USING (false);
+
+CREATE POLICY "Users can only be created on auth signup" ON "public"."users" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "id"));
+
+CREATE POLICY "Users can update own profile" ON "public"."users" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
+
+CREATE POLICY "Users can view all profiles" ON "public"."users" FOR SELECT TO "authenticated", "anon" USING (true);
+
+ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
+
 ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
 
 GRANT USAGE ON SCHEMA "public" TO "postgres";
@@ -273,3 +285,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES  TO "service_role";
 
 RESET ALL;
+
+--
+-- Dumped schema changes for auth and storage
+--
+

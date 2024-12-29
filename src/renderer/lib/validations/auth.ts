@@ -14,5 +14,17 @@ export const signupSchema = z.object({
   path: ["confirmPassword"],
 })
 
+export const createProfileSchema = z.object({
+    username: z.string()
+      .min(3, "Username must be at least 3 characters")
+      .max(20, "Username must not exceed 20 characters")
+      .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
+    name: z.string()
+      .min(2, "Name must be at least 2 characters")
+      .max(50, "Name must not exceed 50 characters"),
+    description: z.string().max(200, "Description must not exceed 200 characters").optional(),
+  })
+  
+export type CreateProfileFormData = z.infer<typeof createProfileSchema>
 export type SignInFormData = z.infer<typeof signInSchema>
 export type SignupFormData = z.infer<typeof signupSchema> 

@@ -17,7 +17,7 @@ interface SignInProps {
 }
 
 export function SignIn({ onSwitchToSignup, onUnverifiedEmail }: SignInProps) {
-  const { signIn } = useAuth()
+  const { signIn, hasProfile } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
@@ -35,16 +35,23 @@ export function SignIn({ onSwitchToSignup, onUnverifiedEmail }: SignInProps) {
       setIsLoading(true)
       await signIn(data.email, data.password)
       
-      // Set a timeout for navigation and toast
-      setTimeout(() => {
-        navigate({ to: '/home' })
-        toast({
-          title: "Welcome back!",
-          description: "Successfully signed in to your account",
-          variant: "default",
-        })
-        setIsLoading(false)
-      }, 1000)
+      // Navigate based on profile status
+      if (hasProfile) {
+        setTimeout(() => {
+          navigate({ to: '/home' })
+          toast({
+            title: "Welcome back!",
+            description: "Successfully signed in to your account",
+            variant: "default",
+          })
+          setIsLoading(false)
+        }, 1000)
+      } else {
+        setTimeout(() => {
+          navigate({ to: '/create-profile' })
+          setIsLoading(false)
+        }, 1000)
+      }
     } catch (error) {
       if (error instanceof Error && 
           error.message.includes('Email not confirmed')) {
@@ -97,7 +104,7 @@ export function SignIn({ onSwitchToSignup, onUnverifiedEmail }: SignInProps) {
                 <FormItem>
                   <div className="flex items-center justify-between">
                     <FormLabel>Password</FormLabel>
-                    <a href="#" className="text-sm underline-offset-4 hover:underline">
+                    <a href="#" className="text-sm underline-offset-4 hover:underline select-none">
                       Forgot your password?
                     </a>
                   </div>

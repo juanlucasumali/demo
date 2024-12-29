@@ -11,6 +11,7 @@ export interface AuthContextType {
   signOut: () => Promise<void>
   isAuthenticated: boolean
   isLoading: boolean
+  hasProfile: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -18,16 +19,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasProfile, setHasProfile] = useState(false)
   const setUser = useUserStore((state) => state.setUser)
   const clearUser = useUserStore((state) => state.clearUser)
+
+  const checkProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single()
+    
+    setHasProfile(!!data && !error)
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session?.user) {
         setUser(session.user)
+        checkProfile(session.user.id)
       } else {
         clearUser()
+        setHasProfile(false)
       }
       setIsLoading(false)
     })
@@ -36,8 +50,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       if (session?.user) {
         setUser(session.user)
+        checkProfile(session.user.id)
       } else {
         clearUser()
+        setHasProfile(false)
       }
     })
 
@@ -48,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     user: session?.user ?? null,
     isLoading,
+    hasProfile,
     signIn: async (email: string, password: string) => {
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
@@ -87,8 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   if (isLoading) return null
-
-  console.log("isLoading, session, user", value.isLoading, value.session, value.user)
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

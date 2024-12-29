@@ -14,6 +14,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as ProjectsIndexImport } from './routes/projects/index'
 import { Route as ProfileIndexImport } from './routes/profile/index'
 import { Route as HomeIndexImport } from './routes/home/index'
+import { Route as CreateProfileIndexImport } from './routes/create-profile/index'
 import { Route as AuthIndexImport } from './routes/auth/index'
 import { Route as ProjectsProjectIdImport } from './routes/projects/$projectId'
 
@@ -34,6 +35,12 @@ const ProfileIndexRoute = ProfileIndexImport.update({
 const HomeIndexRoute = HomeIndexImport.update({
   id: '/home/',
   path: '/home/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const CreateProfileIndexRoute = CreateProfileIndexImport.update({
+  id: '/create-profile/',
+  path: '/create-profile/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -67,6 +74,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexImport
       parentRoute: typeof rootRoute
     }
+    '/create-profile/': {
+      id: '/create-profile/'
+      path: '/create-profile'
+      fullPath: '/create-profile'
+      preLoaderRoute: typeof CreateProfileIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/home/': {
       id: '/home/'
       path: '/home'
@@ -96,6 +110,7 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/auth': typeof AuthIndexRoute
+  '/create-profile': typeof CreateProfileIndexRoute
   '/home': typeof HomeIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
@@ -104,6 +119,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/auth': typeof AuthIndexRoute
+  '/create-profile': typeof CreateProfileIndexRoute
   '/home': typeof HomeIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
@@ -113,6 +129,7 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/auth/': typeof AuthIndexRoute
+  '/create-profile/': typeof CreateProfileIndexRoute
   '/home/': typeof HomeIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/projects/': typeof ProjectsIndexRoute
@@ -123,15 +140,23 @@ export interface FileRouteTypes {
   fullPaths:
     | '/projects/$projectId'
     | '/auth'
+    | '/create-profile'
     | '/home'
     | '/profile'
     | '/projects'
   fileRoutesByTo: FileRoutesByTo
-  to: '/projects/$projectId' | '/auth' | '/home' | '/profile' | '/projects'
+  to:
+    | '/projects/$projectId'
+    | '/auth'
+    | '/create-profile'
+    | '/home'
+    | '/profile'
+    | '/projects'
   id:
     | '__root__'
     | '/projects/$projectId'
     | '/auth/'
+    | '/create-profile/'
     | '/home/'
     | '/profile/'
     | '/projects/'
@@ -141,6 +166,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  CreateProfileIndexRoute: typeof CreateProfileIndexRoute
   HomeIndexRoute: typeof HomeIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
@@ -149,6 +175,7 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   AuthIndexRoute: AuthIndexRoute,
+  CreateProfileIndexRoute: CreateProfileIndexRoute,
   HomeIndexRoute: HomeIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
@@ -166,6 +193,7 @@ export const routeTree = rootRoute
       "children": [
         "/projects/$projectId",
         "/auth/",
+        "/create-profile/",
         "/home/",
         "/profile/",
         "/projects/"
@@ -176,6 +204,9 @@ export const routeTree = rootRoute
     },
     "/auth/": {
       "filePath": "auth/index.tsx"
+    },
+    "/create-profile/": {
+      "filePath": "create-profile/index.tsx"
     },
     "/home/": {
       "filePath": "home/index.tsx"

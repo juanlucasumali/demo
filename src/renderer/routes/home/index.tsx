@@ -20,7 +20,7 @@ import { SubHeader } from '@renderer/components/page-layout/sub-header'
 
 export const Route = createFileRoute('/home/')({
   beforeLoad: async ({ location, context }) => {
-    if (!context.auth.isAuthenticated) {
+    if (!context.auth.isAuthenticated || !context.auth.hasProfile) {
       throw redirect({
         to: '/auth',
         search: {

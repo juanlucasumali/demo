@@ -11,13 +11,19 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as SigninIndexImport } from './routes/signin/index'
 import { Route as ProjectsIndexImport } from './routes/projects/index'
 import { Route as ProfileIndexImport } from './routes/profile/index'
-import { Route as LoginIndexImport } from './routes/login/index'
 import { Route as HomeIndexImport } from './routes/home/index'
 import { Route as ProjectsProjectIdImport } from './routes/projects/$projectId'
 
 // Create/Update Routes
+
+const SigninIndexRoute = SigninIndexImport.update({
+  id: '/signin/',
+  path: '/signin/',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const ProjectsIndexRoute = ProjectsIndexImport.update({
   id: '/projects/',
@@ -28,12 +34,6 @@ const ProjectsIndexRoute = ProjectsIndexImport.update({
 const ProfileIndexRoute = ProfileIndexImport.update({
   id: '/profile/',
   path: '/profile/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const LoginIndexRoute = LoginIndexImport.update({
-  id: '/login/',
-  path: '/login/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -67,13 +67,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeIndexImport
       parentRoute: typeof rootRoute
     }
-    '/login/': {
-      id: '/login/'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginIndexImport
-      parentRoute: typeof rootRoute
-    }
     '/profile/': {
       id: '/profile/'
       path: '/profile'
@@ -88,6 +81,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexImport
       parentRoute: typeof rootRoute
     }
+    '/signin/': {
+      id: '/signin/'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -96,26 +96,26 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/home': typeof HomeIndexRoute
-  '/login': typeof LoginIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/signin': typeof SigninIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/home': typeof HomeIndexRoute
-  '/login': typeof LoginIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/signin': typeof SigninIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/home/': typeof HomeIndexRoute
-  '/login/': typeof LoginIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/signin/': typeof SigninIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -123,35 +123,35 @@ export interface FileRouteTypes {
   fullPaths:
     | '/projects/$projectId'
     | '/home'
-    | '/login'
     | '/profile'
     | '/projects'
+    | '/signin'
   fileRoutesByTo: FileRoutesByTo
-  to: '/projects/$projectId' | '/home' | '/login' | '/profile' | '/projects'
+  to: '/projects/$projectId' | '/home' | '/profile' | '/projects' | '/signin'
   id:
     | '__root__'
     | '/projects/$projectId'
     | '/home/'
-    | '/login/'
     | '/profile/'
     | '/projects/'
+    | '/signin/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   HomeIndexRoute: typeof HomeIndexRoute
-  LoginIndexRoute: typeof LoginIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
+  SigninIndexRoute: typeof SigninIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   HomeIndexRoute: HomeIndexRoute,
-  LoginIndexRoute: LoginIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
+  SigninIndexRoute: SigninIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -166,9 +166,9 @@ export const routeTree = rootRoute
       "children": [
         "/projects/$projectId",
         "/home/",
-        "/login/",
         "/profile/",
-        "/projects/"
+        "/projects/",
+        "/signin/"
       ]
     },
     "/projects/$projectId": {
@@ -177,14 +177,14 @@ export const routeTree = rootRoute
     "/home/": {
       "filePath": "home/index.tsx"
     },
-    "/login/": {
-      "filePath": "login/index.tsx"
-    },
     "/profile/": {
       "filePath": "profile/index.tsx"
     },
     "/projects/": {
       "filePath": "projects/index.tsx"
+    },
+    "/signin/": {
+      "filePath": "signin/index.tsx"
     }
   }
 }

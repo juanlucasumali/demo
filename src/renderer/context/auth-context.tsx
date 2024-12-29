@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { useUserStore } from '@renderer/stores/user-store'
 
 export interface AuthContextType {
   session: Session | null
@@ -9,25 +10,35 @@ export interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   isAuthenticated: boolean
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
-  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const setUser = useUserStore((state) => state.setUser)
+  const clearUser = useUserStore((state) => state.clearUser)
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      setUser(session?.user ?? null)
+      if (session?.user) {
+        setUser(session.user)
+      } else {
+        clearUser()
+      }
+      setIsLoading(false)
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      setUser(session?.user ?? null)
+      if (session?.user) {
+        setUser(session.user)
+      } else {
+        clearUser()
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -35,7 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     session,
-    user,
+    user: session?.user ?? null,
+    isLoading,
     signIn: async (email: string, password: string) => {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
@@ -48,8 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
     },
-    isAuthenticated: !!session && !!user,
+    isAuthenticated: !!session && !!session?.user,
   }
+
+
+  console.log("isLoading, session, user", value.isLoading, value.session, value.user)
+
+
+  if (isLoading) return null
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

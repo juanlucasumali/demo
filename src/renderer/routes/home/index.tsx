@@ -1,4 +1,4 @@
-import { Box, File, HomeIcon, User, UserCog } from 'lucide-react'
+import { Box, HomeIcon, User, UserCog } from 'lucide-react'
 import { useItemsStore } from '@renderer/stores/items-store'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -19,19 +19,19 @@ import { createColumns } from '@renderer/components/data-table/columns'
 import { SubHeader } from '@renderer/components/page-layout/sub-header'
 
 export const Route = createFileRoute('/home/')({
-  // beforeLoad: async ({ location, context }) => {
-  //   if (!context.auth.isAuthenticated) {
-  //     throw redirect({
-  //       to: '/login',
-  //       search: {
-  //         // Use the current location to power a redirect after login
-  //         // (Do not use `router.state.resolvedLocation` as it can
-  //         // potentially lag behind the actual current location)
-  //         redirect: location.href,
-  //       },
-  //     })
-  //   }
-  // },
+  beforeLoad: async ({ location, context }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: '/signin',
+        search: {
+          // Use the current location to power a redirect after signin
+          // (Do not use `router.state.resolvedLocation` as it can
+          // potentially lag behind the actual current location)
+          redirect: location.href,
+        },
+      })
+    }
+  },
   component: Home
 })
 

@@ -7,6 +7,7 @@ import './index.css'
 import { routeTree } from './routeTree.gen'
 import { ThemeProvider } from './context/theme-context'
 import { AuthProvider, useAuth } from './context/auth-context'
+import { Toaster } from './components/ui/toaster'
 
 const memoryHistory = createMemoryHistory({
   initialEntries: ['/home'] // Pass your initial url
@@ -41,7 +42,12 @@ declare module '@tanstack/react-router' {
 
 function InnerApp() {
   const auth = useAuth()
-  return <RouterProvider router={router} context={{ auth }} />
+  return (
+    <>
+      <RouterProvider router={router} context={{ auth }} />
+      <Toaster />
+    </>
+  )
 }
 
 // Render the app

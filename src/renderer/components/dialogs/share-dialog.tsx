@@ -14,7 +14,7 @@ import { File, FolderOpen, Link, Box, X } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { friendsData } from "../home/dummy-data";
-import { ChooseFilesDialog } from "./choose-files";
+import { SelectFilesDialog } from "./select-files";
 import { DemoItem, ItemType } from "@renderer/types/items";
 import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -216,7 +216,7 @@ export function ShareDialog({
       </Dialog>
 
       {!initialItem && (
-        <ChooseFilesDialog
+        <SelectFilesDialog
           open={chooseFiles}
           onOpenChange={setChooseFiles}
           onConfirm={handleConfirmSelection}

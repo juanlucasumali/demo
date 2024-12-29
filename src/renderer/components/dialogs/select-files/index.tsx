@@ -9,7 +9,7 @@ import { DataTable } from "@renderer/components/data-table/data-table"
 import { DemoItem } from "@renderer/types/items"
 import { useState, useEffect } from "react"
 
-interface ChooseFilesDialogProps {
+interface SelectFilesDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: (selectedItems: DemoItem[]) => void
@@ -17,16 +17,17 @@ interface ChooseFilesDialogProps {
   location: "home" | "project" | "save-items"
 }
 
-export function ChooseFilesDialog({
+export function SelectFilesDialog({
   open,
   onOpenChange,
   onConfirm,
   initialSelections = [],
   location
-}: ChooseFilesDialogProps) {
+}: SelectFilesDialogProps) {
   const filesAndFolders = useItemsStore((state) => state.filesAndFolders);
   const projects = useItemsStore((state) => state.projects);
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>(initialSelections);
+  const [activeTab, setActiveTab] = useState<string>("home");
 
   // Update selected items when initialSelections changes
   useEffect(() => {
@@ -38,13 +39,27 @@ export function ChooseFilesDialog({
     onOpenChange(false);
   };
 
+  const getButtonText = () => {
+    if (location === "save-items") {
+      if (activeTab === "home") {
+        return "Save to Home"
+      }
+      return `Save to selected location(s)`
+    }
+    return "Select"
+  }
+
+  const canConfirm = location === "save-items" 
+    ? (activeTab === "projects" ? selectedItems.length > 0 : true)
+    : selectedItems.length > 0;
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-4xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>{location === "project" ? "Choose files" : 
-             location === "save-items" ? "Choose location" :
-             "Choose files"}</AlertDialogTitle>
+          <AlertDialogTitle>{location === "project" ? "Select files" : 
+             location === "save-items" ? "Select location(s)" :
+             "Select files"}</AlertDialogTitle>
           <AlertDialogDescription>
             {location === "project" ? "Select files to include in your project" : 
              location === "save-items" ? "Select where you want to save the shared items" :
@@ -52,7 +67,7 @@ export function ChooseFilesDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <Tabs defaultValue="home">
+        <Tabs defaultValue="home" onValueChange={setActiveTab}>
           <TabsList className="flex flex-row justify-start mb-2">
             <TabsTrigger value="home">Home</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
@@ -100,10 +115,8 @@ export function ChooseFilesDialog({
           <AlertDialogCancel asChild>
             <Button variant="outline">Cancel</Button>
           </AlertDialogCancel>
-          <Button onClick={handleConfirm}>
-            {location === "project" ? "Add to project" : 
-             location === "save-items" ? "Save here" :
-             "Confirm Selection"}
+          <Button onClick={handleConfirm} disabled={!canConfirm}>
+            {getButtonText()}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

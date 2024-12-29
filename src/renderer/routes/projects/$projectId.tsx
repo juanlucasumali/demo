@@ -16,7 +16,7 @@ import { SubHeader } from '@renderer/components/page-layout/sub-header'
 import { CreateCollection } from '@renderer/components/dialogs/create-collection'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
 import { UploadFile } from '@renderer/components/dialogs/upload-file'
-import { ChooseFilesDialog } from '@renderer/components/dialogs/choose-files'
+import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
 
 // Define route params interface
 interface ProjectParams {
@@ -222,7 +222,7 @@ function ProjectPage() {
         location="project"
       />
 
-      <ChooseFilesDialog
+      <SelectFilesDialog
         open={chooseFiles}
         onOpenChange={setChooseFiles}
         onConfirm={handleConfirmSelection}

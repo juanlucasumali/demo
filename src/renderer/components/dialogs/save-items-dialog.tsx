@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { UserProfile } from "@renderer/types/users";
 import { DemoItem } from "@renderer/types/items";
 import React, { useState } from "react";
-import { ChooseFilesDialog } from "./choose-files";
+import { SelectFilesDialog } from "./select-files";
 
 interface SaveItemsDialogProps {
   open: boolean;
@@ -97,7 +97,7 @@ export function SaveItemsDialog({
         </DialogContent>
       </Dialog>
 
-      <ChooseFilesDialog
+      <SelectFilesDialog
         open={chooseLocation}
         onOpenChange={setChooseLocation}
         onConfirm={handleLocationChosen}

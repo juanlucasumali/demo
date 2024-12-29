@@ -1,45 +1,177 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "../ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar"; // Ensure you have an avatar component
-import { Table, TableRow, TableCell, TableBody } from "../ui/table"; // Ensure you have table components
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import { Table, TableRow, TableCell, TableBody } from "../ui/table";
+import { File, FileQuestion, Files } from "lucide-react";
+import { SaveItemsDialog } from "../dialogs/save-items-dialog";
+import { dummyDemoItems } from "./dummy-data";
+import { friendsData } from "./dummy-data";
+import { DemoNotification, NotificationType } from "@renderer/types/notifications";
 
-// Dummy notifications data
-const notifications = [
-  { id: 1, avatarUrl: "", avatarFallback: "JD", name: "John Doe", username: 'johndoe', notification: "Sent you a request" },
-  { id: 2, avatarUrl: "", avatarFallback: "AM", name: "Alice Miller", username: 'alicemills', notification: "Shared forty.mp3" },
-  { id: 3, avatarUrl: "", avatarFallback: "RS", name: "Robert Smith", username: 'robsmithy', notification: "Shared multiple files and folders" },
-  // Add more dummy data here to simulate scrolling
+// Updated notifications data with proper types
+const notifications: DemoNotification[] = [
+  { 
+    id: "notification-1",
+    from: friendsData[0],
+    createdAt: new Date("2024-03-20T14:30:00Z"),
+    type: NotificationType.ITEM_REQUEST,
+    itemsRequested: [dummyDemoItems[3]], // GuitarStem.wav
+    itemShared: null,
+    itemsShared: null,
+    description: "Hey, could you send over the guitar stem for the song?"
+  },
+  { 
+    id: "notification-2",
+    from: friendsData[1],
+    createdAt: new Date("2024-03-20T12:15:00Z"),
+    type: NotificationType.SINGLE_SHARE,
+    itemsRequested: null,
+    itemShared: dummyDemoItems[1], // LeadVocal_Take1
+    itemsShared: null,
+    description: null
+  },
+  { 
+    id: "notification-3",
+    from: friendsData[2],
+    createdAt: new Date("2024-03-19T16:45:00Z"),
+    type: NotificationType.MULTI_SHARE,
+    itemsRequested: null,
+    itemShared: null,
+    itemsShared: [
+      dummyDemoItems[0], // Vocal Recordings folder
+      dummyDemoItems[1], // LeadVocal_Take1
+      dummyDemoItems[2], // Instrumentals folder
+    ],
+    description: null
+  },
 ];
 
 export function Activity() {
+  const [selectedNotification, setSelectedNotification] = useState<typeof notifications[0] | null>(null);
+
+  const handleNotificationClick = (notification: typeof notifications[0]) => {
+    setSelectedNotification(notification);
+  };
+
+  const NotificationContent = ({ type, notification }: { 
+    type: NotificationType, 
+    notification: typeof notifications[0]
+  }) => {
+    const sharedStyles = "ml-1 inline-flex items-center gap-1 underline underline-offset-4 cursor-pointer text-muted-foreground";
+    const textContainerStyles = "flex items-center overflow-hidden";
+    const textStyles = "truncate text-ellipsis overflow-hidden";
+    
+    const handleClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      handleNotificationClick(notification);
+    };
+
+    switch (type) {
+      case NotificationType.ITEM_REQUEST:
+        return (
+          <span className={textContainerStyles}>
+            Sent you a{" "}
+            <span 
+              className={sharedStyles} 
+              onClick={handleClick}
+              style={{ maxWidth: "calc(100% - 80px)" }} // Accounting for "Sent you a" text
+            >
+              <FileQuestion className="h-4 w-4 flex-shrink-0" />
+              <span className={textStyles}>request</span>
+            </span>
+          </span>
+        );
+      
+      case NotificationType.SINGLE_SHARE:
+        return (
+          <span className={textContainerStyles}>
+            Shared{" "}
+            <span 
+              className={sharedStyles} 
+              onClick={handleClick}
+              style={{ maxWidth: "calc(100% - 60px)" }} // Accounting for "Shared" text
+            >
+              <File className="h-4 w-4 flex-shrink-0" />
+              <span className={textStyles}>{notification.itemShared?.name}</span>
+            </span>
+          </span>
+        );
+      
+      case NotificationType.MULTI_SHARE:
+        return (
+          <span className={textContainerStyles}>
+            Shared{" "}
+            <span 
+              className={sharedStyles} 
+              onClick={handleClick}
+              style={{ maxWidth: "calc(100% - 60px)" }} // Accounting for "Shared" text
+            >
+              <Files className="h-4 w-4 flex-shrink-0" />
+              <span className={textStyles}>
+                {notification.itemsShared ? `${notification.itemsShared.length} items` : 'multiple items'}
+              </span>
+            </span>
+          </span>
+        );
+    }
+  };
+
   return (
-    <Card className="lg:col-span-2 lg:mb-0 mb-8 shadow-none">
-      <CardHeader className="py-4">
-      <h1 className="text-base font-semibold tracking-tight">Activity</h1>
-      </CardHeader>
-      <CardContent>
-        {/* Scrollable container */}
-        <div className="h-40 overflow-y-auto no-scrollbar">
-          <Table>
-            <TableBody>
-              {notifications.map((notification) => (
-                <TableRow key={notification.id}>
-                  <TableCell>
-                    <Avatar>
-                      <AvatarImage src={notification.avatarUrl} alt={notification.username} />
-                      <AvatarFallback>{notification.avatarFallback}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell>
-                    {notification.name}
-                    <div className="text-muted-foreground">@{notification.username}</div>
+    <>
+      <Card className="lg:col-span-2 lg:mb-0 mb-8 shadow-none">
+        <CardHeader className="py-4">
+          <h1 className="text-base font-semibold tracking-tight">Activity</h1>
+        </CardHeader>
+        <CardContent>
+          <div className="h-40 overflow-y-auto overflow-x-auto no-scrollbar">
+            <Table>
+              <TableBody>
+                {notifications.map((notification) => (
+                  <TableRow key={notification.id} className="whitespace-nowrap">
+                    <TableCell className="w-[50px]">
+                      <Avatar>
+                        <AvatarImage src={notification.from.avatar || undefined} alt={notification.from.username} />
+                        <AvatarFallback>
+                          {notification.from.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
                     </TableCell>
-                  <TableCell>{notification.notification}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                    <TableCell className="w-[150px]">
+                      <div className="truncate max-w-[150px]">
+                        {notification.from.name}
+                        <div className="text-muted-foreground">@{notification.from.username}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-[200px]">
+                      <NotificationContent 
+                        type={notification.type} 
+                        notification={notification}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedNotification && (
+        <SaveItemsDialog
+          open={!!selectedNotification}
+          onOpenChange={(open) => !open && setSelectedNotification(null)}
+          from={selectedNotification.from}
+          items={
+            selectedNotification.type === NotificationType.ITEM_REQUEST
+              ? selectedNotification.itemsRequested
+              : selectedNotification.type === NotificationType.SINGLE_SHARE
+              ? selectedNotification.itemShared ? [selectedNotification.itemShared] : null
+              : selectedNotification.itemsShared
+          }
+          sharedAt={selectedNotification.createdAt}
+          description={selectedNotification.description}
+        />
+      )}
+    </>
   );
 }

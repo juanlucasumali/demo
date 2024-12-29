@@ -28,12 +28,14 @@ interface ColumnOptions {
   enableStarToggle?: boolean;
   enableTags?: boolean;
   enableActions?: boolean;
+  showStarColumn?: boolean;
 }
 
 export const createColumns = ({
   enableStarToggle = true,
   enableTags = true,
   enableActions = true,
+  showStarColumn = true,
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
@@ -131,10 +133,11 @@ export const createColumns = ({
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
           <div className="flex items-center gap-2 whitespace-nowrap">
-            <div
-              onClick={enableStarToggle ? () => toggleIsStarred(row.original.id) : undefined}
-              style={{ cursor: enableStarToggle ? 'pointer' : 'default' }}
-              title={enableStarToggle ? (isStarred ? 'Unstar' : 'Star') : undefined}
+            {showStarColumn && (
+              <div
+                onClick={enableStarToggle ? () => toggleIsStarred(row.original.id) : undefined}
+                style={{ cursor: enableStarToggle ? 'pointer' : 'default' }}
+                title={enableStarToggle ? (isStarred ? 'Unstar' : 'Star') : undefined}
             >
               {isStarred ? (
                 <Star className="h-4 w-4 text-yellow-500 fill-current" />
@@ -142,6 +145,7 @@ export const createColumns = ({
                 <Star className="h-4 w-4 text-gray-400" />
               )}
             </div>
+            )}
             {type === "folder" ? (
               <Folder className="h-4 w-4 text-muted-foreground fill-current" />
             ) : (

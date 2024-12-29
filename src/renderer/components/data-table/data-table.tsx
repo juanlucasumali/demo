@@ -39,6 +39,9 @@ interface DataTableProps<DemoItem> {
   pageSize?: number
   onSelectionChange?: (selectedItems: DemoItem[]) => void
   initialSelectedItems?: DemoItem[]
+  showColumnHeaders?: boolean
+  showPagination?: boolean
+  showSearch?: boolean
 }
 
 export function DataTable<DemoItem>({
@@ -51,7 +54,10 @@ export function DataTable<DemoItem>({
   pageSize = 10,
   onSelectionChange,
   initialSelectedItems = [],
-  enableRowLink
+  enableRowLink,
+  showColumnHeaders = true,
+  showPagination = true,
+  showSearch = true,
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -159,42 +165,43 @@ export function DataTable<DemoItem>({
   return (
     <div>
       {/* Search Filter and Action Buttons Container */}
-      <div className="flex flex-row items-center pb-4 justify-between space-x-4 lg:space-y-0">
-        <Input
-          placeholder="Search files..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
-          className="w-full lg:max-w-sm"
-        />
-  
-        {/* Buttons Container */}
-        <div className="flex items-center space-x-2">
+      {showSearch && (
+        <div className="flex flex-row items-center pb-4 justify-between space-x-4 lg:space-y-0">
+          <Input
+            placeholder="Search files..."
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("name")?.setFilterValue(event.target.value)
+            }
+            className="w-full lg:max-w-sm"
+          />
+          <div className="flex items-center space-x-2" />
         </div>
-      </div>
+      )}
   
       <div className={cn("rounded-md border", 
         viewMode === 'grid' && "border-none p-0"
       )}>
         {viewMode === 'table' ? (
           <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
+            {showColumnHeaders && (
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+            )}
             <TableBody>
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
@@ -241,9 +248,11 @@ export function DataTable<DemoItem>({
       </div>
   
       {/* Pagination */}
-      <div className="py-4">
-        <DataTablePagination table={table} />
-      </div>
+      {showPagination && (
+        <div className="py-4">
+          <DataTablePagination table={table} />
+        </div>
+      )}
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { useUserStore } from '@renderer/stores/user-store'
+import { checkHasProfile } from '@renderer/services/user-service'
 
 export interface AuthContextType {
   session: Session | null
@@ -12,25 +13,23 @@ export interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   hasProfile: boolean
+  checkProfile: (userId: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isAuthLoading, setIsAuthLoading] = useState(true)
+  const [isProfileLoading, setIsProfileLoading] = useState(true)
   const [hasProfile, setHasProfile] = useState(false)
   const setUser = useUserStore((state) => state.setUser)
   const clearUser = useUserStore((state) => state.clearUser)
 
   const checkProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', userId)
-      .single()
-    
-    setHasProfile(!!data && !error)
+    const hasProfile = await checkHasProfile(userId)
+    setHasProfile(hasProfile)
+    setIsProfileLoading(false)
   }
 
   useEffect(() => {
@@ -42,8 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         clearUser()
         setHasProfile(false)
+        setIsProfileLoading(false)
       }
-      setIsLoading(false)
+      setIsAuthLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -54,17 +54,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         clearUser()
         setHasProfile(false)
+        setIsProfileLoading(false)
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
+  const isLoading = isAuthLoading || isProfileLoading
+  const isAuthenticated = !!session && !!session?.user
+
   const value = {
     session,
     user: session?.user ?? null,
     isLoading,
     hasProfile,
+    checkProfile,
     signIn: async (email: string, password: string) => {
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
@@ -99,8 +104,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error
       clearUser()
       setSession(null)
+      setHasProfile(false)
     },
-    isAuthenticated: !!session && !!session?.user,
+    isAuthenticated,
   }
 
   if (isLoading) return null

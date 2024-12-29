@@ -4,4 +4,5 @@ export interface UserProfile {
     avatar: string | null;
     username: string
     description: string | null
+    email: string
 }

@@ -23,6 +23,7 @@ export const createProfileSchema = z.object({
       .min(2, "Name must be at least 2 characters")
       .max(50, "Name must not exceed 50 characters"),
     description: z.string().max(200, "Description must not exceed 200 characters").optional(),
+    avatar: z.string().optional().nullable(),
   })
   
 export type CreateProfileFormData = z.infer<typeof createProfileSchema>

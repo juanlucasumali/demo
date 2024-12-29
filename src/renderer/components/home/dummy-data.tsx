@@ -36,7 +36,7 @@ export const dummyDemoItems: DemoItem[] = [
     parentFolderId: "root",
     filePath: "/project-001/Vocal Recordings",
     owner: currentUser,
-    sharedWith: [friendsData[0], friendsData[1]],
+    sharedWith: [friendsData[0], friendsData[1], friendsData[2], friendsData[3], friendsData[4], friendsData[5]],
     type: ItemType.FOLDER,
     format: null,
     size: null,

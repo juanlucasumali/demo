@@ -11,15 +11,19 @@ export interface DemoNotification {
     itemsRequested: DemoItem[] | null;
     description: string | null;
 
-    // SINGLE_SHARE
+    // SINGLE_ITEM_SHARE
     itemShared: DemoItem | null;
 
-    // MULTI_SHARE
+    // MULTI_ITEM_SHARE
     itemsShared: DemoItem[] | null;
+
+    // PROJECT_SHARE
+    projectShared: DemoItem | null;
 }
 
 export enum NotificationType {
     ITEM_REQUEST = "item_request",
-    SINGLE_SHARE = "single_share",
-    MULTI_SHARE = "multi_share",
+    SINGLE_ITEM_SHARE = "single_item_share",
+    MULTI_ITEM_SHARE = "multi_item_share",
+    PROJECT_SHARE = "project_share",
 }

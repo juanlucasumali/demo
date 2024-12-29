@@ -12,8 +12,6 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem } from "@renderer/types/items"
-import { Avatar, AvatarFallback, AvatarImage } from "@renderer/components/ui/avatar"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
 import { formatDuration } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
 import { useItemsStore } from "@renderer/stores/items-store"
@@ -23,12 +21,15 @@ import { DeleteDialog } from "@renderer/components/dialogs/delete-dialog"
 import { EditFileDialog } from "@renderer/components/dialogs/edit-file"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 import { ShareDialog } from "@renderer/components/dialogs/share-dialog"
+import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 
 interface ColumnOptions {
   enableStarToggle?: boolean;
   enableTags?: boolean;
   enableActions?: boolean;
   showStarColumn?: boolean;
+  showFileSelection?: boolean;
+  showSelectAll?: boolean;
 }
 
 export const createColumns = ({
@@ -36,25 +37,36 @@ export const createColumns = ({
   enableTags = true,
   enableActions = true,
   showStarColumn = true,
+  showFileSelection = true,
+  showSelectAll = true,
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
     {
       id: "select",
       header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
+        showSelectAll ? (
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        ) : null
       ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
+      cell: ({ row }) => {
+        const isFile = row.original.type === "file";
+        if (!showFileSelection && isFile) {
+          return null;
+        }
+        return (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            disabled={!showFileSelection && isFile}
+          />
+        );
+      },
       enableSorting: false,
       enableHiding: false,
     },
@@ -170,60 +182,11 @@ export const createColumns = ({
       <DataTableColumnHeader column={column} title="Shared With" disabled={true}/>
     ),
     cell: ({ row }) => {
-      // 1. Extract the owner info
-      const owner = row.original.owner
-  
-      // 2. Extract the friends array (may be null or empty)
-      const friends = row.original.sharedWith ?? []
-  
-      return (
-        <div className="flex items-center">
-          {/* Container for overlapping avatars */}
-          <div className="flex -space-x-3">
-            {/* Show owner first */}
-            {owner && (
-              <Tooltip key={owner.id}>
-                <TooltipTrigger asChild>
-                  <div className="cursor-default">
-                    <Avatar className="h-8 w-8 border-2 border-background">
-                      <AvatarImage src={owner.avatar || ""} alt={owner.username} />
-                      <AvatarFallback>
-                        {owner.username[0]?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <div className="flex items-center gap-1">
-                    <span>@{owner.username}</span>
-                    <span className="text-xs text-muted-foreground">(Owner)</span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {/* Show other collaborators */}
-            {friends.map((profile) => (
-              <Tooltip key={profile.id}>
-                <TooltipTrigger asChild>
-                  <div className="cursor-pointer">
-                    <Avatar className="h-8 w-8 border-2 border-background">
-                      <AvatarImage src={profile.avatar || ""} alt={profile.username} />
-                      <AvatarFallback>
-                        {profile.username[0]?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  @{profile.username}
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-        </div>
-      )
-    },
+      const owner = row.original.owner;
+      const friends = row.original.sharedWith ?? [];
+      
+      return <AvatarGroup owner={owner} users={friends} size="md" />;
+    }
   },
 
   {

@@ -6,7 +6,7 @@ import { useItemsStore } from "@renderer/stores/items-store"
 import { Tabs, TabsTrigger, TabsList, TabsContent } from "@renderer/components/ui/tabs"
 import { createColumns } from "@renderer/components/data-table/columns"
 import { DataTable } from "@renderer/components/data-table/data-table"
-import { DemoItem, ItemType } from "@renderer/types/items"
+import { DemoItem } from "@renderer/types/items"
 import { useState, useEffect } from "react"
 
 interface ChooseFilesDialogProps {
@@ -28,10 +28,6 @@ export function ChooseFilesDialog({
   const projects = useItemsStore((state) => state.projects);
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>(initialSelections);
 
-  // Split files and folders
-  const files = filesAndFolders.filter(item => item.type === ItemType.FILE);
-  const folders = filesAndFolders.filter(item => item.type === ItemType.FOLDER);
-
   // Update selected items when initialSelections changes
   useEffect(() => {
     setSelectedItems(initialSelections);
@@ -46,53 +42,40 @@ export function ChooseFilesDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-4xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>Choose Location</AlertDialogTitle>
+          <AlertDialogTitle>{location === "project" ? "Choose files" : 
+             location === "save-items" ? "Choose location" :
+             "Choose files"}</AlertDialogTitle>
           <AlertDialogDescription>
             {location === "project" ? "Select files to include in your project" : 
-             location === "save-items" ? "Select where to save the items" :
+             location === "save-items" ? "Select where you want to save the shared items" :
              "Select files to share"}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <Tabs defaultValue="files">
-          {location === "home" && (
-            <TabsList className="flex flex-row justify-start mb-2">
-              <TabsTrigger value="files">Files</TabsTrigger>
-              <TabsTrigger value="folders">Folders</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-            </TabsList>
-          )}
+        <Tabs defaultValue="home">
+          <TabsList className="flex flex-row justify-start mb-2">
+            <TabsTrigger value="home">Home</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
+          </TabsList>
           
-          <TabsContent value="files">
-            <DataTable 
-              columns={createColumns({
-                enableStarToggle: false,
-                enableActions: false,
-                enableTags: false
-              })}
-              data={files}
-              enableSelection={true}
-              enableActions={false}
-              pageSize={8}
-              onSelectionChange={setSelectedItems}
-              initialSelectedItems={selectedItems}
-            />
-          </TabsContent>
-
-          <TabsContent value="folders">
-            <DataTable 
-              columns={createColumns({
-                enableStarToggle: false,
-                enableActions: false,
-                enableTags: false
-              })}
-              data={folders}
-              enableSelection={true}
-              enableActions={false}
-              pageSize={8}
-              onSelectionChange={setSelectedItems}
-              initialSelectedItems={selectedItems}
-            />
+          <TabsContent value="home">
+            <div className="space-y-4">
+              <DataTable 
+                columns={createColumns({
+                  enableStarToggle: false,
+                  enableActions: false,
+                  enableTags: false,
+                  showFileSelection: location === "save-items" ? false : true,
+                  showSelectAll: location === "save-items" ? false : true,
+                })}
+                data={filesAndFolders}
+                enableSelection={true}
+                enableActions={false}
+                pageSize={8}
+                onSelectionChange={setSelectedItems}
+                initialSelectedItems={selectedItems}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="projects">

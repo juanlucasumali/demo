@@ -97,7 +97,6 @@ function ProjectPage() {
         tag={project.tags}
         owner={project.owner}
         sharedWith={project.sharedWith}
-        className='min-w-[1000px]'
       >
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>

@@ -3,14 +3,12 @@ import { Checkbox } from "@renderer/components/ui/checkbox"
 import TagBadge from "@renderer/components/tag-badge"
 import { FileTag } from "@renderer/types/tags"
 import folderImage from "@renderer/assets/macos-folder.png"
-import { Avatar, AvatarFallback, AvatarImage } from "@renderer/components/ui/avatar"
-import { MoreHorizontal, Star } from "lucide-react"
+import { Star } from "lucide-react"
 import { UserProfile } from "@renderer/types/users"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@renderer/components/ui/dropdown-menu"
 import { cn } from "@renderer/lib/utils"
 import { Link } from "@tanstack/react-router"
 import { useItemsStore } from "@renderer/stores/items-store"
+import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 
 interface GridItemProps<TData> {
   row: Row<TData>;
@@ -33,14 +31,6 @@ export function GridItem<DemoItem>({
   const itemId = row.getValue("id") as string;
   const isStarred = row.getValue("isStarred") as boolean;
   const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
-
-  const avatarPositions = [
-    "top-[8px] right-[-12px] z-[2]",    // First avatar (top right corner)
-    "top-[2px] right-[8px] z-[3]",      // Second avatar (above and left)
-    "top-[24px] right-[-22px] z-[3]",   // Third avatar (below and right)
-    "top-[2px] right-[29px] z-[1]",     // Fourth avatar (left of second)
-    "top-[45px] right-[-22px] z-[1]",   // Fifth avatar (below third)
-  ];
 
   const content = (
     <div 
@@ -83,74 +73,12 @@ export function GridItem<DemoItem>({
             />
               {(owner || hasCollaborators) && (
                 <div className="absolute top-0 right-0 w-full h-full">
-                  {/* Owner avatar */}
-                  {owner && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="absolute top-[8px] right-[-12px] z-[2]">
-                          <Avatar className="h-7 w-7 border-2 border-background">
-                            <AvatarImage src={owner.avatar || ""} alt={owner.username} />
-                            <AvatarFallback className="text-sm">
-                              {owner.username[0]?.toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs">@{owner.username}</span>
-                          <span className="text-xs text-muted-foreground">(Owner)</span>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-
-                  {/* Collaborators */}
-                  {hasCollaborators && sharedWith.slice(0, sharedWith.length > 4 ? 4 : 5).map((user, index) => (
-                    <Tooltip key={user.id}>
-                      <TooltipTrigger asChild>
-                        <div className={`absolute ${avatarPositions[index + 1]}`}>
-                          <Avatar className="h-7 w-7 border-2 border-background">
-                            <AvatarImage src={user.avatar || ""} alt={user.username} />
-                            <AvatarFallback className="text-sm">
-                              {user.username[0]?.toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        <p className="text-xs">@{user.username}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-
-                  {/* Show more dropdown if there are additional collaborators */}
-                  {sharedWith && sharedWith.length > 4 && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <div className={`absolute ${avatarPositions[4]}`}>
-                          <Avatar className="h-7 w-7 border-2 border-background cursor-pointer">
-                            <AvatarFallback>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {sharedWith.slice(4).map((user) => (
-                          <DropdownMenuItem key={user.id}>
-                            <Avatar className="h-6 w-6 mr-2">
-                              <AvatarImage src={user.avatar || ""} alt={user.username} />
-                              <AvatarFallback>
-                                {user.username[0]?.toUpperCase() || "U"}
-                              </AvatarFallback>
-                            </Avatar>
-                            @{user.username}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                  <AvatarGroup
+                    owner={owner}
+                    users={sharedWith || []}
+                    size="sm"
+                    variant="grid"
+                  />
                 </div>
               )}
             </>

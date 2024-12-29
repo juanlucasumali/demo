@@ -6,7 +6,7 @@ import { createColumns } from "@renderer/components/data-table/columns";
 import { format } from "date-fns";
 import { UserProfile } from "@renderer/types/users";
 import { DemoItem } from "@renderer/types/items";
-import { useState } from "react";
+import React, { useState } from "react";
 import { ChooseFilesDialog } from "./choose-files";
 
 interface SaveItemsDialogProps {
@@ -27,6 +27,7 @@ export function SaveItemsDialog({
   description
 }: SaveItemsDialogProps) {
   const [chooseLocation, setChooseLocation] = useState(false);
+  const [selectedItems, setSelectedItems] = React.useState<DemoItem[]>([]);
 
   const handleSaveAll = () => {
     setChooseLocation(true);
@@ -34,6 +35,7 @@ export function SaveItemsDialog({
 
   const handleLocationChosen = (selectedItems: DemoItem[]) => {
     // Here you would implement the logic to save the shared items to the selected location
+    setSelectedItems(selectedItems);
     console.log("Saving items to location:", selectedItems);
     onOpenChange(false);
   };
@@ -99,6 +101,7 @@ export function SaveItemsDialog({
         open={chooseLocation}
         onOpenChange={setChooseLocation}
         onConfirm={handleLocationChosen}
+        initialSelections={selectedItems}
         location="save-items"
       />
     </>

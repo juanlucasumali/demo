@@ -10,9 +10,8 @@ import {
   CommandItem,
   CommandList,
 } from "./ui/command";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { X } from "lucide-react";
 import { UserProfile } from "@renderer/types/users";
+import { AvatarGroup } from "./ui/avatar-group";
 
 interface FriendsSearchProps {
   /** Owner that will always appear first and can't be removed */
@@ -115,55 +114,14 @@ export function FriendsSearch({
 
   return (
     <div className="space-y-2 !mt-0 !mb-4">
-      <div className="flex items-center">
-        <div className="flex -space-x-2">
-
-          {/* Show owner first if exists */}
-          {owner && <Tooltip key={owner.id}>
-            <TooltipTrigger asChild>
-              <div className="cursor-default">
-                <Avatar className="h-11 w-11 border-2 border-background">
-                  <AvatarImage src={owner.avatar || ""} alt={owner.username} />
-                  <AvatarFallback>
-                    {owner.username[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <div className="flex items-center gap-1">
-                <span>{owner.username}</span>
-                <span className="text-xs text-muted-foreground">(Owner)</span>
-              </div>
-            </TooltipContent>
-          </Tooltip>}
-          
-          {selectedUsers.map((user) => (
-            <Tooltip key={user.id}>
-              <TooltipTrigger asChild>
-                <div className="cursor-pointer">
-                  <Avatar className="h-11 w-11 border-2 border-background">
-                    <AvatarImage src={user.avatar || ""} alt={user.username} />
-                    <AvatarFallback>
-                      {user.username[0]?.toUpperCase() ||
-                        "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <div className="flex items-center gap-1">
-                  <span>@{user.username}</span>
-                  <X
-                    className="h-4 w-4 cursor-pointer text-red-500"
-                    onClick={() => handleRemoveUser(user.id)}
-                  />
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          ))}
-        </div>
-      </div>
+      <AvatarGroup
+        owner={owner}
+        users={selectedUsers}
+        size="lg"
+        onRemove={handleRemoveUser}
+        showRemove={true}
+        limit={10}
+      />
 
       <Command ref={containerRef}className="border rounded">
         <CommandInput

@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Home, Star } from "lucide-react"
+import { Box, Home } from "lucide-react"
 
 import {
   SidebarGroup,
@@ -35,13 +35,6 @@ export function NavMain({}: {
               <span>{'Projects'}</span>
           </SidebarMenuButton>
         </Link>
-      </SidebarMenuItem>
-
-      <SidebarMenuItem>
-          <SidebarMenuButton tooltip={'Starred'}>
-            <Star />
-            <span>{'Starred'}</span>
-          </SidebarMenuButton>
       </SidebarMenuItem>
 
       </SidebarMenu>

@@ -53,7 +53,7 @@ export function PageHeader({
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <h1 className="text-4xl font-bold tracking-tight truncate max-w-[300px]">{title}</h1>
-            {tag && <TagBadge tag={tag} className="shrink-0" />}
+            {tag && <TagBadge tag={tag} className="shrink-0 ml-2" />}
           </div>
           {description && (
             <p className='text-sm text-muted-foreground truncate max-w-[400px]'>

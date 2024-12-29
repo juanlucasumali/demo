@@ -4,12 +4,13 @@ import TagBadge from "@renderer/components/tag-badge"
 import { FileTag } from "@renderer/types/tags"
 import folderImage from "@renderer/assets/macos-folder.png"
 import { Avatar, AvatarFallback, AvatarImage } from "@renderer/components/ui/avatar"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Star } from "lucide-react"
 import { UserProfile } from "@renderer/types/users"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@renderer/components/ui/dropdown-menu"
 import { cn } from "@renderer/lib/utils"
 import { Link } from "@tanstack/react-router"
+import { useItemsStore } from "@renderer/stores/items-store"
 
 interface GridItemProps<TData> {
   row: Row<TData>;
@@ -30,6 +31,8 @@ export function GridItem<DemoItem>({
   const sharedWith = row.getValue("sharedWith") as UserProfile[] | null;
   const hasCollaborators = !row.getValue("icon") && sharedWith && sharedWith.length > 0;
   const itemId = row.getValue("id") as string;
+  const isStarred = row.getValue("isStarred") as boolean;
+  const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
 
   const avatarPositions = [
     "top-[8px] right-[-12px] z-[2]",    // First avatar (top right corner)
@@ -50,6 +53,22 @@ export function GridItem<DemoItem>({
     )}
     data-state={isSelected ? "selected" : undefined}
     >
+      {/* Star Button - Absolute positioned */}
+      <div 
+        className="absolute top-2 left-2"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleIsStarred(itemId);
+        }}
+      >
+        {isStarred ? (
+          <Star className="h-4 w-4 text-yellow-500 fill-current cursor-pointer" />
+        ) : (
+          <Star className="h-4 w-4 text-gray-400 hover:text-gray-500 cursor-pointer" />
+        )}
+      </div>
+
       {/* Icon/Thumbnail with Collaborators */}
       <div className="relative">
         <div className="w-32 h-32 rounded-2xl mb-2 flex items-center justify-center text-4xl">

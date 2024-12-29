@@ -1,6 +1,6 @@
 import { Box, File, HomeIcon, User, UserCog } from 'lucide-react'
 import { useItemsStore } from '@renderer/stores/items-store'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
@@ -17,11 +17,31 @@ import { RequestDialog } from '@renderer/components/dialogs/request'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
 import { SubHeader } from '@renderer/components/page-layout/sub-header'
+import { AuthenticatedLayout } from '@renderer/layouts/authenticated-layout'
+
 export const Route = createFileRoute('/home/')({
-  component: Home,
+  component: HomeComponent,
+  // beforeLoad: ({ context }) => {
+  //   if (!context.auth.isAuthenticated) {
+  //     throw redirect({
+  //       to: '/login',
+  //       search: {
+  //         redirect: '/home',
+  //       },
+  //     })
+  //   }
+  // },
 })
 
-export default function Home() {
+function HomeComponent() {
+  return (
+    <AuthenticatedLayout>
+      <Home />
+    </AuthenticatedLayout>
+  )
+}
+
+function Home() {
   const filesAndFolders = useItemsStore((state) => state.filesAndFolders);
 
   const [upload, setUpload] = useState(false)

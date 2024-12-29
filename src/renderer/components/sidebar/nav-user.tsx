@@ -19,7 +19,6 @@ export const user: UserProfile =
     avatar: null,
     name: "Juan Lucas Umali",
     description: "hiiiiiii tis meeee!",
-    email: "juanlucasumali@gmail.com",
     username: "juanlucasumali"
   }
 

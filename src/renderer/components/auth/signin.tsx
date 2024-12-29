@@ -33,19 +33,23 @@ export function SignIn({ onSwitchToSignup }: SignInProps) {
     try {
       setIsLoading(true)
       await signIn(data.email, data.password)
-      toast({
-        title: "Welcome back!",
-        description: "Successfully signed in to your account",
-        variant: "default",
-      })
-      navigate({ to: '/home' })
+      
+      // Set a timeout for navigation and toast
+      setTimeout(() => {
+        navigate({ to: '/home' })
+        toast({
+          title: "Welcome back!",
+          description: "Successfully signed in to your account",
+          variant: "default",
+        })
+        setIsLoading(false)
+      }, 1000)
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Sign in failed",
         description: error instanceof Error ? error.message : "Failed to sign in",
       })
-    } finally {
       setIsLoading(false)
     }
   }

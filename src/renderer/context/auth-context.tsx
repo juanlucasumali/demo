@@ -49,8 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: session?.user ?? null,
     isLoading,
     signIn: async (email: string, password: string) => {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
+      setSession(data.session)
+      if (data.session?.user) {
+        setUser(data.session.user)
+      }
     },
     signUp: async (email: string, password: string) => {
       const { error } = await supabase.auth.signUp({ email, password })
@@ -59,15 +63,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut: async () => {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+      clearUser()
+      setSession(null)
     },
     isAuthenticated: !!session && !!session?.user,
   }
 
+  if (isLoading) return null
 
   console.log("isLoading, session, user", value.isLoading, value.session, value.user)
-
-
-  if (isLoading) return null
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
@@ -78,4 +82,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
-} 
+}

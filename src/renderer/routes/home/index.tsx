@@ -17,29 +17,23 @@ import { RequestDialog } from '@renderer/components/dialogs/request'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
 import { SubHeader } from '@renderer/components/page-layout/sub-header'
-import { AuthenticatedLayout } from '@renderer/layouts/authenticated-layout'
 
 export const Route = createFileRoute('/home/')({
-  component: HomeComponent,
-  // beforeLoad: ({ context }) => {
+  // beforeLoad: async ({ location, context }) => {
   //   if (!context.auth.isAuthenticated) {
   //     throw redirect({
   //       to: '/login',
   //       search: {
-  //         redirect: '/home',
+  //         // Use the current location to power a redirect after login
+  //         // (Do not use `router.state.resolvedLocation` as it can
+  //         // potentially lag behind the actual current location)
+  //         redirect: location.href,
   //       },
   //     })
   //   }
   // },
+  component: Home
 })
-
-function HomeComponent() {
-  return (
-    <AuthenticatedLayout>
-      <Home />
-    </AuthenticatedLayout>
-  )
-}
 
 function Home() {
   const filesAndFolders = useItemsStore((state) => state.filesAndFolders);

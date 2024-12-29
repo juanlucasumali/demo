@@ -10,9 +10,10 @@ import { signupSchema, type SignupFormData } from '@renderer/lib/validations/aut
 
 interface SignupProps {
   onSwitchToSignIn: () => void
+  onEmailSubmitted: (email: string) => void
 }
 
-export function Signup({ onSwitchToSignIn }: SignupProps) {
+export function Signup({ onSwitchToSignIn, onEmailSubmitted }: SignupProps) {
   const { signUp } = useAuth()
   const { toast } = useToast()
   
@@ -28,11 +29,7 @@ export function Signup({ onSwitchToSignIn }: SignupProps) {
   async function onSubmit(data: SignupFormData) {
     try {
       await signUp(data.email, data.password)
-      toast({
-        title: "Success",
-        description: "Please check your email to verify your account",
-      })
-      onSwitchToSignIn()
+      onEmailSubmitted(data.email)
     } catch (error) {
       toast({
         variant: "destructive",

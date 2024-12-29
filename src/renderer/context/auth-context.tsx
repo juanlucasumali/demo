@@ -6,7 +6,7 @@ import { useUserStore } from '@renderer/stores/user-store'
 export interface AuthContextType {
   session: Session | null
   user: User | null
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<{ isVerified: boolean; email?: string }>
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   isAuthenticated: boolean
@@ -49,12 +49,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: session?.user ?? null,
     isLoading,
     signIn: async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      })
+      
       if (error) throw error
+
+      // Check if email is verified
+      const { data: userData } = await supabase.auth.getUser()
+      const isVerified = userData.user?.email_confirmed_at != null
+
+      if (!isVerified) {
+        // Sign out if not verified
+        await supabase.auth.signOut()
+        return { isVerified: false, email }
+      }
+
       setSession(data.session)
       if (data.session?.user) {
         setUser(data.session.user)
       }
+      
+      return { isVerified: true }
     },
     signUp: async (email: string, password: string) => {
       const { error } = await supabase.auth.signUp({ email, password })

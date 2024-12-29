@@ -22,7 +22,7 @@ export const Route = createFileRoute('/home/')({
   beforeLoad: async ({ location, context }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({
-        to: '/signin',
+        to: '/auth',
         search: {
           // Use the current location to power a redirect after signin
           // (Do not use `router.state.resolvedLocation` as it can

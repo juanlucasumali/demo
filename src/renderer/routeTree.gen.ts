@@ -11,19 +11,13 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as SigninIndexImport } from './routes/signin/index'
 import { Route as ProjectsIndexImport } from './routes/projects/index'
 import { Route as ProfileIndexImport } from './routes/profile/index'
 import { Route as HomeIndexImport } from './routes/home/index'
+import { Route as AuthIndexImport } from './routes/auth/index'
 import { Route as ProjectsProjectIdImport } from './routes/projects/$projectId'
 
 // Create/Update Routes
-
-const SigninIndexRoute = SigninIndexImport.update({
-  id: '/signin/',
-  path: '/signin/',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const ProjectsIndexRoute = ProjectsIndexImport.update({
   id: '/projects/',
@@ -43,6 +37,12 @@ const HomeIndexRoute = HomeIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const AuthIndexRoute = AuthIndexImport.update({
+  id: '/auth/',
+  path: '/auth/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const ProjectsProjectIdRoute = ProjectsProjectIdImport.update({
   id: '/projects/$projectId',
   path: '/projects/$projectId',
@@ -58,6 +58,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$projectId'
       fullPath: '/projects/$projectId'
       preLoaderRoute: typeof ProjectsProjectIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/': {
+      id: '/auth/'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthIndexImport
       parentRoute: typeof rootRoute
     }
     '/home/': {
@@ -81,13 +88,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexImport
       parentRoute: typeof rootRoute
     }
-    '/signin/': {
-      id: '/signin/'
-      path: '/signin'
-      fullPath: '/signin'
-      preLoaderRoute: typeof SigninIndexImport
-      parentRoute: typeof rootRoute
-    }
   }
 }
 
@@ -95,63 +95,63 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/auth': typeof AuthIndexRoute
   '/home': typeof HomeIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
-  '/signin': typeof SigninIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/auth': typeof AuthIndexRoute
   '/home': typeof HomeIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
-  '/signin': typeof SigninIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/auth/': typeof AuthIndexRoute
   '/home/': typeof HomeIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/projects/': typeof ProjectsIndexRoute
-  '/signin/': typeof SigninIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/projects/$projectId'
+    | '/auth'
     | '/home'
     | '/profile'
     | '/projects'
-    | '/signin'
   fileRoutesByTo: FileRoutesByTo
-  to: '/projects/$projectId' | '/home' | '/profile' | '/projects' | '/signin'
+  to: '/projects/$projectId' | '/auth' | '/home' | '/profile' | '/projects'
   id:
     | '__root__'
     | '/projects/$projectId'
+    | '/auth/'
     | '/home/'
     | '/profile/'
     | '/projects/'
-    | '/signin/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
+  AuthIndexRoute: typeof AuthIndexRoute
   HomeIndexRoute: typeof HomeIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
-  SigninIndexRoute: typeof SigninIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
+  AuthIndexRoute: AuthIndexRoute,
   HomeIndexRoute: HomeIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
-  SigninIndexRoute: SigninIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -165,14 +165,17 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/projects/$projectId",
+        "/auth/",
         "/home/",
         "/profile/",
-        "/projects/",
-        "/signin/"
+        "/projects/"
       ]
     },
     "/projects/$projectId": {
       "filePath": "projects/$projectId.tsx"
+    },
+    "/auth/": {
+      "filePath": "auth/index.tsx"
     },
     "/home/": {
       "filePath": "home/index.tsx"
@@ -182,9 +185,6 @@ export const routeTree = rootRoute
     },
     "/projects/": {
       "filePath": "projects/index.tsx"
-    },
-    "/signin/": {
-      "filePath": "signin/index.tsx"
     }
   }
 }

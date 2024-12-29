@@ -19,17 +19,15 @@ import { UploadFile } from '@renderer/components/dialogs/upload-file'
 import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
 
 // Define route params interface
-interface ProjectParams {
+export interface ProjectParams {
   projectId: string
 }
 
 // Create the route with params validation
 export const Route = createFileRoute('/projects/$projectId')({
-  validateSearch: (search: Record<string, unknown>): ProjectParams => {
-    return {
-      projectId: String(search.projectId),
-    }
-  },
+  parseParams: (params): ProjectParams => ({
+    projectId: params.projectId,
+  }),
   component: ProjectPage,
   loader: ({ params }) => {
     // You can add data loading logic here if needed

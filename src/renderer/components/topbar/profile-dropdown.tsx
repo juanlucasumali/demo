@@ -32,7 +32,7 @@ export function ProfileDropdown() {
       
       // Set a timeout for navigation and toast
       setTimeout(() => {
-        navigate({ to: '/signin' })
+        navigate({ to: '/auth' })
         toast({
           title: 'Success',
           description: 'Successfully logged out',

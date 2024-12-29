@@ -13,9 +13,10 @@ import { useState } from "react"
 
 interface SignInProps {
   onSwitchToSignup: () => void
+  onUnverifiedEmail: (email: string) => void
 }
 
-export function SignIn({ onSwitchToSignup }: SignInProps) {
+export function SignIn({ onSwitchToSignup, onUnverifiedEmail }: SignInProps) {
   const { signIn } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -45,6 +46,13 @@ export function SignIn({ onSwitchToSignup }: SignInProps) {
         setIsLoading(false)
       }, 1000)
     } catch (error) {
+      if (error instanceof Error && 
+          error.message.includes('Email not confirmed')) {
+        onUnverifiedEmail(data.email)
+        setIsLoading(false)
+        return
+      }
+
       toast({
         variant: "destructive",
         title: "Sign in failed",

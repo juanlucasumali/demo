@@ -1,92 +1,65 @@
-import { dummyDemoItems, dummyProjectItems } from '@renderer/components/home/dummy-data';
-import { DemoItem } from '@renderer/types/items';
 import { create } from 'zustand';
+import { DemoItem } from '@renderer/types/items';
+import * as itemsService from '@renderer/services/items-service';
 
 interface ItemsStore {
-  // Separate storage for files/folders and projects
   filesAndFolders: DemoItem[];
   projects: DemoItem[];
-  
-  // Computed state
   starredItems: DemoItem[];
   
   // Actions
-  toggleIsStarred: (id: string) => void;
-  addFileOrFolder: (item: DemoItem) => void;
-  addProject: (item: DemoItem) => void;
-  removeItem: (id: string) => void;
-  updateItem: (updatedItem: DemoItem) => void;
+  fetchItems: () => Promise<void>;
+  toggleIsStarred: (id: string) => Promise<void>;
+  addFileOrFolder: (item: DemoItem) => Promise<void>;
+  addProject: (item: DemoItem) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
+  updateItem: (updatedItem: DemoItem) => Promise<void>;
 }
 
 export const useItemsStore = create<ItemsStore>((set, get) => ({
-  // Initialize with separated data
-  filesAndFolders: dummyDemoItems,
-  projects: dummyProjectItems,
-  
-  // Compute starred items from both arrays
-  starredItems: [...dummyDemoItems, ...dummyProjectItems].filter(item => item.isStarred),
+  filesAndFolders: [],
+  projects: [],
+  starredItems: [],
 
-  toggleIsStarred: (id: string) =>
-    set((state) => {
-      const newFilesAndFolders = state.filesAndFolders.map((item) =>
-        item.id === id ? { ...item, isStarred: !item.isStarred } : item
-      );
-      
-      const newProjects = state.projects.map((item) =>
-        item.id === id ? { ...item, isStarred: !item.isStarred } : item
-      );
+  fetchItems: async () => {
+    const [filesAndFolders, projects] = await Promise.all([
+      itemsService.getFilesAndFolders(),
+      itemsService.getProjects()
+    ]);
 
-      return {
-        filesAndFolders: newFilesAndFolders,
-        projects: newProjects,
-        starredItems: [...newFilesAndFolders, ...newProjects].filter(item => item.isStarred),
-      };
-    }),
+    set({
+      filesAndFolders,
+      projects,
+      starredItems: [...filesAndFolders, ...projects].filter(item => item.isStarred)
+    });
+  },
 
-  addFileOrFolder: (item: DemoItem) =>
-    set((state) => {
-      const newFilesAndFolders = [...state.filesAndFolders, item];
-      return {
-        filesAndFolders: newFilesAndFolders,
-        starredItems: [...newFilesAndFolders, ...state.projects].filter(item => item.isStarred),
-      };
-    }),
+  toggleIsStarred: async (id: string) => {
+    const state = get();
+    const item = [...state.filesAndFolders, ...state.projects].find(item => item.id === id);
+    if (!item) return;
 
-  addProject: (item: DemoItem) =>
-    set((state) => {
-      const newProjects = [...state.projects, item];
-      return {
-        projects: newProjects,
-        starredItems: [...state.filesAndFolders, ...newProjects].filter(item => item.isStarred),
-      };
-    }),
+    await itemsService.toggleItemStar(id, !item.isStarred);
+    await state.fetchItems();
+  },
 
-  removeItem: (id: string) =>
-    set((state) => {
-      const newFilesAndFolders = state.filesAndFolders.filter(item => item.id !== id);
-      const newProjects = state.projects.filter(item => item.id !== id);
-      
-      return {
-        filesAndFolders: newFilesAndFolders,
-        projects: newProjects,
-        starredItems: [...newFilesAndFolders, ...newProjects].filter(item => item.isStarred),
-      };
-    }),
+  addFileOrFolder: async (item: DemoItem) => {
+    await itemsService.addFileOrFolder(item);
+    await get().fetchItems();
+  },
 
-  updateItem: (updatedItem: DemoItem) =>
-    set((state) => {
-      const newFilesAndFolders = state.filesAndFolders.map(item =>
-        item.id === updatedItem.id ? { ...item, ...updatedItem } : item
-      );
-      
-      const newProjects = state.projects.map(item =>
-        item.id === updatedItem.id ? { ...item, ...updatedItem } : item
-      );
+  addProject: async (item: DemoItem) => {
+    await itemsService.addProject(item);
+    await get().fetchItems();
+  },
 
-      return {
-        filesAndFolders: newFilesAndFolders,
-        projects: newProjects,
-        starredItems: [...newFilesAndFolders, ...newProjects].filter(item => item.isStarred),
-      };
-    }),
+  removeItem: async (id: string) => {
+    await itemsService.removeItem(id);
+    await get().fetchItems();
+  },
+
+  updateItem: async (updatedItem: DemoItem) => {
+    await itemsService.updateItem(updatedItem);
+    await get().fetchItems();
+  }
 }));

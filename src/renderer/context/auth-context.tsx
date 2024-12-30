@@ -25,10 +25,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [hasProfile, setHasProfile] = useState(false)
   const setUser = useUserStore((state) => state.setUser)
   const clearUser = useUserStore((state) => state.clearUser)
+  const fetchProfile = useUserStore((state) => state.fetchProfile)
 
-  const checkProfile = async (userId: string) => {
-    const hasProfile = await checkHasProfile(userId)
-    setHasProfile(hasProfile)
+  const initializeUserSession = async (user: User) => {
+    setUser(user)
+    try {
+      // Run these checks in parallel
+      const [hasProfileResult] = await Promise.all([
+        checkHasProfile(user.id),
+        fetchProfile(user.id)
+      ])
+      setHasProfile(hasProfileResult)
+    } catch (error) {
+      console.error('Error initializing user session:', error)
+      // Handle error appropriately - maybe show a toast
+    } finally {
+      setIsProfileLoading(false)
+    }
+  }
+
+  const clearUserSession = () => {
+    clearUser()
+    setHasProfile(false)
     setIsProfileLoading(false)
   }
 
@@ -36,12 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session?.user) {
-        setUser(session.user)
-        checkProfile(session.user.id)
+        initializeUserSession(session.user)
       } else {
-        clearUser()
-        setHasProfile(false)
-        setIsProfileLoading(false)
+        clearUserSession()
       }
       setIsAuthLoading(false)
     })
@@ -49,17 +64,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session?.user) {
-        setUser(session.user)
-        checkProfile(session.user.id)
+        initializeUserSession(session.user)
       } else {
-        clearUser()
-        setHasProfile(false)
-        setIsProfileLoading(false)
+        clearUserSession()
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
+  const checkProfile = async (userId: string) => {
+    const hasProfile = await checkHasProfile(userId)
+    setHasProfile(hasProfile)
+    await fetchProfile(userId)
+    setIsProfileLoading(false)
+  }
 
   const isLoading = isAuthLoading || isProfileLoading
   const isAuthenticated = !!session && !!session?.user
@@ -90,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setSession(data.session)
       if (data.session?.user) {
-        setUser(data.session.user)
+        await initializeUserSession(data.session.user)
       }
       
       return { isVerified: true }
@@ -102,9 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut: async () => {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
-      clearUser()
+      clearUserSession()
       setSession(null)
-      setHasProfile(false)
     },
     isAuthenticated,
   }

@@ -8,10 +8,13 @@ import { routeTree } from './routeTree.gen'
 import { ThemeProvider } from './context/theme-context'
 import { AuthProvider, useAuth } from './context/auth-context'
 import { Toaster } from './components/ui/toaster'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const memoryHistory = createMemoryHistory({
   initialEntries: ['/home'] // Pass your initial url
 })
+
+const queryClient = new QueryClient()
 
 // Create a new router instance
 const router = createRouter({ 
@@ -57,11 +60,13 @@ if (!rootElement.innerHTML) {
 
   root.render(
     <StrictMode>
-      <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
-        <AuthProvider>
-          <InnerApp />
-        </AuthProvider>
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
+          <AuthProvider>
+            <InnerApp />
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
     </StrictMode>,
   )
 }

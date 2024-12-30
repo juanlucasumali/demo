@@ -1,39 +1,62 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
-import { DemoItem, ItemType } from '@renderer/types/items'
+import * as itemsService from '@renderer/services/items-service'
 
 export function useItems() {
   const queryClient = useQueryClient()
 
-  const { data: filesAndFolders } = useQuery({
+  // Query for files and folders
+  const { data: filesAndFolders = [] } = useQuery({
     queryKey: ['files'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('files')
-        .select('*')
-      if (error) throw error
-      return data as DemoItem[]
-    }
+    queryFn: itemsService.getFilesAndFolders
   })
 
-  const { data: projects } = useQuery({
+  // Query for projects
+  const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-      if (error) throw error
-      return data as DemoItem[]
+    queryFn: itemsService.getProjects
+  })
+
+  // Compute starred items
+  const starredItems = [...filesAndFolders, ...projects].filter(item => item.isStarred)
+
+  // Add file or folder mutation
+  const addFileOrFolder = useMutation({
+    mutationFn: itemsService.addFileOrFolder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] })
     }
   })
 
-  const addItem = useMutation({
-    mutationFn: async (item: DemoItem) => {
-      const { error } = await supabase
-        .from(item.type === ItemType.PROJECT ? 'projects' : 'files')
-        .insert(item)
-      if (error) throw error
-    },
+  // Add project mutation
+  const addProject = useMutation({
+    mutationFn: itemsService.addProject,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    }
+  })
+
+  // Remove item mutation
+  const removeItem = useMutation({
+    mutationFn: itemsService.removeItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    }
+  })
+
+  // Update item mutation
+  const updateItem = useMutation({
+    mutationFn: itemsService.updateItem,
+    onSuccess: (_, variables) => {
+      const queryKey = variables.type === 'project' ? ['projects'] : ['files']
+      queryClient.invalidateQueries({ queryKey })
+    }
+  })
+
+  // Toggle star mutation
+  const toggleStar = useMutation({
+    mutationFn: ({ id, isStarred }: { id: string; isStarred: boolean }) => 
+      itemsService.toggleItemStar(id, isStarred),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
@@ -43,6 +66,18 @@ export function useItems() {
   return {
     filesAndFolders,
     projects,
-    addItem
+    starredItems,
+    addFileOrFolder: addFileOrFolder.mutate,
+    addProject: addProject.mutate,
+    removeItem: removeItem.mutate,
+    updateItem: updateItem.mutate,
+    toggleStar: toggleStar.mutate,
+    isLoading: {
+      addFileOrFolder: addFileOrFolder.isPending,
+      addProject: addProject.isPending,
+      removeItem: removeItem.isPending,
+      updateItem: updateItem.isPending,
+      toggleStar: toggleStar.isPending
+    }
   }
 } 

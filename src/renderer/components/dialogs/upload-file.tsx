@@ -27,8 +27,10 @@ import {
 import { FileFormat, ItemType } from "@renderer/types/items";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
-import { currentUser, friendsData } from "../home/dummy-data";
+import { useUserStore } from "@renderer/stores/user-store";
 import { maxFileNameLength } from "@renderer/lib/utils";
+import { friendsData } from "../home/dummy-data";
+import { useItems } from "@renderer/hooks/use-items";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 
@@ -59,6 +61,7 @@ interface FileUploadProps {
   upload: boolean;
   handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
   location: "project" | "home";
+  projectId: string | null;
 }
 
 export function UploadFile({
@@ -66,13 +69,14 @@ export function UploadFile({
   upload,
   handleDialogClose,
   location,
+  projectId
 }: FileUploadProps) {
   const { toast } = useToast();
-  const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
+  const { addFileOrFolder } = useItems();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
+  const currentUser = useUserStore((state) => state.profile);
 
-  // Initialize react-hook-form with zod schema
   const form = useForm<FileUploadFormValues>({
     resolver: zodResolver(fileUploadSchema),
     defaultValues: {
@@ -86,38 +90,53 @@ export function UploadFile({
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9_\-\.]/g, "_"); // Replace invalid characters
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
       form.setValue("file", file, { shouldValidate: true });
       form.setValue("fileName", sanitizedFileName, { shouldValidate: true });
     }
   };
 
-  const onSubmit: SubmitHandler<FileUploadFormValues> = (data) => {
-    // Create a new item to add to the store
+  const onSubmit: SubmitHandler<FileUploadFormValues> = async (data) => {
+    try {
+      console.log("selectedFile", selectedFile);
+      console.log("currentUser", currentUser);
+      if (!selectedFile || !currentUser) return;
 
-    if (!selectedFile) return;
+      const fileExtension = data.file.name.split(".").pop() as FileFormat;
+      const filePath = location === "project" 
+        ? `/projects/${projectId}/${data.fileName}.${fileExtension}`
+        : `/files/${data.fileName}.${fileExtension}`;
 
-    const newItem = {
-      id: `i${Date.now()}`, // Generate unique ID
-      createdAt: new Date(),
-      lastModified: new Date(),
-      lastOpened: new Date(),
-      name: data.fileName,
-      isStarred: false,
-      tags: data.tags,
-      parentFolderId: null,
-      filePath: data.file.name,
-      type: ItemType.FILE,
-      duration: 1,
-      format: data.file.name.split(".").pop() as FileFormat,
-      size: data.file.size,
-      owner: currentUser,
-      sharedWith: selectedUsers,
-      projectId: null,
-      description: null,
-      icon: null,
-      collectionId: null,
-    };
+      const newItem = {
+        id: undefined,
+        createdAt: new Date(),
+        lastModified: new Date(),
+        lastOpened: new Date(),
+        name: data.fileName,
+        isStarred: false,
+        tags: data.tags,
+        parentFolderId: null,
+        filePath: filePath,
+        type: ItemType.FILE,
+        duration: null,
+        format: fileExtension,
+        size: data.file.size,
+        owner: {
+          id: currentUser.id,
+          username: currentUser.username,
+          description: currentUser.description,
+          name: currentUser.name,
+          email: currentUser.email,
+          avatar: currentUser.avatar
+        },
+        sharedWith: selectedUsers,
+        projectId: location === "project" ? projectId : null,
+        description: null,
+        icon: null,
+        collectionId: null,
+      };
+
+      console.log("newItem", newItem);
 
     addFileOrFolder(newItem);
 
@@ -132,7 +151,14 @@ export function UploadFile({
     setUpload(false);
     setSelectedFile(null);
     setSelectedUsers([]);
-  };
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to upload file. Please try again.",
+      variant: "destructive",
+    });
+  }
+};
 
   return (
     <Dialog open={upload} onOpenChange={() => handleDialogClose(setUpload)}>

@@ -147,7 +147,7 @@ export const createColumns = ({
           <div className="flex items-center gap-2 whitespace-nowrap">
             {showStarColumn && (
               <div
-                onClick={enableStarToggle ? () => toggleIsStarred(row.original.id) : undefined}
+                onClick={enableStarToggle ? () => toggleIsStarred(row.getValue("id")) : undefined}
                 style={{ cursor: enableStarToggle ? 'pointer' : 'default' }}
                 title={enableStarToggle ? (isStarred ? 'Unstar' : 'Star') : undefined}
             >
@@ -256,7 +256,6 @@ if (enableActions) {
   baseColumns.push({
     id: "actions",
     cell: ({ row }) => {
-      const item = row.original;
       const removeItem = useItemsStore((state) => state.removeItem);
       const [isDeleting, setIsDeleting] = useState(false);
       const [editFile, setEditFile] = useState(false);
@@ -273,7 +272,7 @@ if (enableActions) {
       const handleDelete = async () => {
         try {
           setIsDeleting(true);
-          await removeItem(item.id);
+          await removeItem(row.getValue("id"));
           setDropdown(false);
           setOpen(false);
           toast({
@@ -309,7 +308,7 @@ if (enableActions) {
                 <Share /> Share
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(item.id)}
+                onClick={() => navigator.clipboard.writeText(row.getValue("id"))}
               >
                 <RefreshCcw /> Convert
               </DropdownMenuItem>
@@ -326,7 +325,7 @@ if (enableActions) {
           <EditFileDialog
             editFile={editFile}
             setEditFile={setEditFile}
-            existingFile={item}
+            existingFile={row.original}
             handleDialogClose={setDropdown}
           />
 
@@ -334,7 +333,7 @@ if (enableActions) {
             share={share}
             setShare={setShare}
             handleDialogClose={handleDialogClose}
-            initialItem={item}
+            initialItem={row.original}
           />
         </div>
       );

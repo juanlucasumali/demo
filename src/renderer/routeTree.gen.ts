@@ -17,6 +17,7 @@ import { Route as HomeIndexImport } from './routes/home/index'
 import { Route as CreateProfileIndexImport } from './routes/create-profile/index'
 import { Route as AuthIndexImport } from './routes/auth/index'
 import { Route as ProjectsProjectIdImport } from './routes/projects/$projectId'
+import { Route as HomeFoldersFolderIdImport } from './routes/home/folders/$folderId'
 
 // Create/Update Routes
 
@@ -53,6 +54,12 @@ const AuthIndexRoute = AuthIndexImport.update({
 const ProjectsProjectIdRoute = ProjectsProjectIdImport.update({
   id: '/projects/$projectId',
   path: '/projects/$projectId',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const HomeFoldersFolderIdRoute = HomeFoldersFolderIdImport.update({
+  id: '/home/folders/$folderId',
+  path: '/home/folders/$folderId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -102,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexImport
       parentRoute: typeof rootRoute
     }
+    '/home/folders/$folderId': {
+      id: '/home/folders/$folderId'
+      path: '/home/folders/$folderId'
+      fullPath: '/home/folders/$folderId'
+      preLoaderRoute: typeof HomeFoldersFolderIdImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -114,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
 }
 
 export interface FileRoutesByTo {
@@ -123,6 +138,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
 }
 
 export interface FileRoutesById {
@@ -133,6 +149,7 @@ export interface FileRoutesById {
   '/home/': typeof HomeIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
 }
 
 export interface FileRouteTypes {
@@ -144,6 +161,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/profile'
     | '/projects'
+    | '/home/folders/$folderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/projects/$projectId'
@@ -152,6 +170,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/profile'
     | '/projects'
+    | '/home/folders/$folderId'
   id:
     | '__root__'
     | '/projects/$projectId'
@@ -160,6 +179,7 @@ export interface FileRouteTypes {
     | '/home/'
     | '/profile/'
     | '/projects/'
+    | '/home/folders/$folderId'
   fileRoutesById: FileRoutesById
 }
 
@@ -170,6 +190,7 @@ export interface RootRouteChildren {
   HomeIndexRoute: typeof HomeIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
+  HomeFoldersFolderIdRoute: typeof HomeFoldersFolderIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -179,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeIndexRoute: HomeIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
+  HomeFoldersFolderIdRoute: HomeFoldersFolderIdRoute,
 }
 
 export const routeTree = rootRoute
@@ -196,7 +218,8 @@ export const routeTree = rootRoute
         "/create-profile/",
         "/home/",
         "/profile/",
-        "/projects/"
+        "/projects/",
+        "/home/folders/$folderId"
       ]
     },
     "/projects/$projectId": {
@@ -216,6 +239,9 @@ export const routeTree = rootRoute
     },
     "/projects/": {
       "filePath": "projects/index.tsx"
+    },
+    "/home/folders/$folderId": {
+      "filePath": "home/folders/$folderId.tsx"
     }
   }
 }

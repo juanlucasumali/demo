@@ -29,22 +29,24 @@ import { cn } from "@renderer/lib/utils"
 import { GridItem } from "./grid-item"
 import { Skeleton } from "@renderer/components/ui/skeleton"
 import { Card } from "@renderer/components/ui/card"
-import { useItems } from "@renderer/hooks/use-items"
+import { Loader2 } from "lucide-react"
 
 interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
   data: DemoItem[]
   enableSelection?: boolean
   enableActions?: boolean
-  enableRowLink?: boolean
   enableSharedWith?: boolean
   viewMode?: 'table' | 'grid'
   pageSize?: number
-  onSelectionChange?: (selectedItems: DemoItem[]) => void
+  onSelectionChange?: (items: DemoItem[]) => void
   initialSelectedItems?: DemoItem[]
+  enableRowLink?: boolean
   showColumnHeaders?: boolean
   showPagination?: boolean
   showSearch?: boolean
+  onRowClick?: (item: DemoItem) => void
+  isLoading?: boolean
 }
 
 export function DataTable<DemoItem>({
@@ -61,13 +63,13 @@ export function DataTable<DemoItem>({
   showColumnHeaders = true,
   showPagination = true,
   showSearch = true,
+  onRowClick,
+  isLoading = false,
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
     { id: 'lastModified', desc: true }, // true first
   ]);
-
-  const { isLoading } = useItems();
   
   // Handle sorting changes while ensuring isStarred remains the primary sort
   const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
@@ -168,7 +170,7 @@ export function DataTable<DemoItem>({
   })
 
   return (
-    <div>
+    <div className="space-y-4">
       {/* Search Filter and Action Buttons Container */}
       {showSearch && (
         <div className="flex flex-row items-center pb-4 justify-between space-x-4 lg:space-y-0">
@@ -184,10 +186,12 @@ export function DataTable<DemoItem>({
         </div>
       )}
   
-      <div className={cn("rounded-md border", 
-        viewMode === 'grid' && "border-none p-0"
-      )}>
-        {viewMode === 'table' ? (
+      <div className="rounded-md border">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-[100px]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : viewMode === 'table' ? (
           <Table>
             {showColumnHeaders && (
               <TableHeader>
@@ -208,7 +212,7 @@ export function DataTable<DemoItem>({
               </TableHeader>
             )}
             <TableBody>
-              {isLoading.filesAndFolders ? (
+              {isLoading ? (
                 // Single skeleton per row
                 Array.from({ length: pageSize }).map((_, i) => (
                   <TableRow key={i}>
@@ -220,9 +224,14 @@ export function DataTable<DemoItem>({
               ) : table.getRowModel().rows?.length ? (
                 // Existing row rendering logic
                 table.getRowModel().rows.map((row) => (
-                  <TableRow
+                  <TableRow 
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className={cn(
+                      "cursor-pointer hover:bg-muted/50",
+                      enableRowLink && "cursor-pointer"
+                    )}
+                    onClick={() => onRowClick?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
@@ -242,9 +251,8 @@ export function DataTable<DemoItem>({
             </TableBody>
           </Table>
         ) : (
-          // Grid view with skeleton loading
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {isLoading.filesAndFolders ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
+            {isLoading ? (
               Array.from({ length: pageSize }).map((_, i) => (
                 <Card key={i} className="p-4">
                   <Skeleton className="h-12 w-12 rounded-full mb-4" />

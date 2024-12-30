@@ -1,14 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as itemsService from '@renderer/services/items-service'
 
-export function useItems() {
+export function useItems(parentFolderId?: string) {
   const queryClient = useQueryClient()
+  const queryKey = ['files-and-folders', parentFolderId];
 
-  // Query for files and folders
-  const { data: filesAndFolders = [], isLoading: isLoadingFilesAndFolders } = useQuery({
-    queryKey: ['files'],
-    queryFn: itemsService.getFilesAndFolders
-  })
+  const { data: filesAndFolders = [], isLoading } = useQuery({
+    queryKey,
+    queryFn: () => itemsService.getFilesAndFolders(parentFolderId),
+  });
 
   // Query for projects
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
@@ -78,7 +78,7 @@ export function useItems() {
       removeItem: removeItem.isPending,
       updateItem: updateItem.isPending,
       toggleStar: toggleStar.isPending,
-      filesAndFolders: isLoadingFilesAndFolders,
+      filesAndFolders: isLoading,
       projects: isLoadingProjects
     }
   }

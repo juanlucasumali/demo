@@ -47,6 +47,7 @@ interface CreateItemProps {
   onClose: () => void;
   location?: 'project' | 'home';
   projectId?: string | null;
+  parentFolderId?: string | null;
 }
 
 export function CreateItem({
@@ -54,7 +55,8 @@ export function CreateItem({
   isOpen,
   onClose,
   location = 'home',
-  projectId = null
+  projectId = null,
+  parentFolderId = null
 }: CreateItemProps) {
   const { toast } = useToast();
   const { addFileOrFolder } = useItems();
@@ -92,7 +94,7 @@ export function CreateItem({
         lastOpened: new Date(),
         name: data.name,
         isStarred: false,
-        parentFolderId: null,
+        parentFolderId: parentFolderId,
         filePath: type === 'file' 
           ? `/files/${data.name}` 
           : data.name,
@@ -110,6 +112,8 @@ export function CreateItem({
         icon: null,
         collectionId: null,
       };
+
+      console.log(newItem);
 
       await addFileOrFolder(newItem);
 

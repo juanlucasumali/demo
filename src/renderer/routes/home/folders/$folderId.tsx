@@ -20,7 +20,15 @@ import { useNavigate } from '@tanstack/react-router'
 import { ItemType } from '@renderer/types/items'
 import { DemoItem } from '@renderer/types/items'
 
-export const Route = createFileRoute('/home/')({
+// Define route params interface
+export interface FolderParams {
+  folderId: string
+}
+
+export const Route = createFileRoute('/home/folders/$folderId')({
+  parseParams: (params): FolderParams => ({
+    folderId: params.folderId,
+  }),
   beforeLoad: async ({ context }) => {
     if (!context.auth.isAuthenticated || !context.auth.hasProfile) {
       throw redirect({
@@ -28,25 +36,27 @@ export const Route = createFileRoute('/home/')({
       })
     }
   },
-  component: Home
+  component: FolderPage
 })
 
-function Home() {
-  const { filesAndFolders, isLoading } = useItems();
-  const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null);
-  const [share, setShare] = useState(false);
-  const [createProject, setCreateProject] = useState(false);
-  const [request, setRequest] = useState(false);
+function FolderPage() {
+  const { folderId } = Route.useParams()
+  const { filesAndFolders, isLoading } = useItems(folderId);
   const navigate = useNavigate();
-
-  const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
-    dialogSetter(false);
-  };
-
+  
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {
       navigate({ to: '/home/folders/$folderId', params: { folderId: item.id!! } })
     }
+  };
+
+  const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null);
+  const [share, setShare] = useState(false);
+  const [createProject, setCreateProject] = useState(false);
+  const [request, setRequest] = useState(false);
+
+  const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
+    dialogSetter(false);
   };
 
   return (
@@ -117,7 +127,7 @@ function Home() {
         isOpen={!!createItem}
         onClose={() => setCreateItem(null)}
         location="home"
-        parentFolderId={null}
+        parentFolderId={folderId}
       />
       <ShareDialog setShare={setShare} share={share} handleDialogClose={handleDialogClose}/>
       <CreateProject setCreateProject={setCreateProject} createProject={createProject} handleDialogClose={handleDialogClose}/>

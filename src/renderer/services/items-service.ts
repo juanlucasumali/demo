@@ -9,10 +9,10 @@ const getCurrentUserId = () => {
   return user.id
 }
 
-export async function getFilesAndFolders(): Promise<DemoItem[]> {
+export async function getFilesAndFolders(parentFolderId?: string | null): Promise<DemoItem[]> {
   const userId = getCurrentUserId()
   
-  const { data, error } = await supabase
+  let query = supabase
     .from('files')
     .select(`
       *,
@@ -23,6 +23,16 @@ export async function getFilesAndFolders(): Promise<DemoItem[]> {
     `)
     .eq('owner_id', userId)
     .filter('type', 'in', '("file","folder")')
+
+  // Add parent folder filter if provided
+  if (parentFolderId) {
+    query = query.eq('parent_folder_id', parentFolderId)
+  } else {
+    // When no parent folder is specified, get root-level items
+    query = query.is('parent_folder_id', null)
+  }
+
+  const { data, error } = await query
 
   if (error) throw error
 

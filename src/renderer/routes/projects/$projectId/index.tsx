@@ -1,17 +1,15 @@
-import { createFileRoute, useParams } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
-import { Box, Play, Plus, Upload, FileSearch } from 'lucide-react'
+import { Box, Upload, FileSearch, Folder } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
 import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
 import { useState } from 'react'
-import { DemoItem } from '@renderer/types/items'
+import { DemoItem, ItemType } from '@renderer/types/items'
 import { EditProjectDialog } from '@renderer/components/dialogs/edit-project'
-import { cn } from '@renderer/lib/utils'
-import { SubHeader } from '@renderer/components/page-layout/sub-header'
 import { CreateCollection } from '@renderer/components/dialogs/create-collection'
 import {
   DropdownMenu,
@@ -24,6 +22,7 @@ import {
 import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
 import { CreateItem } from '@renderer/components/dialogs/create-item'
 import { useItems } from '@renderer/hooks/use-items'
+import { CollectionsSidebar } from '@renderer/components/collections/collections-sidebar'
 
 // Define route params interface
 export interface ProjectParams {
@@ -55,6 +54,7 @@ function ProjectPage() {
   const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null)
   const [chooseFiles, setChooseFiles] = useState(false)
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>([])
+  const navigate = useNavigate();
 
   const handleConfirmSelection = (items: DemoItem[]) => {
     setSelectedItems(items)
@@ -65,6 +65,12 @@ function ProjectPage() {
   ) => {
     dialogSetter(false)
   }
+
+  const handleRowClick = (item: DemoItem) => {
+    if (item.type === ItemType.FOLDER) {
+      navigate({ to: '/home/folders/$folderId', params: { folderId: item.id!! } })
+    }
+  };
 
   // Handle loading state
   if (isLoading.currentProject || isLoading.filesAndFolders) {
@@ -99,7 +105,7 @@ function ProjectPage() {
         description={currentProject.description || 'No description provided'}
         icon={Box}
         tag={currentProject.tags}
-        owner={currentProject.owner}
+        owner={currentProject.owner ?? undefined}
         sharedWith={currentProject.sharedWith}
       >
         <DropdownMenu modal={false}>
@@ -117,6 +123,11 @@ function ProjectPage() {
                 <FileSearch className="h-4 w-4 mr-2" />
                 Choose files
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCreateItem('folder')}>
+                <Folder/>
+                Create folder
+                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -142,44 +153,10 @@ function ProjectPage() {
       <PageContent>
         <div className="flex gap-6 md:flex-row flex-col pt-4">
           {/* Navigation Sidebar */}
-          <div className="w-48 flex-shrink-0">
-            <div className="sticky top-0">
-              <div>
-                <SubHeader subHeader="Collections" />
-              </div>
-              <nav className="space-y-1">
-                <a
-                  href="#"
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 text-sm',
-                    'rounded-md hover:bg-muted',
-                    'text-muted-foreground hover:text-foreground',
-                    'transition-colors',
-                  )}
-                >
-                  <Play className="h-4 w-4" />
-                  All
-                </a>
-
-                {/* New Collection Button */}
-                <button
-                  onClick={() => {
-                    setCreateCollection(true)
-                  }}
-                  className={cn(
-                    'flex w-full items-center gap-2 px-3 py-2 text-sm',
-                    'rounded-md hover:bg-muted',
-                    'text-muted-foreground hover:text-foreground',
-                    'transition-colors',
-                    'cursor-pointer',
-                  )}
-                >
-                  <Plus className="h-4 w-4" />
-                  New Collection
-                </button>
-              </nav>
-            </div>
-          </div>
+          <CollectionsSidebar 
+            projectId={projectId} 
+            onCreateCollection={() => setCreateCollection(true)}
+          />
 
           {/* Main Content */}
           <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
@@ -194,6 +171,7 @@ function ProjectPage() {
               viewMode="table"
               pageSize={10}
               isLoading={isLoading.filesAndFolders}
+              onRowClick={handleRowClick}
             />
           </div>
         </div>
@@ -218,6 +196,7 @@ function ProjectPage() {
         setCreateCollection={setCreateCollection}
         createCollection={createCollection}
         handleDialogClose={handleDialogClose}
+        projectId={projectId}
       />
 
       <CreateItem

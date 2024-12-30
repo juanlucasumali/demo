@@ -196,7 +196,7 @@ export const createColumns = ({
       const owner = row.original.owner;
       const friends = row.original.sharedWith ?? [];
       
-      return <AvatarGroup owner={owner} users={friends} size="md" />;
+      return <AvatarGroup owner={owner!!} users={friends} size="md" />;
     }
   },
 

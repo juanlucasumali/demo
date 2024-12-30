@@ -6,12 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
-import { useItemsStore } from "@renderer/stores/items-store";
 import { useToast } from "@renderer/hooks/use-toast";
-import { currentUser } from "../home/dummy-data";
-import { UserProfile } from "@renderer/types/users";
-import { useState } from "react";
-import { ItemType } from "@renderer/types/items";
+import { useItems } from "@renderer/hooks/use-items";
 
 // Validation schema for collection name
 const collectionSchema = z.object({
@@ -27,16 +23,17 @@ interface CreateCollectionProps {
   setCreateCollection: React.Dispatch<React.SetStateAction<boolean>>;
   createCollection: boolean;
   handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
+  projectId: string;
 }
 
 export function CreateCollection({
   setCreateCollection,
   createCollection,
   handleDialogClose,
+  projectId
 }: CreateCollectionProps) {
   const { toast } = useToast();
-  const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
-  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
+  const { addCollection } = useItems({ projectId });
 
   const {
     register,
@@ -50,40 +47,28 @@ export function CreateCollection({
     },
   });
 
-  const onSubmit: SubmitHandler<CollectionFormValues> = (data) => {
-    const newItem = {
-      id: `collection-${Date.now()}`,
-      createdAt: new Date(),
-      lastModified: new Date(),
-      lastOpened: new Date(),
-      name: data.collectionName,
-      isStarred: false,
-      parentFolderId: null,
-      filePath: data.collectionName,
-      type: ItemType.FOLDER, // Using FOLDER type for now
-      duration: null,
-      format: null,
-      owner: currentUser,
-      sharedWith: selectedUsers,
-      tags: null,
-      projectId: null,
-      size: null,
-      description: null,
-      icon: null,
-      collectionId: null,
-    };
+  const onSubmit: SubmitHandler<CollectionFormValues> = async (data) => {
+    try {
+      await addCollection({
+        projectId,
+        name: data.collectionName,
+      });
 
-    addFileOrFolder(newItem);
+      toast({
+        title: "Success!",
+        description: "Collection created successfully.",
+        variant: "default",
+      });
 
-    toast({
-      title: "Success!",
-      description: "Collection created successfully.",
-      variant: "default",
-    });
-
-    reset();
-    setCreateCollection(false);
-    setSelectedUsers([]);
+      reset();
+      setCreateCollection(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create collection. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

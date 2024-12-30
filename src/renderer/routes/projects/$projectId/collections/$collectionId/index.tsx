@@ -1,15 +1,14 @@
-import { createFileRoute, useParams } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
-import { Box, Upload, FileSearch } from 'lucide-react'
+import { Box, Upload, FileSearch, Folder } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
 import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
 import { useState } from 'react'
-import { DemoItem } from '@renderer/types/items'
-import { cn } from '@renderer/lib/utils'
+import { DemoItem, ItemType } from '@renderer/types/items'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,44 +20,28 @@ import {
 import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
 import { CreateItem } from '@renderer/components/dialogs/create-item'
 import { useItems } from '@renderer/hooks/use-items'
+import { CollectionsSidebar } from '@renderer/components/collections/collections-sidebar'
 
-// Define route params interface
-export interface CollectionParams {
-  projectId: string
-  collectionId: string
-}
-
-// Create the route with params validation
-export const Route = createFileRoute(
-  '/projects/$projectId/collections/$collectionId/',
-)({
-  parseParams: (params): CollectionParams => ({
-    projectId: params.projectId,
-    collectionId: params.collectionId,
-  }),
+export const Route = createFileRoute('/projects/$projectId/collections/$collectionId/')({
   component: CollectionPage,
 })
 
 function CollectionPage() {
-  const { projectId, collectionId } = useParams({
-    from: '/projects/$projectId/$collectionId',
-  })
-  const { projects, filesAndFolders, isLoading } = useItems()
+  const { projectId, collectionId } = useParams({ from: '/projects/$projectId/collections/$collectionId/' })
+  const { currentCollection, currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ collectionId, projectId })
 
-  // Get project data
-  const project = projects.find((p) => p.id === projectId)
+  console.log(projectId, collectionId)
 
-  // Get files associated with this collection
-  const filesInCollection = filesAndFolders.filter(
-    (file) =>
-      file.projectId === projectId && file.collectionId === collectionId,
-  )
+  console.log(currentCollection, filesAndFolders)
 
   // Dialog states
   const [share, setShare] = useState(false)
+  const [editProject, setEditProject] = useState(false)
   const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null)
   const [chooseFiles, setChooseFiles] = useState(false)
+  const [createCollection, setCreateCollection] = useState(false)
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>([])
+  const navigate = useNavigate()
 
   const handleConfirmSelection = (items: DemoItem[]) => {
     setSelectedItems(items)
@@ -70,26 +53,33 @@ function CollectionPage() {
     dialogSetter(false)
   }
 
+  const handleRowClick = (item: DemoItem) => {
+    if (item.type === ItemType.FOLDER) {
+      navigate({ to: '/home/folders/$folderId', params: { folderId: item.id!! } })
+    }
+  };
+
+
   // Handle loading state
-  if (isLoading.projects || isLoading.filesAndFolders) {
+  if (isLoading.currentProject || isLoading.filesAndFolders) {
     return (
       <PageMain>
         <PageHeader
-          title="Loading..."
-          description="Please wait while we load the collection details."
+          title=""
+          description=""
           icon={Box}
         />
       </PageMain>
     )
   }
 
-  // Handle case where project or collection is not found
-  if (!project) {
+  // Handle case where project is not found
+  if (!currentProject) {
     return (
       <PageMain>
         <PageHeader
-          title="Collection Not Found"
-          description="The requested collection could not be found."
+          title="Project Not Found"
+          description="The requested project could not be found."
           icon={Box}
         />
       </PageMain>
@@ -99,12 +89,12 @@ function CollectionPage() {
   return (
     <PageMain>
       <PageHeader
-        title={project.name} // You might want to add collection name here
-        description="Collection View"
+        title={currentProject.name}
+        description={currentProject.description || 'No description provided'}
         icon={Box}
-        tag={project.tags}
-        owner={project.owner}
-        sharedWith={project.sharedWith}
+        tag={currentProject.tags}
+        owner={currentProject.owner ?? undefined}
+        sharedWith={currentProject.sharedWith}
       >
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
@@ -122,6 +112,11 @@ function CollectionPage() {
                 Choose files
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCreateItem('folder')}>
+                <Folder/>
+                Create folder
+                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -133,19 +128,41 @@ function CollectionPage() {
         >
           Share
         </Button>
+
+        <Button
+          variant="default"
+          className="flex items-center gap-2"
+          onClick={() => setEditProject(true)}
+        >
+          Edit
+        </Button>
       </PageHeader>
 
       <PageContent>
-        <DataTable
-          columns={createColumns({
-            enableTags: false,
-          })}
-          data={filesInCollection}
-          enableSelection={false}
-          viewMode="table"
-          pageSize={10}
-          isLoading={isLoading.filesAndFolders}
-        />
+        <div className="flex gap-6 md:flex-row flex-col pt-4">
+          {/* Navigation Sidebar */}
+          <CollectionsSidebar 
+            projectId={projectId} 
+            onCreateCollection={() => setCreateCollection(true)}
+          />
+
+          {/* Main Content */}
+          <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
+            <DataTable
+              columns={createColumns({
+                enableTags: false,
+                removeItem: removeItem,
+                updateItem: updateItem,
+              })}
+              data={filesAndFolders}
+              enableSelection={false}
+              viewMode="table"
+              pageSize={10}
+              isLoading={isLoading.filesAndFolders}
+              onRowClick={handleRowClick}
+            />
+          </div>
+        </div>
       </PageContent>
 
       {/* Dialogs */}
@@ -153,6 +170,7 @@ function CollectionPage() {
         setShare={setShare}
         share={share}
         handleDialogClose={handleDialogClose}
+        initialItem={currentProject as DemoItem}
       />
 
       <CreateItem
@@ -169,9 +187,7 @@ function CollectionPage() {
         onOpenChange={setChooseFiles}
         onConfirm={handleConfirmSelection}
         initialSelections={[]}
-        location="collection"
-        projectId={projectId}
-        collectionId={collectionId}
+        location="project"
       />
     </PageMain>
   )

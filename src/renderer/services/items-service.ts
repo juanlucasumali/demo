@@ -11,7 +11,8 @@ const getCurrentUserId = () => {
 
 export async function getFilesAndFolders(
   parentFolderId?: string | null,
-  projectId?: string | null
+  projectId?: string | null,
+  collectionId?: string | null
 ): Promise<DemoItem[]> {
   const userId = getCurrentUserId()
   
@@ -27,17 +28,18 @@ export async function getFilesAndFolders(
     .eq('owner_id', userId)
     .filter('type', 'in', '("file","folder")')
 
-  // Add parent folder filter if provided
   if (parentFolderId) {
     query = query.eq('parent_folder_id', parentFolderId)
   } else {
-    // When no parent folder is specified, get root-level items
     query = query.is('parent_folder_id', null)
   }
 
-  // Add project filter if provided
   if (projectId) {
     query = query.eq('project_id', projectId)
+  }
+
+  if (collectionId) {
+    query = query.eq('collection_id', collectionId)
   }
 
   const { data, error } = await query
@@ -225,6 +227,20 @@ export async function getFolder(folderId: string): Promise<DemoItem | null> {
   };
 }
 
+export async function createCollection(projectId: string, name: string) {
+  const { data, error } = await supabase
+    .from('collections')
+    .insert({
+      project_id: projectId,
+      name: name,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getProject(projectId: string): Promise<DemoItem | null> {
   const { data, error } = await supabase
     .from('projects')
@@ -250,4 +266,86 @@ export async function getProject(projectId: string): Promise<DemoItem | null> {
     lastModified: new Date(data.last_modified),
     lastOpened: new Date(data.last_opened),
   };
+}
+
+export async function getCollections(projectId: string | undefined): Promise<DemoItem[]> {
+  if (!projectId) return [];
+  
+  const { data, error } = await supabase
+    .from('collections')
+    .select(`
+      *
+    `)
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+
+  return data.map(collection => ({
+    id: collection.id,
+    name: collection.name,
+    createdAt: new Date(collection.created_at),
+    projectId: collection.project_id,
+    // Add other necessary fields with default values
+    type: ItemType.FOLDER,
+    lastModified: new Date(collection.created_at),
+    lastOpened: new Date(collection.created_at),
+    isStarred: false,
+    description: null,
+    icon: null,
+    tags: null,
+    format: null,
+    size: null,
+    duration: null,
+    filePath: null,
+    parentFolderId: null,
+    collectionId: null,
+    owner: null,
+    sharedWith: [],
+  }));
+}
+
+export async function getCollection(collectionId: string): Promise<DemoItem | null> {
+  const { data, error } = await supabase
+    .from('collections')
+    .select(`
+      *,
+      project:project_id(*)
+    `)
+    .eq('id', collectionId)
+    .single();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    name: data.name,
+    createdAt: new Date(data.created_at),
+    projectId: data.project_id,
+    type: ItemType.FOLDER,
+    lastModified: new Date(data.created_at),
+    lastOpened: new Date(data.created_at),
+    isStarred: false,
+    description: null,
+    icon: null,
+    tags: null,
+    format: null,
+    size: null,
+    duration: null,
+    filePath: null,
+    parentFolderId: null,
+    collectionId: null,
+    owner: null,
+    sharedWith: [],
+  };
+}
+
+export async function removeCollection(collectionId: string) {
+  const { error } = await supabase
+    .from('collections')
+    .delete()
+    .eq('id', collectionId);
+
+  if (error) throw error;
 } 

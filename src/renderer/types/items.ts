@@ -39,6 +39,6 @@ export interface DemoItem {
     duration: number | null;
     filePath: string | null;
     
-    owner: UserProfile;
+    owner: UserProfile | null;
     sharedWith: UserProfile[] | null
 }

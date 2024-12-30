@@ -1,4 +1,4 @@
-import { Box, HomeIcon, User, UserCog } from 'lucide-react'
+import { Box, Folder, HomeIcon, User, UserCog } from 'lucide-react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
@@ -74,7 +74,7 @@ function Home() {
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => setCreateItem('folder')}>
-                <User/>
+                <Folder/>
                 Create folder
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
               </DropdownMenuItem>

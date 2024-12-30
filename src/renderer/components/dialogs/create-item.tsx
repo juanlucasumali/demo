@@ -45,9 +45,10 @@ interface CreateItemProps {
   type: 'file' | 'folder';
   isOpen: boolean;
   onClose: () => void;
-  location?: 'project' | 'home';
+  location?: 'project' | 'home' | 'collection';
   projectId?: string | null;
   parentFolderId?: string | null;
+  collectionId?: string | null;
 }
 
 export function CreateItem({
@@ -56,7 +57,8 @@ export function CreateItem({
   onClose,
   location = 'home',
   projectId = null,
-  parentFolderId = null
+  parentFolderId = null,
+  collectionId = null
 }: CreateItemProps) {
   const { toast } = useToast();
   const { addFileOrFolder } = useItems();
@@ -106,11 +108,11 @@ export function CreateItem({
         owner: currentUser,
         sharedWith: selectedUsers,
         tags: data.tags,
-        projectId: location === 'project' ? projectId : null,
+        projectId: location === 'project' || location === 'collection' ? projectId : null,
         size: type === 'file' ? selectedFile?.size ?? null : null,
         description: null,
         icon: null,
-        collectionId: null,
+        collectionId: location === 'collection' ? collectionId : null,
       };
 
       console.log(newItem);

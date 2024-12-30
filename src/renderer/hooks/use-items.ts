@@ -4,6 +4,7 @@ import * as itemsService from '@renderer/services/items-service'
 interface UseItemsOptions {
   parentFolderId?: string;
   projectId?: string;
+  collectionId?: string;
 }
 
 export function useItems(options?: UseItemsOptions) {
@@ -11,8 +12,12 @@ export function useItems(options?: UseItemsOptions) {
   const queryKey = ['files-and-folders', options?.parentFolderId, options?.projectId];
 
   const { data: filesAndFolders = [], isLoading } = useQuery({
-    queryKey,
-    queryFn: () => itemsService.getFilesAndFolders(options?.parentFolderId, options?.projectId),
+    queryKey: ['files-and-folders', options?.parentFolderId, options?.projectId, options?.collectionId],
+    queryFn: () => itemsService.getFilesAndFolders(
+      options?.parentFolderId, 
+      options?.projectId,
+      options?.collectionId
+    ),
   });
 
   // Query for projects
@@ -85,6 +90,24 @@ export function useItems(options?: UseItemsOptions) {
     }
   })
 
+  // Add this inside useItems function
+  const addCollection = useMutation({
+    mutationFn: ({ projectId, name }: { projectId: string; name: string }) => 
+      itemsService.createCollection(projectId, name),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['collections'] 
+      });
+      // If we're in a project context, invalidate that project's data
+      if (options?.projectId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['files-and-folders', null, options.projectId]
+        });
+      }
+    }
+  });
+
   // Add query for current folder if parentFolderId is provided
   const { data: currentFolder, isLoading: isLoadingCurrentFolder } = useQuery({
     queryKey: ['folder', options?.parentFolderId],
@@ -99,17 +122,49 @@ export function useItems(options?: UseItemsOptions) {
     enabled: !!options?.projectId
   });
 
+  // Add query for collections if projectId is provided
+  const { data: collections = [], isLoading: isLoadingCollections } = useQuery({
+    queryKey: ['collections', options?.projectId],
+    queryFn: () => itemsService.getCollections(options?.projectId),
+    enabled: !!options?.projectId
+  });
+
+  // Add current collection query
+  const { data: currentCollection, isLoading: isLoadingCurrentCollection } = useQuery({
+    queryKey: ['collection', options?.collectionId],
+    queryFn: () => options?.collectionId ? itemsService.getCollection(options.collectionId) : null,
+    enabled: !!options?.collectionId
+  });
+
+  const removeCollection = useMutation({
+    mutationFn: (collectionId: string) => itemsService.removeCollection(collectionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['collections'] 
+      });
+      if (options?.projectId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['files-and-folders', null, options.projectId]
+        });
+      }
+    }
+  });
+
   return {
     filesAndFolders,
     projects,
     starredItems,
     currentFolder,
     currentProject,
+    collections,
     addFileOrFolder: addFileOrFolder.mutate,
     addProject: addProject.mutate,
     removeItem: removeItem.mutate,
     updateItem: updateItem.mutate,
     toggleStar: toggleStar.mutate,
+    addCollection: addCollection.mutate,
+    currentCollection,
+    removeCollection,
     isLoading: {
       addFileOrFolder: addFileOrFolder.isPending,
       addProject: addProject.isPending,
@@ -119,7 +174,11 @@ export function useItems(options?: UseItemsOptions) {
       filesAndFolders: isLoading,
       projects: isLoadingProjects,
       currentFolder: isLoadingCurrentFolder,
-      currentProject: isLoadingCurrentProject
+      currentProject: isLoadingCurrentProject,
+      addCollection: addCollection.isPending,
+      collections: isLoadingCollections,
+      currentCollection: isLoadingCurrentCollection,
+      removeCollection: removeCollection.isPending
     }
   }
 } 

@@ -9,6 +9,7 @@ import { cn } from "@renderer/lib/utils"
 import { Link } from "@tanstack/react-router"
 import { useItemsStore } from "@renderer/stores/items-store"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
+import { ItemType } from "@renderer/types/items"
 
 interface GridItemProps<TData> {
   row: Row<TData>;
@@ -31,6 +32,8 @@ export function GridItem<DemoItem>({
   const itemId = row.getValue("id") as string;
   const isStarred = row.getValue("isStarred") as boolean;
   const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
+  const isClickable = row.getValue("type") === ItemType.FOLDER
+
 
   const content = (
     <div 
@@ -39,7 +42,8 @@ export function GridItem<DemoItem>({
         "transition-all duration-200",
         "hover:bg-muted/50",
         "data-[state=selected]:bg-muted",
-        enableRowLink && "cursor-pointer"
+        isClickable && enableRowLink && "cursor-pointer hover:bg-muted/50",
+        !isClickable && "cursor-default"
     )}
     data-state={isSelected ? "selected" : undefined}
     >

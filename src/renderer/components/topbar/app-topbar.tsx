@@ -16,7 +16,6 @@ export function AppTopbar({}: AppTopbarProps) {
   const router = useRouter()
   const routerState = useRouterState()
   const { addPath, goBack, goForward, canGoBack, canGoForward } = useNavigationStore()
-  console.log(routerState.location.pathname)
 
   const getInitialBreadcrumb = () => {
     const path = routerState.location.pathname

@@ -14,7 +14,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@renderer/components/ui/dialog";
-import { useItemsStore } from "@renderer/stores/items-store";
 import { useToast } from "@renderer/hooks/use-toast";
 import {
   Form,
@@ -29,6 +28,7 @@ import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { friendsData } from "../home/dummy-data";
 import { maxFileNameLength } from "@renderer/lib/utils";
+import { UseMutateFunction } from "@tanstack/react-query";
 
 // Schema and validation rules remain the same
 const editFileSchema = z.object({
@@ -45,9 +45,10 @@ type EditFileFormValues = z.infer<typeof editFileSchema>;
 
 interface EditFileDialogProps {
   editFile: boolean;
-  setEditFile: React.Dispatch<React.SetStateAction<boolean>>;
+  setEditFile: (value: boolean) => void;
   existingFile: DemoItem;
   handleDialogClose: (value: boolean) => void;
+  updateItem: UseMutateFunction<void, Error, DemoItem, unknown>;
 }
 
 export function EditFileDialog({
@@ -55,9 +56,9 @@ export function EditFileDialog({
   setEditFile,
   existingFile,
   handleDialogClose,
+  updateItem,
 }: EditFileDialogProps) {
   const { toast } = useToast();
-  const updateItem = useItemsStore((state) => state.updateItem);
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
     existingFile.sharedWith || []
   );
@@ -71,16 +72,18 @@ export function EditFileDialog({
   });
 
   const onSubmit = async (data: EditFileFormValues) => {
-
-    console.log(selectedUsers)
     try {
-      await updateItem({
+      // Create updated item object
+      const updatedItem = {
         ...existingFile,
         name: data.fileName,
         tags: data.tags,
         lastModified: new Date(),
         sharedWith: selectedUsers,
-      });
+      };
+
+      // Call updateItem mutation
+      await updateItem(updatedItem);
 
       toast({
         title: "Changes saved",

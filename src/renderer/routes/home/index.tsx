@@ -107,7 +107,7 @@ function Home() {
         </div>
         <SubHeader subHeader="All files"/>
         <DataTable 
-          columns={createColumns()} 
+          columns={createColumns({ showStarColumn: false })} 
           data={filesAndFolders}
           onRowClick={handleRowClick}
           isLoading={isLoading.filesAndFolders}

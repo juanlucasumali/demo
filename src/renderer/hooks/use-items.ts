@@ -51,7 +51,7 @@ export function useItems(parentFolderId?: string) {
   const updateItem = useMutation({
     mutationFn: itemsService.updateItem,
     onSuccess: (_, variables) => {
-      const queryKey = variables.type === 'project' ? ['projects'] : ['files']
+      const queryKey = variables.type === 'project' ? ['projects'] : ['files-and-folders']
       queryClient.invalidateQueries({ queryKey })
     }
   })

@@ -13,6 +13,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  Row,
 } from "@tanstack/react-table"
 
 import {
@@ -30,6 +31,7 @@ import { GridItem } from "./grid-item"
 import { Skeleton } from "@renderer/components/ui/skeleton"
 import { Card } from "@renderer/components/ui/card"
 import { Loader2 } from "lucide-react"
+import { ItemType } from '@renderer/types/items'
 
 interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
@@ -169,6 +171,12 @@ export function DataTable<DemoItem>({
     },
   })
 
+  // Add helper function to determine if row is clickable
+  const isRowClickable = (row: Row<any>) => {
+    const item = row.original
+    return item.type === ItemType.FOLDER
+  }
+
   return (
     <div className="space-y-4">
       {/* Search Filter and Action Buttons Container */}
@@ -228,10 +236,10 @@ export function DataTable<DemoItem>({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className={cn(
-                      "cursor-pointer hover:bg-muted/50",
-                      enableRowLink && "cursor-pointer"
+                      isRowClickable(row) && "hover:bg-muted/50",
+                      isRowClickable(row) && "cursor-pointer"
                     )}
-                    onClick={() => onRowClick?.(row.original)}
+                    onClick={() => isRowClickable(row) && onRowClick?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

@@ -22,6 +22,7 @@ import { EditFileDialog } from "@renderer/components/dialogs/edit-file"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 import { ShareDialog } from "@renderer/components/dialogs/share-dialog"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
+import { useItems } from "@renderer/hooks/use-items"
 
 interface ColumnOptions {
   enableStarToggle?: boolean;
@@ -40,6 +41,8 @@ export const createColumns = ({
   showFileSelection = true,
   showSelectAll = true,
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
+  const { removeItem, updateItem } = useItems();
+
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
     {
@@ -239,11 +242,13 @@ export const createColumns = ({
       const lastModified = row.original.lastModified;
       if (!lastModified) return "";
   
-      // Format the date as "Dec 6, 2035"
+      // Format the date as "Dec 6, 2035 12:00 AM"
       const formattedDate = new Intl.DateTimeFormat("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
       }).format(new Date(lastModified));
   
       return <div>{formattedDate}</div>;
@@ -256,7 +261,6 @@ if (enableActions) {
   baseColumns.push({
     id: "actions",
     cell: ({ row }) => {
-      const removeItem = useItemsStore((state) => state.removeItem);
       const [isDeleting, setIsDeleting] = useState(false);
       const [editFile, setEditFile] = useState(false);
       const [open, setOpen] = useState(false);
@@ -292,7 +296,7 @@ if (enableActions) {
       };
 
       return (
-        <div className="text-end">
+        <div className="text-end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu open={dropdown} onOpenChange={setDropdown} modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -301,14 +305,23 @@ if (enableActions) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditFile(true)}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                setEditFile(true);
+              }}>
                 <Edit /> Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShare(true)}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                setShare(true);
+              }}>
                 <Share /> Share
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(row.getValue("id"))}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(row.getValue("id"));
+                }}
               >
                 <RefreshCcw /> Convert
               </DropdownMenuItem>
@@ -327,6 +340,7 @@ if (enableActions) {
             setEditFile={setEditFile}
             existingFile={row.original}
             handleDialogClose={setDropdown}
+            updateItem={updateItem}
           />
 
           <ShareDialog 

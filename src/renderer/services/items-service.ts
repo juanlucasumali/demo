@@ -9,7 +9,10 @@ const getCurrentUserId = () => {
   return user.id
 }
 
-export async function getFilesAndFolders(parentFolderId?: string | null): Promise<DemoItem[]> {
+export async function getFilesAndFolders(
+  parentFolderId?: string | null,
+  projectId?: string | null
+): Promise<DemoItem[]> {
   const userId = getCurrentUserId()
   
   let query = supabase
@@ -30,6 +33,11 @@ export async function getFilesAndFolders(parentFolderId?: string | null): Promis
   } else {
     // When no parent folder is specified, get root-level items
     query = query.is('parent_folder_id', null)
+  }
+
+  // Add project filter if provided
+  if (projectId) {
+    query = query.eq('project_id', projectId)
   }
 
   const { data, error } = await query
@@ -211,6 +219,33 @@ export async function getFolder(folderId: string): Promise<DemoItem | null> {
     owner: data.owner,
     sharedWith: data.shared_with?.map(share => share.shared_with),
     type: data.type as ItemType,
+    createdAt: new Date(data.created_at),
+    lastModified: new Date(data.last_modified),
+    lastOpened: new Date(data.last_opened),
+  };
+}
+
+export async function getProject(projectId: string): Promise<DemoItem | null> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(`
+      *,
+      owner:owner_id(*),
+      shared_with:shared_items(
+        shared_with:shared_with_id(*)
+      )
+    `)
+    .eq('id', projectId)
+    .single();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return {
+    ...data,
+    owner: data.owner,
+    sharedWith: data.shared_with?.map(share => share.shared_with),
+    type: ItemType.PROJECT,
     createdAt: new Date(data.created_at),
     lastModified: new Date(data.last_modified),
     lastOpened: new Date(data.last_opened),

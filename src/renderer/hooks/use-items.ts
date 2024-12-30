@@ -1,13 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as itemsService from '@renderer/services/items-service'
 
-export function useItems(parentFolderId?: string) {
+interface UseItemsOptions {
+  parentFolderId?: string;
+  projectId?: string;
+}
+
+export function useItems(options?: UseItemsOptions) {
   const queryClient = useQueryClient()
-  const queryKey = ['files-and-folders', parentFolderId];
+  const queryKey = ['files-and-folders', options?.parentFolderId, options?.projectId];
 
   const { data: filesAndFolders = [], isLoading } = useQuery({
     queryKey,
-    queryFn: () => itemsService.getFilesAndFolders(parentFolderId),
+    queryFn: () => itemsService.getFilesAndFolders(options?.parentFolderId, options?.projectId),
   });
 
   // Query for projects
@@ -51,8 +56,16 @@ export function useItems(parentFolderId?: string) {
   const updateItem = useMutation({
     mutationFn: itemsService.updateItem,
     onSuccess: (_, variables) => {
-      const queryKey = variables.type === 'project' ? ['projects'] : ['files-and-folders']
-      queryClient.invalidateQueries({ queryKey })
+      const baseQueryKey = variables.type === 'project' ? ['projects'] : ['files-and-folders']
+      queryClient.invalidateQueries({ 
+        queryKey: baseQueryKey 
+      })
+      // Also invalidate the specific project query if we're in a project context
+      if (options?.projectId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['files-and-folders', null, options.projectId]
+        })
+      }
     }
   })
 
@@ -68,9 +81,16 @@ export function useItems(parentFolderId?: string) {
 
   // Add query for current folder if parentFolderId is provided
   const { data: currentFolder, isLoading: isLoadingCurrentFolder } = useQuery({
-    queryKey: ['folder', parentFolderId],
-    queryFn: () => parentFolderId ? itemsService.getFolder(parentFolderId) : null,
-    enabled: !!parentFolderId
+    queryKey: ['folder', options?.parentFolderId],
+    queryFn: () => options?.parentFolderId ? itemsService.getFolder(options?.parentFolderId) : null,
+    enabled: !!options?.parentFolderId
+  });
+
+  // Add query for current project if projectId is provided
+  const { data: currentProject, isLoading: isLoadingCurrentProject } = useQuery({
+    queryKey: ['project', options?.projectId],
+    queryFn: () => options?.projectId ? itemsService.getProject(options?.projectId) : null,
+    enabled: !!options?.projectId
   });
 
   return {
@@ -78,6 +98,7 @@ export function useItems(parentFolderId?: string) {
     projects,
     starredItems,
     currentFolder,
+    currentProject,
     addFileOrFolder: addFileOrFolder.mutate,
     addProject: addProject.mutate,
     removeItem: removeItem.mutate,
@@ -91,7 +112,8 @@ export function useItems(parentFolderId?: string) {
       toggleStar: toggleStar.isPending,
       filesAndFolders: isLoading,
       projects: isLoadingProjects,
-      currentFolder: isLoadingCurrentFolder
+      currentFolder: isLoadingCurrentFolder,
+      currentProject: isLoadingCurrentProject
     }
   }
 } 

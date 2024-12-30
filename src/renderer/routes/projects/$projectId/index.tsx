@@ -1,5 +1,4 @@
 import { createFileRoute, useParams } from '@tanstack/react-router'
-import { useItemsStore } from '@renderer/stores/items-store'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
@@ -14,9 +13,17 @@ import { EditProjectDialog } from '@renderer/components/dialogs/edit-project'
 import { cn } from '@renderer/lib/utils'
 import { SubHeader } from '@renderer/components/page-layout/sub-header'
 import { CreateCollection } from '@renderer/components/dialogs/create-collection'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuGroup,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '@renderer/components/ui/dropdown-menu'
 import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
 import { CreateItem } from '@renderer/components/dialogs/create-item'
+import { useItems } from '@renderer/hooks/use-items'
 
 // Define route params interface
 export interface ProjectParams {
@@ -24,7 +31,7 @@ export interface ProjectParams {
 }
 
 // Create the route with params validation
-export const Route = createFileRoute('/projects/$projectId')({
+export const Route = createFileRoute('/projects/$projectId/')({
   parseParams: (params): ProjectParams => ({
     projectId: params.projectId,
   }),
@@ -32,29 +39,14 @@ export const Route = createFileRoute('/projects/$projectId')({
   loader: ({ params }) => {
     // You can add data loading logic here if needed
     return {
-      projectId: params.projectId
+      projectId: params.projectId,
     }
   },
 })
 
 function ProjectPage() {
-  // Get the project ID from the route params
-  const { projectId } = useParams({ from: '/projects/$projectId' })
-
-  console.log(projectId)
-  
-  // Get project data from store
-  const project = useItemsStore((state) => 
-    state.projects.find(p => p.id === projectId)
-  )
-
-  console.log(project)
-  
-  const filesInProject = useItemsStore((state) => 
-    state.filesAndFolders
-  )
-
-  console.log(filesInProject)
+  const { projectId } = useParams({ from: '/projects/$projectId/' })
+  const { currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ projectId })
 
   // Dialog states
   const [share, setShare] = useState(false)
@@ -65,16 +57,30 @@ function ProjectPage() {
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>([])
 
   const handleConfirmSelection = (items: DemoItem[]) => {
-    setSelectedItems(items);
-  };
+    setSelectedItems(items)
+  }
 
-  const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
+  const handleDialogClose = (
+    dialogSetter: React.Dispatch<React.SetStateAction<boolean>>,
+  ) => {
     dialogSetter(false)
   }
 
+  // Handle loading state
+  if (isLoading.currentProject || isLoading.filesAndFolders) {
+    return (
+      <PageMain>
+        <PageHeader
+          title="Loading..."
+          description="Please wait while we load the project details."
+          icon={Box}
+        />
+      </PageMain>
+    )
+  }
 
   // Handle case where project is not found
-  if (!project) {
+  if (!currentProject) {
     return (
       <PageMain>
         <PageHeader
@@ -89,28 +95,26 @@ function ProjectPage() {
   return (
     <PageMain>
       <PageHeader
-        title={project.name}
-        description={project.description || "No description provided"}
+        title={currentProject.name}
+        description={currentProject.description || 'No description provided'}
         icon={Box}
-        tag={project.tags}
-        owner={project.owner}
-        sharedWith={project.sharedWith}
+        tag={currentProject.tags}
+        owner={currentProject.owner}
+        sharedWith={currentProject.sharedWith}
       >
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button variant="default">
-              Add Files
-            </Button>
+            <Button variant="default">Add Files</Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className='w-56' align='end' forceMount>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => setCreateItem('file')}>
-                <Upload className="h-4 w-4 mr-2"/>
+                <Upload className="h-4 w-4 mr-2" />
                 Upload file
                 <DropdownMenuShortcut>⇧⌘U</DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setChooseFiles(true)}>
-                <FileSearch className="h-4 w-4 mr-2"/>
+                <FileSearch className="h-4 w-4 mr-2" />
                 Choose files
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
               </DropdownMenuItem>
@@ -118,15 +122,15 @@ function ProjectPage() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button 
-          variant="default" 
+        <Button
+          variant="default"
           onClick={() => setShare(true)}
           className="flex items-center gap-2"
         >
           Share
         </Button>
 
-        <Button 
+        <Button
           variant="default"
           className="flex items-center gap-2"
           onClick={() => setEditProject(true)}
@@ -144,13 +148,13 @@ function ProjectPage() {
                 <SubHeader subHeader="Collections" />
               </div>
               <nav className="space-y-1">
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-sm",
-                    "rounded-md hover:bg-muted",
-                    "text-muted-foreground hover:text-foreground",
-                    "transition-colors"
+                    'flex items-center gap-2 px-3 py-2 text-sm',
+                    'rounded-md hover:bg-muted',
+                    'text-muted-foreground hover:text-foreground',
+                    'transition-colors',
                   )}
                 >
                   <Play className="h-4 w-4" />
@@ -163,11 +167,11 @@ function ProjectPage() {
                     setCreateCollection(true)
                   }}
                   className={cn(
-                    "flex w-full items-center gap-2 px-3 py-2 text-sm",
-                    "rounded-md hover:bg-muted",
-                    "text-muted-foreground hover:text-foreground",
-                    "transition-colors",
-                    "cursor-pointer"
+                    'flex w-full items-center gap-2 px-3 py-2 text-sm',
+                    'rounded-md hover:bg-muted',
+                    'text-muted-foreground hover:text-foreground',
+                    'transition-colors',
+                    'cursor-pointer',
                   )}
                 >
                   <Plus className="h-4 w-4" />
@@ -181,12 +185,15 @@ function ProjectPage() {
           <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
             <DataTable
               columns={createColumns({
-                enableTags: false 
+                enableTags: false,
+                removeItem: removeItem,
+                updateItem: updateItem,
               })}
-              data={filesInProject}
+              data={filesAndFolders}
               enableSelection={false}
               viewMode="table"
               pageSize={10}
+              isLoading={isLoading.filesAndFolders}
             />
           </div>
         </div>
@@ -197,13 +204,13 @@ function ProjectPage() {
         setShare={setShare}
         share={share}
         handleDialogClose={handleDialogClose}
-        initialItem={project as DemoItem}
+        initialItem={currentProject as DemoItem}
       />
 
       <EditProjectDialog
         editProject={editProject}
         setEditProject={setEditProject}
-        existingProject={project}
+        existingProject={currentProject as DemoItem}
         handleDialogClose={handleDialogClose}
       />
 

@@ -23,6 +23,7 @@ import { Checkbox } from "@renderer/components/ui/checkbox"
 import { ShareDialog } from "@renderer/components/dialogs/share-dialog"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 import { useItems } from "@renderer/hooks/use-items"
+import { UseMutateFunction } from "@tanstack/react-query"
 
 interface ColumnOptions {
   enableStarToggle?: boolean;
@@ -31,6 +32,12 @@ interface ColumnOptions {
   showStarColumn?: boolean;
   showFileSelection?: boolean;
   showSelectAll?: boolean;
+  removeItem?: UseMutateFunction<void, Error, string, unknown>;
+  updateItem?: UseMutateFunction<void, Error, DemoItem, unknown>;
+  isLoading?: {
+    removeItem: boolean;
+    updateItem: boolean;
+  };
 }
 
 export const createColumns = ({
@@ -40,9 +47,10 @@ export const createColumns = ({
   showStarColumn = true,
   showFileSelection = true,
   showSelectAll = true,
+  removeItem,
+  updateItem,
+  isLoading = { removeItem: false, updateItem: false }
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
-  const { removeItem, updateItem, isLoading } = useItems();
-
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
     {
@@ -276,7 +284,7 @@ if (enableActions) {
       const handleDelete = async () => {
         try {
           setIsDeleting(true);
-          await removeItem(row.getValue("id"));
+          await removeItem?.(row.getValue("id"));
           setDropdown(false);
           setOpen(false);
           toast({
@@ -339,29 +347,35 @@ if (enableActions) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <EditFileDialog
-            editFile={editFile}
-            setEditFile={setEditFile}
-            existingFile={row.original}
-            handleDialogClose={setDropdown}
-            updateItem={updateItem}
-          />
+          {updateItem && (
+            <EditFileDialog
+              editFile={editFile}
+              setEditFile={setEditFile}
+              existingFile={row.original}
+              handleDialogClose={setDropdown}
+              updateItem={updateItem}
+            />
+          )}
 
-          <ShareDialog 
-            share={share}
-            setShare={setShare}
-            handleDialogClose={handleDialogClose}
-            initialItem={row.original}
-          />
+          {share && (
+            <ShareDialog 
+              share={share}
+              setShare={setShare}
+              handleDialogClose={handleDialogClose}
+              initialItem={row.original}
+            />
+          )}
 
-          <DeleteDialog 
-            open={open}
-            onOpenChange={setOpen}
-            itemId={row.original.id!!}
-            removeItem={removeItem}
-            handleDialogClose={setDropdown}
-            isLoading={isLoading.removeItem}
-          />
+          {removeItem && (
+            <DeleteDialog 
+              open={open}
+              onOpenChange={setOpen}
+              itemId={row.original.id!!}
+              removeItem={removeItem}
+              handleDialogClose={setDropdown}
+              isLoading={isLoading.removeItem}
+            />
+          )}
         </div>
       );
     },

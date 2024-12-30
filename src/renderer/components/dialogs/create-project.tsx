@@ -22,6 +22,8 @@ import React from "react";
 import { UserProfile } from "@renderer/types/users";
 import { currentUser, friendsData } from "../home/dummy-data";
 import { DemoItem, ItemType } from "@renderer/types/items";
+import { useItems } from "@renderer/hooks/use-items";
+import { Loader2 } from "lucide-react";
 
 const projectSchema = z.object({
   icon: z
@@ -50,6 +52,7 @@ interface CreateProjectProps {
 }
 
 export function CreateProject({ createProject, setCreateProject, handleDialogClose }: CreateProjectProps) {
+  const { addProject, isLoading } = useItems();
   const { toast } = useToast();
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
 
@@ -70,37 +73,49 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
     }
   };
 
-  const handleSubmit: SubmitHandler<ProjectFormValues> = (data) => {
-    const newProject: DemoItem = {
-      id: `project-${Date.now()}`,
-      createdAt: new Date(),
-      lastModified: new Date(),
-      lastOpened: new Date(),
-      name: data.name,
-      description: data.description,
-      isStarred: false,
-      tags: null,
-      icon: data.icon?.name || "default-folder",
-      owner: currentUser,
-      sharedWith: [],
-      projectId: null,
-      parentFolderId: null,
-      filePath: "",
-      type: ItemType.PROJECT,
-      format: null,
-      size: null,
-      duration: null,
-      collectionId: null,
-    };
+  const handleSubmit: SubmitHandler<ProjectFormValues> = async (data) => {
+    try {
+      const newProject: DemoItem = {
+        id: undefined,
+        createdAt: new Date(),
+        lastModified: new Date(),
+        lastOpened: new Date(),
+        name: data.name,
+        description: data.description,
+        isStarred: false,
+        tags: null,
+        icon: data.icon?.name || "default-folder",
+        owner: currentUser,
+        sharedWith: selectedUsers,
+        projectId: null,
+        parentFolderId: null,
+        filePath: "",
+        type: ItemType.PROJECT,
+        format: null,
+        size: null,
+        duration: null,
+        collectionId: null,
+      };
 
-    toast({
-      title: "Project Created!",
-      description: "Your project has been successfully created.",
-      variant: "default",
-    });
+      await addProject(newProject);
 
-    form.reset();
-    setCreateProject(false);
+      toast({
+        title: "Success!",
+        description: "Your project has been successfully created.",
+        variant: "default",
+      });
+
+      form.reset();
+      setSelectedUsers([]);
+      setCreateProject(false);
+      handleDialogClose(setCreateProject);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create project. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const icon = form.watch("icon");
@@ -186,7 +201,20 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
                 )}
               />
               <div className="pt-2">
-                <Button className="w-full" type="submit">Create Project</Button>
+                <Button 
+                  className="w-full" 
+                  type="submit"
+                  disabled={isLoading.addProject}
+                >
+                  {isLoading.addProject ? (
+                    <span className="flex items-center justify-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </span>
+                  ) : (
+                    "Create Project"
+                  )}
+                </Button>
               </div>
             </div>
           </form>

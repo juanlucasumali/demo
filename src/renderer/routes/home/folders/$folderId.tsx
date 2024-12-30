@@ -41,7 +41,7 @@ export const Route = createFileRoute('/home/folders/$folderId')({
 
 function FolderPage() {
   const { folderId } = Route.useParams()
-  const { filesAndFolders, currentFolder, isLoading } = useItems(folderId);
+  const { filesAndFolders, currentFolder, isLoading } = useItems({ parentFolderId: folderId });
   const navigate = useNavigate();
   
   const handleRowClick = (item: DemoItem) => {

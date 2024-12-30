@@ -3,13 +3,14 @@ import { Box } from 'lucide-react'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
 import { createFileRoute } from '@tanstack/react-router'
-import { useItemsStore } from '@renderer/stores/items-store'
+import { useItems } from '@renderer/hooks/use-items'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
 import { Button } from '@renderer/components/ui/button'
 import { CreateProject } from '@renderer/components/dialogs/create-project'
 import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
 import { useState } from 'react'
+
 
 export const Route = createFileRoute('/projects/')({
   component: Projects,
@@ -22,7 +23,7 @@ export const Route = createFileRoute('/projects/')({
 })
 
 export default function Projects() {
-  const projects = useItemsStore((state) => state.projects);
+  const { projects, isLoading } = useItems();
   const [createProject, setCreateProject] = useState(false)
   const [share, setShare] = useState(false)
 
@@ -57,6 +58,7 @@ export default function Projects() {
           enableActions={true}
           viewMode="grid"
           pageSize={12}
+          isLoading={isLoading.projects}
         />
       </PageContent>
 

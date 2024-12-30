@@ -35,7 +35,7 @@ export const Route = createFileRoute('/home/')({
 })
 
 function Home() {
-  const { filesAndFolders, isLoading } = useItems();
+  const { filesAndFolders, isLoading, updateItem, removeItem } = useItems();
   const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null);
   const [share, setShare] = useState(false);
   const [createProject, setCreateProject] = useState(false);
@@ -107,7 +107,7 @@ function Home() {
         </div>
         <SubHeader subHeader="All files"/>
         <DataTable 
-          columns={createColumns({ showStarColumn: false })} 
+          columns={createColumns({ showStarColumn: false, removeItem: removeItem, updateItem: updateItem })} 
           data={filesAndFolders}
           onRowClick={handleRowClick}
           isLoading={isLoading.filesAndFolders}

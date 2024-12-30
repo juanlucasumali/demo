@@ -1,5 +1,5 @@
 import { Box, HomeIcon, User, UserCog } from 'lucide-react'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, Router, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
@@ -36,7 +36,7 @@ export const Route = createFileRoute('/home/folders/$folderId')({
       })
     }
   },
-  component: FolderPage
+  component: FolderPage,
 })
 
 function FolderPage() {

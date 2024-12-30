@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star } from "lucide-react"
+import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem } from "@renderer/types/items"
 import { formatDuration } from "@renderer/lib/utils"
@@ -41,7 +41,7 @@ export const createColumns = ({
   showFileSelection = true,
   showSelectAll = true,
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
-  const { removeItem, updateItem } = useItems();
+  const { removeItem, updateItem, isLoading } = useItems();
 
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
@@ -326,12 +326,16 @@ if (enableActions) {
                 <RefreshCcw /> Convert
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DeleteDialog 
-                open={open}
-                onOpenChange={setOpen}
-                onDelete={handleDelete}
-                isDeleting={isDeleting}
-              />
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(true);
+                }}
+                className="text-red-500"
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -348,6 +352,15 @@ if (enableActions) {
             setShare={setShare}
             handleDialogClose={handleDialogClose}
             initialItem={row.original}
+          />
+
+          <DeleteDialog 
+            open={open}
+            onOpenChange={setOpen}
+            itemId={row.original.id!!}
+            removeItem={removeItem}
+            handleDialogClose={setDropdown}
+            isLoading={isLoading.removeItem}
           />
         </div>
       );

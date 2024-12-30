@@ -42,7 +42,7 @@ export function useItems(parentFolderId?: string) {
   const removeItem = useMutation({
     mutationFn: itemsService.removeItem,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files'] })
+      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
     }
   })
@@ -61,7 +61,7 @@ export function useItems(parentFolderId?: string) {
     mutationFn: ({ id, isStarred }: { id: string; isStarred: boolean }) => 
       itemsService.toggleItemStar(id, isStarred),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files'] })
+      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
     }
   })

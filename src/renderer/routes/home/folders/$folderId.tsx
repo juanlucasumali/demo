@@ -1,5 +1,5 @@
 import { Box, HomeIcon, User, UserCog } from 'lucide-react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
@@ -19,7 +19,6 @@ import { CreateItem } from '@renderer/components/dialogs/create-item'
 import { useNavigate } from '@tanstack/react-router'
 import { ItemType } from '@renderer/types/items'
 import { DemoItem } from '@renderer/types/items'
-import { supabase } from '@renderer/lib/supabase'
 
 // Define route params interface
 export interface FolderParams {
@@ -27,26 +26,17 @@ export interface FolderParams {
 }
 
 export const Route = createFileRoute('/home/folders/$folderId')({
+  parseParams: (params): FolderParams => ({
+    folderId: params.folderId,
+  }),
+  beforeLoad: async ({ context }) => {
+    if (!context.auth.isAuthenticated || !context.auth.hasProfile) {
+      throw redirect({
+        to: '/auth',
+      })
+    }
+  },
   component: FolderPage,
-  loader: async ({ params }): Promise<{ 
-    breadcrumb: { 
-      label: string;
-      id: string;
-    }
-  }> => {
-    const { data: folder } = await supabase
-      .from('files')
-      .select('name')
-      .eq('id', params.folderId)
-      .single()
-
-    return {
-      breadcrumb: {
-        label: folder?.name || 'Unknown Folder',
-        id: params.folderId
-      }
-    }
-  }
 })
 
 function FolderPage() {

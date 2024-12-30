@@ -60,7 +60,13 @@ export function useItems(options?: UseItemsOptions) {
       queryClient.invalidateQueries({ 
         queryKey: baseQueryKey 
       })
-      // Also invalidate the specific project query if we're in a project context
+      // Also invalidate the specific project query
+      if (variables.type === 'project') {
+        queryClient.invalidateQueries({ 
+          queryKey: ['project', variables.id]
+        })
+      }
+      // Invalidate project files if in project context
       if (options?.projectId) {
         queryClient.invalidateQueries({ 
           queryKey: ['files-and-folders', null, options.projectId]

@@ -71,8 +71,8 @@ function ProjectPage() {
     return (
       <PageMain>
         <PageHeader
-          title="Loading..."
-          description="Please wait while we load the project details."
+          title=""
+          description=""
           icon={Box}
         />
       </PageMain>
@@ -225,6 +225,7 @@ function ProjectPage() {
         isOpen={!!createItem}
         onClose={() => setCreateItem(null)}
         location="project"
+        projectId={projectId}
       />
 
       <SelectFilesDialog

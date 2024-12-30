@@ -14,7 +14,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@renderer/components/ui/dialog";
-import { useItemsStore } from "@renderer/stores/items-store";
 import { useToast } from "@renderer/hooks/use-toast";
 import {
   Form,
@@ -29,6 +28,7 @@ import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { friendsData } from "../home/dummy-data";
 import { maxFileNameLength } from "@renderer/lib/utils";
+import { useItems } from "@renderer/hooks/use-items";
 
 const editProjectSchema = z.object({
   projectName: z
@@ -57,7 +57,7 @@ export function EditProjectDialog({
   handleDialogClose,
 }: EditProjectDialogProps) {
   const { toast } = useToast();
-  const updateItem = useItemsStore((state) => state.updateItem);
+  const { updateItem } = useItems();
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
     existingProject.sharedWith || []
   );

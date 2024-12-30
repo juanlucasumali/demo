@@ -1,4 +1,4 @@
-import { Box, HomeIcon, User, UserCog } from 'lucide-react'
+import { Box, FolderIcon, HomeIcon, User, UserCog } from 'lucide-react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/home/folders/$folderId')({
 
 function FolderPage() {
   const { folderId } = Route.useParams()
-  const { filesAndFolders, isLoading } = useItems(folderId);
+  const { filesAndFolders, currentFolder, isLoading } = useItems(folderId);
   const navigate = useNavigate();
   
   const handleRowClick = (item: DemoItem) => {
@@ -63,9 +63,9 @@ function FolderPage() {
     <PageMain>
       {/* Page Header */}
       <PageHeader
-        title="Home"
-        description="Supercharge creativity, simplify your media."
-        icon={HomeIcon}
+        title={currentFolder?.name || ""}
+        description=""
+        icon={FolderIcon}
       >
         {/* Header Buttons */}
         <Button variant="default" onClick={() => setCreateItem('file')}>
@@ -108,11 +108,6 @@ function FolderPage() {
 
       {/* Page Content */}
       <PageContent>
-        <div className='lg:grid lg:grid-cols-5 gap-4 pt-8'>
-          <Recents />
-          <Activity />
-        </div>
-        <SubHeader subHeader="All files"/>
         <DataTable 
           columns={createColumns()} 
           data={filesAndFolders}

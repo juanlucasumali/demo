@@ -188,4 +188,31 @@ export async function toggleItemStar(id: string, isStarred: boolean) {
       .eq('id', id)
       .eq('owner_id', userId)
   ])
+}
+
+export async function getFolder(folderId: string): Promise<DemoItem | null> {
+  const { data, error } = await supabase
+    .from('files')
+    .select(`
+      *,
+      owner:owner_id(*),
+      shared_with:shared_items(
+        shared_with:shared_with_id(*)
+      )
+    `)
+    .eq('id', folderId)
+    .single();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return {
+    ...data,
+    owner: data.owner,
+    sharedWith: data.shared_with?.map(share => share.shared_with),
+    type: data.type as ItemType,
+    createdAt: new Date(data.created_at),
+    lastModified: new Date(data.last_modified),
+    lastOpened: new Date(data.last_opened),
+  };
 } 

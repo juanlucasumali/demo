@@ -66,10 +66,18 @@ export function useItems(parentFolderId?: string) {
     }
   })
 
+  // Add query for current folder if parentFolderId is provided
+  const { data: currentFolder, isLoading: isLoadingCurrentFolder } = useQuery({
+    queryKey: ['folder', parentFolderId],
+    queryFn: () => parentFolderId ? itemsService.getFolder(parentFolderId) : null,
+    enabled: !!parentFolderId
+  });
+
   return {
     filesAndFolders,
     projects,
     starredItems,
+    currentFolder,
     addFileOrFolder: addFileOrFolder.mutate,
     addProject: addProject.mutate,
     removeItem: removeItem.mutate,
@@ -82,7 +90,8 @@ export function useItems(parentFolderId?: string) {
       updateItem: updateItem.isPending,
       toggleStar: toggleStar.isPending,
       filesAndFolders: isLoading,
-      projects: isLoadingProjects
+      projects: isLoadingProjects,
+      currentFolder: isLoadingCurrentFolder
     }
   }
 } 

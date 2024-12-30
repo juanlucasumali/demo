@@ -82,7 +82,7 @@ export function AppTopbar({}: AppTopbarProps) {
             </Button>
           </div>
 
-          <Breadcrumb>
+          {/* <Breadcrumb>
             <BreadcrumbList>
               {(() => {
                 const initial = getInitialBreadcrumb()
@@ -98,7 +98,7 @@ export function AppTopbar({}: AppTopbarProps) {
                 )
               })()}
             </BreadcrumbList>
-          </Breadcrumb>
+          </Breadcrumb> */}
         </div>
         <div className='ml-auto flex items-center gap-2 pr-3'>
           <ThemeSwitch />

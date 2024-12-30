@@ -3,69 +3,66 @@ import { Card, CardContent, CardHeader } from "../ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Table, TableRow, TableCell, TableBody } from "../ui/table";
 import { File, FileQuestion, Files, Box } from "lucide-react";
-import { SaveItemsDialog } from "../dialogs/save-items-dialog";
 import { dummyDemoItems, dummyProjectItems } from "./dummy-data";
 import { friendsData } from "./dummy-data";
 import { DemoNotification, NotificationType } from "@renderer/types/notifications";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog";
-import { Button } from "../ui/button";
-import { useToast } from "@renderer/hooks/use-toast";
+import { useNotifications } from "@renderer/hooks/use-notifications";
 
 // Updated notifications data with proper types
-const notifications: DemoNotification[] = [
-  { 
-    id: "notification-1",
-    from: friendsData[0],
-    createdAt: new Date("2024-03-20T14:30:00Z"),
-    type: NotificationType.ITEM_REQUEST,
-    itemsRequested: [dummyDemoItems[3]], // GuitarStem.wav
-    itemShared: null,
-    itemsShared: null,
-    projectShared: null,
-    description: "Hey, could you send over the guitar stem for the song?"
-  },
-  { 
-    id: "notification-2",
-    from: friendsData[1],
-    createdAt: new Date("2024-03-20T12:15:00Z"),
-      type: NotificationType.SINGLE_ITEM_SHARE,
-      itemsRequested: null,
-    itemShared: dummyDemoItems[1], // LeadVocal_Take1
-    itemsShared: null,
-    projectShared: null,
-    description: null
-  },
-  { 
-    id: "notification-3",
-    from: friendsData[2],
-    createdAt: new Date("2024-03-19T16:45:00Z"),
-    type: NotificationType.MULTI_ITEM_SHARE,
-    itemsRequested: null,
-    itemShared: null,
-    itemsShared: [
-      dummyDemoItems[0], // Vocal Recordings folder
-      dummyDemoItems[1], // LeadVocal_Take1
-      dummyDemoItems[2], // Instrumentals folder
-    ],
-    projectShared: null,
-    description: null
-  },
-  { 
-    id: "notification-4",
-    from: friendsData[3],
-    createdAt: new Date("2024-03-19T10:30:00Z"),
-    type: NotificationType.PROJECT_SHARE,
-    itemsRequested: null,
-    itemShared: null,
-    itemsShared: null,
-    projectShared: dummyProjectItems[1], // Assuming this is a project item
-    description: null
-  },
-];
+// const notifications: DemoNotification[] = [
+//   { 
+//     id: "notification-1",
+//     from: friendsData[0],
+//     createdAt: new Date("2024-03-20T14:30:00Z"),
+//     type: NotificationType.ITEM_REQUEST,
+//     itemsRequested: [dummyDemoItems[3]], // GuitarStem.wav
+//     itemShared: null,
+//     itemsShared: null,
+//     projectShared: null,
+//     description: "Hey, could you send over the guitar stem for the song?"
+//   },
+//   { 
+//     id: "notification-2",
+//     from: friendsData[1],
+//     createdAt: new Date("2024-03-20T12:15:00Z"),
+//       type: NotificationType.SINGLE_ITEM_SHARE,
+//       itemsRequested: null,
+//     itemShared: dummyDemoItems[1], // LeadVocal_Take1
+//     itemsShared: null,
+//     projectShared: null,
+//     description: null
+//   },
+//   { 
+//     id: "notification-3",
+//     from: friendsData[2],
+//     createdAt: new Date("2024-03-19T16:45:00Z"),
+//     type: NotificationType.MULTI_ITEM_SHARE,
+//     itemsRequested: null,
+//     itemShared: null,
+//     itemsShared: [
+//       dummyDemoItems[0], // Vocal Recordings folder
+//       dummyDemoItems[1], // LeadVocal_Take1
+//       dummyDemoItems[2], // Instrumentals folder
+//     ],
+//     projectShared: null,
+//     description: null
+//   },
+//   { 
+//     id: "notification-4",
+//     from: friendsData[3],
+//     createdAt: new Date("2024-03-19T10:30:00Z"),
+//     type: NotificationType.PROJECT_SHARE,
+//     itemsRequested: null,
+//     itemShared: null,
+//     itemsShared: null,
+//     projectShared: dummyProjectItems[1], // Assuming this is a project item
+//     description: null
+//   },
+// ];
 
 export function Activity() {
+  const { data: notifications = [] } = useNotifications();
   const [selectedNotification, setSelectedNotification] = useState<typeof notifications[0] | null>(null);
-  const { toast } = useToast();
 
   const handleNotificationClick = (notification: typeof notifications[0]) => {
     setSelectedNotification(notification);
@@ -149,12 +146,16 @@ export function Activity() {
   };
 
   return (
-    <>
-      <Card className="lg:col-span-2 lg:mb-0 mb-8 shadow-none">
-        <CardHeader className="py-4">
-          <h1 className="text-base font-semibold tracking-tight">Activity</h1>
-        </CardHeader>
-        <CardContent>
+    <Card className="lg:col-span-2 lg:mb-0 mb-8 shadow-none">
+      <CardHeader className="py-4">
+        <h1 className="text-base font-semibold tracking-tight">Activity</h1>
+      </CardHeader>
+      <CardContent>
+        {notifications.length === 0 ? (
+          <div className="h-40 flex items-center justify-center text-muted-foreground">
+            No recent activity to show
+          </div>
+        ) : (
           <div className="h-40 overflow-y-auto overflow-x-auto no-scrollbar">
             <Table>
               <TableBody>
@@ -185,61 +186,8 @@ export function Activity() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
-
-      {selectedNotification && (
-        selectedNotification.type === NotificationType.PROJECT_SHARE ? (
-          <Dialog 
-            open={!!selectedNotification} 
-            onOpenChange={(open) => !open && setSelectedNotification(null)}
-          >
-            <DialogContent className="max-w-[400px]">
-              <DialogHeader>
-                <DialogTitle>Save Project</DialogTitle>
-                <DialogDescription>
-                  {selectedNotification.from.name} shared a project with you
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
-                <Box className="h-4 w-4" />
-                <span className="text-sm">{selectedNotification.projectShared?.name}</span>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  onClick={() => {
-                    // Here you would implement the project save logic
-                    toast({
-                      title: "Project saved",
-                      description: "The project has been added to your projects"
-                    });
-                    setSelectedNotification(null);
-                  }}
-                >
-                  Save Project
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : (
-          <SaveItemsDialog
-            open={!!selectedNotification}
-            onOpenChange={(open) => !open && setSelectedNotification(null)}
-            from={selectedNotification.from}
-            items={
-              selectedNotification.type === NotificationType.ITEM_REQUEST
-                ? selectedNotification.itemsRequested
-                : selectedNotification.type === NotificationType.SINGLE_ITEM_SHARE
-                ? selectedNotification.itemShared ? [selectedNotification.itemShared] : null
-                : selectedNotification.itemsShared
-            }
-            sharedAt={selectedNotification.createdAt}
-            description={selectedNotification.description}
-          />
-        )
-      )}
-    </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

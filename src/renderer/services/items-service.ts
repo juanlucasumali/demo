@@ -24,10 +24,6 @@ export async function getFilesAndFolders(): Promise<DemoItem[]> {
     .eq('owner_id', userId)
     .filter('type', 'in', '("file","folder")')
 
-    console.log("userId", userId);
-    console.log("data", data);
-    console.log("error", error);
-
   if (error) throw error
 
   return data.map(item => ({
@@ -88,6 +84,8 @@ export async function addFileOrFolder(item: DemoItem) {
       duration: item.duration,
       file_path: item.filePath,
     })
+
+    console.log("error", error);
 
   if (error) throw error
 }

@@ -15,8 +15,8 @@ import { cn } from '@renderer/lib/utils'
 import { SubHeader } from '@renderer/components/page-layout/sub-header'
 import { CreateCollection } from '@renderer/components/dialogs/create-collection'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
-import { UploadFile } from '@renderer/components/dialogs/upload-file'
 import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
+import { CreateItem } from '@renderer/components/dialogs/create-item'
 
 // Define route params interface
 export interface ProjectParams {
@@ -60,7 +60,7 @@ function ProjectPage() {
   const [share, setShare] = useState(false)
   const [editProject, setEditProject] = useState(false)
   const [createCollection, setCreateCollection] = useState(false)
-  const [upload, setUpload] = useState(false)
+  const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null)
   const [chooseFiles, setChooseFiles] = useState(false)
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>([])
 
@@ -104,7 +104,7 @@ function ProjectPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setUpload(true)}>
+              <DropdownMenuItem onClick={() => setCreateItem('file')}>
                 <Upload className="h-4 w-4 mr-2"/>
                 Upload file
                 <DropdownMenuShortcut>⇧⌘U</DropdownMenuShortcut>
@@ -213,10 +213,10 @@ function ProjectPage() {
         handleDialogClose={handleDialogClose}
       />
 
-      <UploadFile
-        setUpload={setUpload}
-        upload={upload}
-        handleDialogClose={handleDialogClose}
+      <CreateItem
+        type={createItem || 'file'}
+        isOpen={!!createItem}
+        onClose={() => setCreateItem(null)}
         location="project"
       />
 

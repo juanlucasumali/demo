@@ -98,8 +98,7 @@ export function UploadFile({
 
   const onSubmit: SubmitHandler<FileUploadFormValues> = async (data) => {
     try {
-      console.log("selectedFile", selectedFile);
-      console.log("currentUser", currentUser);
+      
       if (!selectedFile || !currentUser) return;
 
       const fileExtension = data.file.name.split(".").pop() as FileFormat;
@@ -135,8 +134,6 @@ export function UploadFile({
         icon: null,
         collectionId: null,
       };
-
-      console.log("newItem", newItem);
 
     addFileOrFolder(newItem);
 

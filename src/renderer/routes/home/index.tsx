@@ -1,13 +1,10 @@
 import { Box, HomeIcon, User, UserCog } from 'lucide-react'
-import { useItemsStore } from '@renderer/stores/items-store'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
 import { Button } from '@renderer/components/ui/button'
-import { UploadFile } from '@renderer/components/dialogs/upload-file'
-import { CreateFolder } from '@renderer/components/dialogs/create-folder'
 import { Recents } from '@renderer/components/home/recents'
 import { Activity } from '@renderer/components/home/activity'
 import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
@@ -17,8 +14,8 @@ import { RequestDialog } from '@renderer/components/dialogs/request'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
 import { SubHeader } from '@renderer/components/page-layout/sub-header'
-import { useNotifications } from '@renderer/hooks/use-notifications'
 import { useItems } from '@renderer/hooks/use-items'
+import { CreateItem } from '@renderer/components/dialogs/create-item'
 
 export const Route = createFileRoute('/home/')({
   beforeLoad: async ({ context }) => {
@@ -33,24 +30,14 @@ export const Route = createFileRoute('/home/')({
 
 function Home() {
   const { filesAndFolders, isLoading } = useItems();
-  const { data: notifications = [] } = useNotifications();
-  
-  const [upload, setUpload] = useState(false);
-  const [createFolder, setCreateFolder] = useState(false);
+  const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null);
   const [share, setShare] = useState(false);
   const [createProject, setCreateProject] = useState(false);
   const [request, setRequest] = useState(false);
-  const [showRecents, setShowRecents] = useState(false);
-  const [showActivity, setShowActivity] = useState(false);
 
   const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
     dialogSetter(false);
   };
-
-  useEffect(() => {
-    setShowRecents(filesAndFolders.length >= 10);
-    setShowActivity(notifications.length > 0);
-  }, [filesAndFolders, notifications]);
 
   if (isLoading && filesAndFolders.length === 0) {
     return <div>Loading...</div>;
@@ -65,7 +52,7 @@ function Home() {
         icon={HomeIcon}
       >
         {/* Header Buttons */}
-        <Button variant="default" onClick={() => setUpload(true)}>
+        <Button variant="default" onClick={() => setCreateItem('file')}>
           Upload
         </Button>
 
@@ -77,7 +64,7 @@ function Home() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setCreateFolder(true)}>
+              <DropdownMenuItem onClick={() => setCreateItem('folder')}>
                 <User/>
                 Create folder
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
@@ -106,21 +93,20 @@ function Home() {
       {/* Page Content */}
       <PageContent>
         <div className='lg:grid lg:grid-cols-5 gap-4 pt-8'>
-          {showRecents && <Recents />}
-          {showActivity && <Activity />}
-          {!showRecents && !showActivity && (
-            <div className="col-span-5 text-center text-muted-foreground py-8">
-              No recent activity to show. Start by uploading files or creating a project!
-            </div>
-          )}
+          <Recents />
+          <Activity />
         </div>
         <SubHeader subHeader="All files"/>
         <DataTable columns={createColumns()} data={filesAndFolders} />
       </PageContent>
 
       {/* Dialogs */}
-      <UploadFile setUpload={setUpload} upload={upload} handleDialogClose={handleDialogClose} location="home" projectId={null}/>
-      <CreateFolder setCreateFolder={setCreateFolder} createFolder={createFolder} handleDialogClose={handleDialogClose}/>
+      <CreateItem 
+        type={createItem || 'file'}
+        isOpen={!!createItem}
+        onClose={() => setCreateItem(null)}
+        location="home"
+      />
       <ShareDialog setShare={setShare} share={share} handleDialogClose={handleDialogClose}/>
       <CreateProject setCreateProject={setCreateProject} createProject={createProject} handleDialogClose={handleDialogClose}/>
       <RequestDialog setRequest={setRequest} request={request} handleDialogClose={handleDialogClose}/>

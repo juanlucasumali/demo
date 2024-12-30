@@ -3,7 +3,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { ThemeSwitch } from './theme-switcher'
 import { ProfileDropdown } from './profile-dropdown'
 import { Button } from '../ui/button'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Box, ChevronLeft, ChevronRight, Home, User } from 'lucide-react'
 import { useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useNavigationStore } from '@renderer/stores/navigation-store'
@@ -16,6 +16,23 @@ export function AppTopbar({}: AppTopbarProps) {
   const router = useRouter()
   const routerState = useRouterState()
   const { addPath, goBack, goForward, canGoBack, canGoForward } = useNavigationStore()
+  console.log(routerState.location.pathname)
+
+  const getInitialBreadcrumb = () => {
+    const path = routerState.location.pathname
+    
+    if (path.startsWith('/home')) {
+      return { icon: Home, label: 'Home' }
+    }
+    if (path.startsWith('/profile')) {
+      return { icon: User, label: 'Profile' }
+    }
+    if (path.startsWith('/projects')) {
+      return { icon: Box, label: 'Projects' }
+    }
+    return null
+  }
+  
 
   // Add current path to history when route changes
   useEffect(() => {
@@ -67,15 +84,19 @@ export function AppTopbar({}: AppTopbarProps) {
 
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="#">
-                  Building Your Application
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-              </BreadcrumbItem>
+              {(() => {
+                const initial = getInitialBreadcrumb()
+                if (!initial) return null
+                
+                return (
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="#" className="flex items-center gap-2">
+                      <initial.icon className="h-4 w-4" />
+                      <span>{initial.label}</span>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                )
+              })()}
             </BreadcrumbList>
           </Breadcrumb>
         </div>

@@ -65,3 +65,24 @@ export const formatDate = (date: Date) => {
 }
 
 export const maxFileNameLength = 100; // Set maximum length for file name
+
+/**
+ * Checks if a router match contains the specified nested property path in its loaderData
+ * @param match The router match object to check
+ * @param path Dot-notation path to check (e.g. 'loaderData.breadcrumb')
+ */
+export function isMatch(match: any, path: string): boolean {
+  if (!match || !path) return false
+  
+  const parts = path.split('.')
+  let current = match
+
+  for (const part of parts) {
+    if (current === null || current === undefined || !(part in current)) {
+      return false
+    }
+    current = current[part]
+  }
+
+  return true
+}

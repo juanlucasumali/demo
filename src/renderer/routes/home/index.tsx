@@ -28,7 +28,10 @@ export const Route = createFileRoute('/home/')({
       })
     }
   },
-  component: Home
+  component: Home,
+  loader: () => ({
+    breadcrumb: 'home'
+  })
 })
 
 function Home() {

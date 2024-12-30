@@ -13,6 +13,12 @@ import { useState } from 'react'
 
 export const Route = createFileRoute('/projects/')({
   component: Projects,
+  loader: () => ({
+    breadcrumb: {
+      label: 'Projects',
+      id: 'projects'
+    }
+  })
 })
 
 export default function Projects() {

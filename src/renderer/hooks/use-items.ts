@@ -23,7 +23,10 @@ export function useItems(parentFolderId?: string) {
   const addFileOrFolder = useMutation({
     mutationFn: itemsService.addFileOrFolder,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files'] })
+      // Invalidate both root-level and folder-specific queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['files-and-folders']
+      })
     }
   })
 

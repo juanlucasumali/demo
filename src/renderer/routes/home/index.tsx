@@ -39,10 +39,6 @@ function Home() {
     dialogSetter(false);
   };
 
-  if (isLoading && filesAndFolders.length === 0) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <PageMain>
       {/* Page Header */}
@@ -97,7 +93,10 @@ function Home() {
           <Activity />
         </div>
         <SubHeader subHeader="All files"/>
-        <DataTable columns={createColumns()} data={filesAndFolders} />
+        <DataTable 
+          columns={createColumns()} 
+          data={filesAndFolders} 
+        />
       </PageContent>
 
       {/* Dialogs */}

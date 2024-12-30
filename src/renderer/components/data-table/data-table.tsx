@@ -27,6 +27,9 @@ import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
 import { cn } from "@renderer/lib/utils"
 import { GridItem } from "./grid-item"
+import { Skeleton } from "@renderer/components/ui/skeleton"
+import { Card } from "@renderer/components/ui/card"
+import { useItems } from "@renderer/hooks/use-items"
 
 interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
@@ -64,6 +67,8 @@ export function DataTable<DemoItem>({
     { id: 'lastModified', desc: true }, // true first
   ]);
 
+  const { isLoading } = useItems();
+  
   // Handle sorting changes while ensuring isStarred remains the primary sort
   const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
     setSorting((oldSorting) => {
@@ -203,7 +208,17 @@ export function DataTable<DemoItem>({
               </TableHeader>
             )}
             <TableBody>
-              {table.getRowModel().rows?.length ? (
+              {isLoading.filesAndFolders ? (
+                // Single skeleton per row
+                Array.from({ length: pageSize }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={columns.length}>
+                      <Skeleton className="h-6 py-2 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                // Existing row rendering logic
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
@@ -217,6 +232,7 @@ export function DataTable<DemoItem>({
                   </TableRow>
                 ))
               ) : (
+                // Existing no results row
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
                     No results.
@@ -226,8 +242,18 @@ export function DataTable<DemoItem>({
             </TableBody>
           </Table>
         ) : (
+          // Grid view with skeleton loading
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {table.getRowModel().rows?.length ? (
+            {isLoading.filesAndFolders ? (
+              Array.from({ length: pageSize }).map((_, i) => (
+                <Card key={i} className="p-4">
+                  <Skeleton className="h-12 w-12 rounded-full mb-4" />
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </Card>
+              ))
+            ) : table.getRowModel().rows?.length ? (
+              // Existing grid items
               table.getRowModel().rows.map((row) => (
                 <GridItem
                   key={row.id}
@@ -239,6 +265,7 @@ export function DataTable<DemoItem>({
                 />
               ))
             ) : (
+              // Existing no results message
               <div className="col-span-full text-center py-12 text-muted-foreground">
                 No results.
               </div>

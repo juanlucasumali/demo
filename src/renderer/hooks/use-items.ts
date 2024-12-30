@@ -5,13 +5,13 @@ export function useItems() {
   const queryClient = useQueryClient()
 
   // Query for files and folders
-  const { data: filesAndFolders = [] } = useQuery({
+  const { data: filesAndFolders = [], isLoading: isLoadingFilesAndFolders } = useQuery({
     queryKey: ['files'],
     queryFn: itemsService.getFilesAndFolders
   })
 
   // Query for projects
-  const { data: projects = [] } = useQuery({
+  const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
     queryFn: itemsService.getProjects
   })
@@ -77,7 +77,9 @@ export function useItems() {
       addProject: addProject.isPending,
       removeItem: removeItem.isPending,
       updateItem: updateItem.isPending,
-      toggleStar: toggleStar.isPending
+      toggleStar: toggleStar.isPending,
+      filesAndFolders: isLoadingFilesAndFolders,
+      projects: isLoadingProjects
     }
   }
 } 

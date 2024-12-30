@@ -7,6 +7,7 @@ import { dummyDemoItems, dummyProjectItems } from "./dummy-data";
 import { friendsData } from "./dummy-data";
 import { DemoNotification, NotificationType } from "@renderer/types/notifications";
 import { useNotifications } from "@renderer/hooks/use-notifications";
+import { Skeleton } from "../ui/skeleton";
 
 // Updated notifications data with proper types
 // const notifications: DemoNotification[] = [
@@ -61,7 +62,7 @@ import { useNotifications } from "@renderer/hooks/use-notifications";
 // ];
 
 export function Activity() {
-  const { data: notifications = [] } = useNotifications();
+  const { data: notifications = [], isLoading } = useNotifications();
   const [selectedNotification, setSelectedNotification] = useState<typeof notifications[0] | null>(null);
 
   const handleNotificationClick = (notification: typeof notifications[0]) => {
@@ -151,7 +152,30 @@ export function Activity() {
         <h1 className="text-base font-semibold tracking-tight">Activity</h1>
       </CardHeader>
       <CardContent>
-        {notifications.length === 0 ? (
+        {isLoading ? (
+          <div className="h-40 overflow-y-auto overflow-x-auto no-scrollbar">
+            <Table>
+              <TableBody>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="w-[50px]">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                    </TableCell>
+                    <TableCell className="w-[150px]">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-[200px]">
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="h-40 flex items-center justify-center text-muted-foreground">
             No recent activity to show
           </div>

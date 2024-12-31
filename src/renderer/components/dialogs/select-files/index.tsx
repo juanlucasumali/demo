@@ -2,12 +2,12 @@
 
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@renderer/components/ui/alert-dialog"
 import { Button } from "@renderer/components/ui/button"
-import { useItemsStore } from "@renderer/stores/items-store"
 import { Tabs, TabsTrigger, TabsList, TabsContent } from "@renderer/components/ui/tabs"
 import { createColumns } from "@renderer/components/data-table/columns"
 import { DataTable } from "@renderer/components/data-table/data-table"
 import { DemoItem } from "@renderer/types/items"
 import { useState, useEffect } from "react"
+import { useItems } from "@renderer/hooks/use-items"
 
 interface SelectFilesDialogProps {
   open: boolean
@@ -24,8 +24,7 @@ export function SelectFilesDialog({
   initialSelections = [],
   location
 }: SelectFilesDialogProps) {
-  const filesAndFolders = useItemsStore((state) => state.filesAndFolders);
-  const projects = useItemsStore((state) => state.projects);
+  const { filesAndFolders, projects } = useItems()
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>(initialSelections);
   const [activeTab, setActiveTab] = useState<string>("home");
 

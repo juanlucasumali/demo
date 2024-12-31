@@ -15,7 +15,7 @@ import { useItems } from "@renderer/hooks/use-items";
 import FileTagsDropdown from "./file-tags-dropdown";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
 import { maxFileNameLength } from "@renderer/lib/utils";
-import { currentUser } from "../home/dummy-data";
+import { useUserStore } from "@renderer/stores/user-store";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 
@@ -26,6 +26,9 @@ const createItemSchema = z.object({
     .max(maxFileNameLength, { 
       message: `Name must not exceed ${maxFileNameLength} characters.` 
     }),
+  description: z
+    .string()
+    .max(200, { message: "Description must not exceed 200 characters." }),
   tags: z.any().nullable(),
   file: z.custom<File>().optional()
     .refine(
@@ -66,11 +69,13 @@ export function CreateItem({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { friends, isLoading } = useItems({ searchTerm });  
+  const currentUser = useUserStore((state) => state.profile);
 
   const form = useForm<CreateItemFormValues>({
     resolver: zodResolver(createItemSchema),
     defaultValues: {
       name: "",
+      description: "",
       tags: null,
       file: undefined
     },
@@ -111,7 +116,7 @@ export function CreateItem({
         tags: data.tags,
         projectId: location === 'project' || location === 'collection' ? projectId : null,
         size: type === 'file' ? selectedFile?.size ?? null : null,
-        description: null,
+        description: data.description || "",
         icon: null,
         collectionId: location === 'collection' ? collectionId : null,
       };
@@ -182,6 +187,20 @@ export function CreateItem({
                 </FormItem>
               )}
             />
+
+            {type !== 'file' && <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="description">Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />}
 
             <FormField
               control={form.control}

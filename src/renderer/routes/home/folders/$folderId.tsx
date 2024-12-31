@@ -49,7 +49,7 @@ function FolderPage() {
     <PageMain>
       <PageHeader
         title={currentFolder?.name || ""}
-        description=""
+        description={currentFolder?.description || ""}
         icon={FolderIcon}
         owner={currentFolder?.owner || undefined}
         sharedWith={currentFolder?.sharedWith}

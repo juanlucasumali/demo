@@ -16,14 +16,13 @@ import { useToast } from "@renderer/hooks/use-toast";
 
 import folderImage from "@renderer/assets/macos-folder.png";
 import { Button } from "@renderer/components/ui/button";
-import { Textarea } from "@renderer/components/ui/textarea";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import React from "react";
 import { UserProfile } from "@renderer/types/users";
-import { currentUser } from "../home/dummy-data";
 import { DemoItem, ItemType } from "@renderer/types/items";
 import { useItems } from "@renderer/hooks/use-items";
 import { Loader2 } from "lucide-react";
+import { useUserStore } from "@renderer/stores/user-store";
 
 const projectSchema = z.object({
   icon: z
@@ -55,6 +54,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
   const { toast } = useToast();
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const currentUser = useUserStore((state) => state.profile);
 
   const { addProject, isLoading, friends } = useItems({ searchTerm });
 
@@ -191,13 +191,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
                   <FormItem>
                     <FormLabel htmlFor="description">Description</FormLabel>
                     <FormControl>
-                      <Textarea
-                        id="description"
-                        placeholder=""
-                        className="resize-none"
-                        rows={2}
-                        {...field}
-                      />
+                      <Input placeholder="" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

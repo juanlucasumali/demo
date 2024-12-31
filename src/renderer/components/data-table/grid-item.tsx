@@ -7,7 +7,6 @@ import { Star } from "lucide-react"
 import { UserProfile } from "@renderer/types/users"
 import { cn } from "@renderer/lib/utils"
 import { Link } from "@tanstack/react-router"
-import { useItemsStore } from "@renderer/stores/items-store"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 import { ItemType } from "@renderer/types/items"
 
@@ -31,7 +30,7 @@ export function GridItem<DemoItem>({
   const hasCollaborators = !row.getValue("icon") && sharedWith && sharedWith.length > 0;
   const itemId = row.getValue("id") as string;
   const isStarred = row.getValue("isStarred") as boolean;
-  const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
+  // const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
   const isClickable = row.getValue("type") === ItemType.FOLDER
 
 
@@ -53,7 +52,7 @@ export function GridItem<DemoItem>({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          toggleIsStarred(itemId);
+          // toggleIsStarred(itemId);
         }}
       >
         {isStarred ? (

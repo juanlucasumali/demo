@@ -14,7 +14,6 @@ import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem } from "@renderer/types/items"
 import { formatDuration } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
-import { useItemsStore } from "@renderer/stores/items-store"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 
@@ -141,14 +140,15 @@ export const createColumns = ({
       const type = row.original.type;
       const isStarred = row.original.isStarred;
       const tags = row.original.tags;
-      const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
+      // const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
+
   
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
           <div className="flex items-center gap-2 whitespace-nowrap">
             {showStarColumn && (
               <div
-                onClick={enableStarToggle ? () => toggleIsStarred(row.getValue("id")) : undefined}
+                // onClick={enableStarToggle ? () => toggleIsStarred(row.getValue("id")) : undefined}
                 style={{ cursor: enableStarToggle ? 'pointer' : 'default' }}
                 title={enableStarToggle ? (isStarred ? 'Unstar' : 'Star') : undefined}
             >

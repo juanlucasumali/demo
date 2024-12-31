@@ -29,6 +29,7 @@ import { UserProfile } from "@renderer/types/users";
 import { maxFileNameLength } from "@renderer/lib/utils";
 import { UseMutateFunction } from "@tanstack/react-query";
 import { useItems } from "@renderer/hooks/use-items";
+import { Textarea } from "../ui/textarea";
 
 // Schema and validation rules remain the same
 const editFileSchema = z.object({
@@ -38,6 +39,9 @@ const editFileSchema = z.object({
     .max(maxFileNameLength, {
       message: `File name must not exceed ${maxFileNameLength} characters.`,
     }),
+    description: z
+    .string()
+  .max(200, { message: "Description must not exceed 200 characters." }),
   tags: z.any().nullable(),
 });
 
@@ -70,6 +74,7 @@ export function EditFileDialog({
     defaultValues: {
       fileName: existingFile.name,
       tags: existingFile.tags,
+      description: existingFile.description || "",
     },
   });
 
@@ -80,6 +85,7 @@ export function EditFileDialog({
         ...existingFile,
         name: data.fileName,
         tags: data.tags,
+        description: data.description || "",
         lastModified: new Date(),
         sharedWith: selectedUsers,
       };
@@ -127,6 +133,20 @@ export function EditFileDialog({
                   <FormLabel>File Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter file name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="description">Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

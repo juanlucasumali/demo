@@ -21,11 +21,9 @@ import {
   FormMessage,
 } from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
-import { useItemsStore } from "@renderer/stores/items-store";
 import { Box, File, Folder, Link } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { Textarea } from "@renderer/components/ui/textarea";
-import { friendsData } from "../home/dummy-data";
 import { UserProfile } from "@renderer/types/users";
 import { useItems } from "@renderer/hooks/use-items";
 

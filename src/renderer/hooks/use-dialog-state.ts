@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { DemoItem } from '@renderer/types/items'
 import { UserProfile } from '@renderer/types/users'
 

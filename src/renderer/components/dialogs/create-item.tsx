@@ -52,6 +52,7 @@ interface CreateItemProps {
   projectId?: string | null;
   parentFolderId?: string | null;
   collectionId?: string | null;
+  sharedWith: UserProfile[] | null;
 }
 
 export function CreateItem({
@@ -61,11 +62,14 @@ export function CreateItem({
   location = 'home',
   projectId = null,
   parentFolderId = null,
-  collectionId = null
+  collectionId = null,
+  sharedWith
 }: CreateItemProps) {
   const { toast } = useToast();
   const { addFileOrFolder } = useItems();
-  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
+    sharedWith || []
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { friends, isLoading } = useItems({ searchTerm });  

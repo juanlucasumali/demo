@@ -36,7 +36,7 @@ export default function Projects() {
           Create Project
         </Button>
 
-        <Button variant="default" onClick={() => dialogState.share.onOpen()}>
+        <Button variant="default" onClick={() => dialogState.share.onOpen({ item: undefined })}>
           Share
         </Button>
       </PageHeader>
@@ -46,9 +46,9 @@ export default function Projects() {
           columns={createColumns({
             enableStarToggle: true,
             enableActions: true,
-            onEditFile: dialogState.editFile.onOpen,
-            onShare: dialogState.share.onOpen,
-            onDelete: dialogState.delete.onOpen
+            onEditFile: (item) => dialogState.editFile.onOpen({ item }),
+            onShare: (item) => dialogState.share.onOpen({ item }),
+            onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
           })}
           data={projects}
           enableSelection={false}

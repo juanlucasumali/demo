@@ -75,7 +75,7 @@ function CollectionPage() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => 
-                dialogState.createItem.onOpen('file', null, 'collection', projectId, collectionId)
+                dialogState.createItem.onOpen({ type: 'file', parentFolderId: null, location: 'collection', projectId, collectionId })
               }>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload file
@@ -90,7 +90,7 @@ function CollectionPage() {
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => 
-                dialogState.createItem.onOpen('folder', null, 'collection', projectId, collectionId)
+                dialogState.createItem.onOpen({ type: 'folder', parentFolderId: null, location: 'collection', projectId, collectionId })
               }>
                 <Folder/>
                 Create folder
@@ -102,7 +102,7 @@ function CollectionPage() {
 
         <Button
           variant="default"
-          onClick={() => dialogState.share.onOpen(currentProject)}
+          onClick={() => dialogState.share.onOpen({ item: currentProject })}
           className="flex items-center gap-2"
         >
           Share
@@ -111,7 +111,7 @@ function CollectionPage() {
         <Button
           variant="default"
           className="flex items-center gap-2"
-          onClick={() => dialogState.editFile.onOpen(currentProject)}
+          onClick={() => dialogState.editFile.onOpen({ item: currentProject })}
         >
           Edit
         </Button>
@@ -121,16 +121,16 @@ function CollectionPage() {
         <div className="flex gap-6 md:flex-row flex-col pt-4">
           <CollectionsSidebar 
             projectId={projectId} 
-            onCreateCollection={() => dialogState.createCollection.onOpen(projectId)}
+            onCreateCollection={() => dialogState.createCollection.onOpen({ projectId })}
           />
 
           <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
             <DataTable
               columns={createColumns({
                 enableTags: false,
-                onEditFile: dialogState.editFile.onOpen,
-                onShare: dialogState.share.onOpen,
-                onDelete: dialogState.delete.onOpen
+                onEditFile: (item) => dialogState.editFile.onOpen({ item }),
+                onShare: (item) => dialogState.share.onOpen({ item }),
+                onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
               })}
               data={filesAndFolders}
               enableSelection={false}

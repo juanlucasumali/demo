@@ -50,7 +50,7 @@ function Home() {
         description="Supercharge creativity, simplify your media."
         icon={HomeIcon}
       >
-        <Button variant="default" onClick={() => dialogState.createItem.onOpen('file')}>
+        <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file' })}>
           Upload
         </Button>
 
@@ -60,7 +60,7 @@ function Home() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen('folder')}>
+              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen({ type: 'folder' })}>
                 <Folder/> Create folder
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => dialogState.createProject.onOpen()}>
@@ -74,7 +74,7 @@ function Home() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="default" onClick={() => dialogState.share.onOpen()}>
+        <Button variant="default" onClick={() => dialogState.share.onOpen({ item: undefined })}>
           Share
         </Button>
 
@@ -89,9 +89,9 @@ function Home() {
         <SubHeader subHeader="All files"/>
         <DataTable 
           columns={createColumns({ 
-            onEditFile: dialogState.editFile.onOpen,
-            onShare: dialogState.share.onOpen,
-            onDelete: dialogState.delete.onOpen,
+            onEditFile: (item) => dialogState.editFile.onOpen({ item }) ,
+            onShare: (item) => dialogState.share.onOpen({ item }),
+            onDelete: (itemId) => dialogState.delete.onOpen({ itemId }),
             onToggleStar: (id, isStarred) => toggleStar({ id, isStarred })
           })} 
           data={filesAndFolders}

@@ -35,6 +35,7 @@ interface DialogManagerProps {
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
     collectionId?: string | null
+    sharedWith: UserProfile[] | null
   }
   createProject: {
     isOpen: boolean
@@ -124,6 +125,7 @@ export function DialogManager({
           parentFolderId={createItem.parentFolderId}
           projectId={createItem.projectId}
           collectionId={createItem.collectionId}
+          sharedWith={createItem.sharedWith}
         />
       )}
 

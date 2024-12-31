@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,11 +62,13 @@ export function EditFileDialog({
   updateItem,
 }: EditFileDialogProps) {
   const { toast } = useToast();
-  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
-    existingFile.sharedWith || []
-  );
+  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const { friends, isLoading } = useItems({ searchTerm: searchTerm });
+  const { friends, isLoading } = useItems({ searchTerm });
+
+  useEffect(() => {
+    setSelectedUsers(existingFile.sharedWith || []);
+  }, [existingFile]);
 
   const form = useForm<EditFileFormValues>({
     resolver: zodResolver(editFileSchema),

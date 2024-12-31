@@ -56,7 +56,7 @@ function FolderPage() {
         owner={currentFolder?.owner || undefined}
         sharedWith={currentFolder?.sharedWith}
       >
-        <Button variant="default" onClick={() => dialogState.createItem.onOpen('file', folderId, 'home')}>
+        <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file', parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
           Upload
         </Button>
 
@@ -66,7 +66,7 @@ function FolderPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen('folder', folderId, 'home')}>
+              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen({ type: 'folder', parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
                 <User/> Create folder
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
               </DropdownMenuItem>
@@ -83,7 +83,7 @@ function FolderPage() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="default" onClick={() => dialogState.share.onOpen(currentFolder ?? undefined)}>
+        <Button variant="default" onClick={() => dialogState.share.onOpen({ item: currentFolder ?? undefined })}>
           Share
         </Button>
       </PageHeader>
@@ -91,9 +91,9 @@ function FolderPage() {
       <PageContent>
         <DataTable 
           columns={createColumns({
-            onEditFile: dialogState.editFile.onOpen,
-            onShare: dialogState.share.onOpen,
-            onDelete: dialogState.delete.onOpen
+            onEditFile: (item) => dialogState.editFile.onOpen({ item }),
+            onShare: (item) => dialogState.share.onOpen({ item }),
+            onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
           })} 
           data={filesAndFolders}
           onRowClick={handleRowClick}

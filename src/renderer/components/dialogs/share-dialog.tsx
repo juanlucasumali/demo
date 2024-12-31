@@ -44,6 +44,7 @@ export function ShareDialog({
   useEffect(() => {
     if (open) {
       setSelectedItems(initialItem ? [initialItem] : []);
+      setSelectedUsers(initialItem?.sharedWith || []);
     }
   }, [open, initialItem]);
 

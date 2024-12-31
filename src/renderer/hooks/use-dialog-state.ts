@@ -11,13 +11,24 @@ interface SaveItemsState {
 }
 
 export function useDialogState() {
-  const [editFile, setEditFile] = useState<{ isOpen: boolean; item?: DemoItem }>({
+  const [editFile, setEditFile] = useState<{ 
+    isOpen: boolean
+    item?: DemoItem 
+  }>({
     isOpen: false
   })
-  const [share, setShare] = useState<{ isOpen: boolean; item?: DemoItem }>({
+
+  const [share, setShare] = useState<{ 
+    isOpen: boolean
+    item?: DemoItem 
+  }>({
     isOpen: false
   })
-  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; itemId?: string }>({
+
+  const [deleteDialog, setDeleteDialog] = useState<{ 
+    isOpen: boolean
+    itemId?: string 
+  }>({
     isOpen: false
   })
 
@@ -28,13 +39,21 @@ export function useDialogState() {
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
     collectionId?: string | null
-  }>({ isOpen: false })
+    sharedWith: UserProfile[] | null
+  }>({ 
+    isOpen: false,
+    sharedWith: null 
+  })
 
-  const [createProject, setCreateProject] = useState<{ isOpen: boolean }>({
+  const [createProject, setCreateProject] = useState<{
+    isOpen: boolean
+  }>({
     isOpen: false
   })
 
-  const [request, setRequest] = useState<{ isOpen: boolean }>({
+  const [request, setRequest] = useState<{
+    isOpen: boolean
+  }>({
     isOpen: false
   })
 
@@ -47,36 +66,60 @@ export function useDialogState() {
     onConfirm?: (items: DemoItem[]) => void
     initialSelections?: DemoItem[]
     location?: 'project' | 'home' | 'save-items' | 'collection'
-  }>({ isOpen: false })
+  }>({ 
+    isOpen: false 
+  })
 
   const [createCollection, setCreateCollection] = useState<{ 
-    isOpen: boolean;
-    projectId?: string;
+    isOpen: boolean
+    projectId?: string
   }>({
     isOpen: false
-  });
+  })
 
   return {
-    editFile: {
+  editFile: {
       ...editFile,
-      onOpen: (item: DemoItem) => setEditFile({ isOpen: true, item }),
+      onOpen: ({ item }: { item: DemoItem }) => setEditFile({ isOpen: true, item }),
       onClose: () => setEditFile({ isOpen: false })
     },
     share: {
       ...share, 
-      onOpen: (item?: DemoItem) => setShare({ isOpen: true, item: item || undefined }),
+      onOpen: ({ item }: { item?: DemoItem }) => setShare({ isOpen: true, item }),
       onClose: () => setShare({ isOpen: false })
     },
     delete: {
       ...deleteDialog,
-      onOpen: (itemId: string) => setDeleteDialog({ isOpen: true, itemId }),
+      onOpen: ({ itemId }: { itemId: string }) => setDeleteDialog({ isOpen: true, itemId }),
       onClose: () => setDeleteDialog({ isOpen: false })
     },
     createItem: {
       ...createItem,
-      onOpen: (type: 'file' | 'folder', parentFolderId?: string | null, location?: 'project' | 'home' | 'collection', projectId?: string | null, collectionId?: string | null) =>
-        setCreateItem({ isOpen: true, type, parentFolderId, location, projectId, collectionId }),
-      onClose: () => setCreateItem({ isOpen: false })
+      onOpen: ({ 
+        type,
+        parentFolderId,
+        location,
+        projectId,
+        collectionId,
+        sharedWith 
+      }: {
+        type: 'file' | 'folder'
+        parentFolderId?: string | null
+        location?: 'project' | 'home' | 'collection'
+        projectId?: string | null
+        collectionId?: string | null
+        sharedWith?: UserProfile[] | null
+      }) =>
+        setCreateItem({ 
+          isOpen: true, 
+          type, 
+          parentFolderId, 
+          location, 
+          projectId, 
+          collectionId,
+          sharedWith: sharedWith || null
+        }),
+      onClose: () => setCreateItem({ isOpen: false, sharedWith: null })
     },
     createProject: {
       ...createProject,
@@ -90,19 +133,26 @@ export function useDialogState() {
     },
     saveItems: {
       ...saveItems,
-      onOpen: (from: UserProfile, items: DemoItem[], sharedAt: Date, description?: string) => 
-        setSaveItems({ isOpen: true, from, items, sharedAt, description }),
+      onOpen: ({ from, items, sharedAt, description }: { 
+        from: UserProfile
+        items: DemoItem[]
+        sharedAt: Date
+        description?: string 
+      }) => setSaveItems({ isOpen: true, from, items, sharedAt, description }),
       onClose: () => setSaveItems({ isOpen: false })
     },
     selectFiles: {
       ...selectFiles,
-      onOpen: (config: Omit<typeof selectFiles, 'isOpen'>) => 
-        setSelectFiles({ isOpen: true, ...config }),
+      onOpen: ({ onConfirm, initialSelections, location }: {
+        onConfirm?: (items: DemoItem[]) => void
+        initialSelections?: DemoItem[]
+        location?: 'project' | 'home' | 'save-items' | 'collection'
+      }) => setSelectFiles({ isOpen: true, onConfirm, initialSelections, location }),
       onClose: () => setSelectFiles({ isOpen: false })
     },
     createCollection: {
       ...createCollection,
-      onOpen: (projectId: string) => setCreateCollection({ isOpen: true, projectId }),
+      onOpen: ({ projectId }: { projectId: string }) => setCreateCollection({ isOpen: true, projectId }),
       onClose: () => setCreateCollection({ isOpen: false })
     }
   }

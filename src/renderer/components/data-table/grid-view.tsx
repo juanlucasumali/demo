@@ -35,7 +35,6 @@ export function DataTableGridView<TData>({
         const hasCollaborators = !row.getValue("icon") && sharedWith && sharedWith.length > 0
         const itemId = row.getValue("id") as string
         const isStarred = row.getValue("isStarred") as boolean
-        const isProject = row.getValue("type") === ItemType.PROJECT
 
         const content = (
           <div 
@@ -44,12 +43,12 @@ export function DataTableGridView<TData>({
               "transition-all duration-200",
               "hover:bg-muted/50",
               "data-[state=selected]:bg-muted",
-              isProject && enableRowLink && "cursor-pointer hover:bg-muted/50",
-              !isProject && "cursor-default"
+              enableRowLink && "cursor-pointer hover:bg-muted/50",
+              "cursor-pointer"
             )}
             data-state={isSelected ? "selected" : undefined}
             onClick={() => {
-              if (isProject && onRowClick) {
+              if (onRowClick) {
                 onRowClick(row.original)
               }
             }}
@@ -126,7 +125,7 @@ export function DataTableGridView<TData>({
 
         return (
           <div key={row.id}>
-            {enableRowLink && isProject ? (
+            {enableRowLink ? (
               <Link 
                 to={`/projects/${itemId}`}
                 className="no-underline text-foreground"

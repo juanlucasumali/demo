@@ -11,18 +11,10 @@ const getCurrentUserId = () => {
   return user.id
 }
 
-export async function getFilesAndFolders(
-  parentFolderId?: string | null,
-  projectId?: string | null,
-  collectionId?: string | null
-): Promise<DemoItem[]> {
-  const userId = getCurrentUserId()
-
-  console.log(parentFolderId, projectId, collectionId);
-  
-  // Get owned files and folders with people they're shared with
-  let query = supabase
-    .from('files')
+// Helper function to build base select query
+const buildBaseSelect = (tableName: 'files' | 'projects') => {
+  return supabase
+    .from(tableName)
     .select(`
       *,
       owner:owner_id(*),
@@ -30,14 +22,27 @@ export async function getFilesAndFolders(
         shared_with:shared_with_id(*)
       )
     `)
-    .eq('owner_id', userId)
-    .filter('type', 'in', '("file","folder")')
+}
 
-  if (parentFolderId) {
-    query = query.eq('parent_folder_id', parentFolderId)
-    console.log("Querying parent folder", parentFolderId);
-  } else {
-    query = query.is('parent_folder_id', null)
+// Helper function to apply common filters
+const applyCommonFilters = (
+  query: any, 
+  {
+    parentFolderId,
+    projectId,
+    collectionId,
+    fileTypes
+  }: {
+    parentFolderId?: string | null,
+    projectId?: string | null,
+    collectionId?: string | null,
+    fileTypes?: string[]
+  }
+) => {
+  if (parentFolderId !== undefined) {
+    query = parentFolderId ? 
+      query.eq('parent_folder_id', parentFolderId) :
+      query.is('parent_folder_id', null)
   }
 
   if (projectId) {
@@ -48,113 +53,85 @@ export async function getFilesAndFolders(
     query = query.eq('collection_id', collectionId)
   }
 
-  const { data: ownedItems = [], error: ownedError } = await query
-  if (ownedError) throw ownedError
+  if (fileTypes) {
+    query = query.filter('type', 'in', `(${fileTypes.map(t => `"${t}"`).join(',')})`)
+  }
 
-  console.log("Owned items", ownedItems);
+  return query
+}
 
-  // Get files shared with me and who they're shared with
-  let sharedQuery = supabase
-    .from('files')
-    .select(`
-      *,
-      owner:owner_id(*),
-      shared_with:shared_items(
-        shared_with:shared_with_id(*)
-      ),
-      my_share:shared_items!inner(
-        shared_with:shared_with_id(*)
-      )
-    `)
+// Helper function to fetch both owned and shared items
+async function fetchItems(
+  tableName: 'files' | 'projects',
+  userId: string,
+  filters: {
+    parentFolderId?: string | null,
+    projectId?: string | null,
+    collectionId?: string | null,
+    fileTypes?: string[]
+  }
+) {
+  // Get owned items
+  const ownedQuery = buildBaseSelect(tableName)
+    .eq('owner_id', userId)
+  
+  // Get shared items
+  const sharedQuery = buildBaseSelect(tableName)
     .eq('shared_items.shared_with_id', userId)
     .neq('owner_id', userId)
-    .filter('type', 'in', '("file","folder")')
+    .select('*, owner:owner_id(*), shared_with:shared_items(shared_with:shared_with_id(*)), my_share:shared_items!inner(shared_with:shared_with_id(*))')
 
-  if (parentFolderId) {
-    sharedQuery = sharedQuery.eq('parent_folder_id', parentFolderId)
-  } else {
-    sharedQuery = sharedQuery.is('parent_folder_id', null)
-  }
+  // Apply filters to both queries
+  const [ownedFiltered, sharedFiltered] = [ownedQuery, sharedQuery].map(q => 
+    applyCommonFilters(q, filters)
+  )
 
-  if (projectId) {
-    sharedQuery = sharedQuery.eq('project_id', projectId)
-  }
+  const [{ data: owned = [], error: ownedError }, { data: shared = [], error: sharedError }] = 
+    await Promise.all([ownedFiltered, sharedFiltered])
 
-  if (collectionId) {
-    sharedQuery = sharedQuery.eq('collection_id', collectionId)
-  }
-
-  const { data: sharedItems = [], error: sharedError } = await sharedQuery
-
+  if (ownedError) throw ownedError
   if (sharedError) throw sharedError
 
-  const allItems = [...(ownedItems ?? []), ...(sharedItems ?? [])]
+  return [...owned, ...shared]
+}
 
-  console.log("All items", allItems);
+export async function getFilesAndFolders(
+  parentFolderId?: string | null,
+  projectId?: string | null,
+  collectionId?: string | null
+): Promise<DemoItem[]> {
+  const userId = getCurrentUserId()
+  
+  const items = await fetchItems('files', userId, {
+    parentFolderId,
+    projectId,
+    collectionId,
+    fileTypes: ['file', 'folder']
+  })
 
-  return allItems.map(item => {
-    const camelCaseItem = toCamelCase(item);
-    return {
-      ...camelCaseItem,
-      owner: toCamelCase(item.owner),
-      sharedWith: item.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
-      type: item.type as ItemType,
-      createdAt: new Date(item.created_at),
-      lastModified: new Date(item.last_modified),
-      lastOpened: new Date(item.last_opened),
-    };
-  });
+  return items.map(formatItemResponse)
 }
 
 export async function getProjects(): Promise<DemoItem[]> {
   const userId = getCurrentUserId()
+  
+  const projects = await fetchItems('projects', userId, {})
+  
+  return projects.map(formatItemResponse)
+}
 
-  // Get owned projects with people they're shared with
-  const { data: ownedProjects = [], error: ownedError } = await supabase
-    .from('projects')
-    .select(`
-      *,
-      owner:owner_id(*),
-      shared_with:shared_items(
-        shared_with:shared_with_id(*)
-      )
-    `)
-    .eq('owner_id', userId)
-
-  if (ownedError) throw ownedError
-
-  // Get projects shared with me and who they're shared with
-  const { data: sharedProjects = [], error: sharedError } = await supabase
-    .from('projects')
-    .select(`
-      *,
-      owner:owner_id(*),
-      shared_with:shared_items(
-        shared_with:shared_with_id(*)
-      ),
-      my_share:shared_items!inner(
-        shared_with:shared_with_id(*)
-      )
-    `)
-    .neq('owner_id', userId)
-    .eq('shared_items.shared_with_id', userId)
-
-  if (sharedError) throw sharedError
-
-  const allProjects = [...(ownedProjects ?? []), ...(sharedProjects ?? [])]
-
-  return allProjects.map(item => {
-    const camelCaseItem = toCamelCase(item);
-    return {
-      ...camelCaseItem,
-      owner: toCamelCase(item.owner),
-      sharedWith: item.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
-      type: ItemType.PROJECT,
-      createdAt: new Date(item.created_at),
-      lastModified: new Date(item.last_modified),
-      lastOpened: new Date(item.last_opened),
-    };
-  });
+// Helper to format response consistently
+function formatItemResponse(item: any): DemoItem {
+  const camelCaseItem = toCamelCase(item)
+  return {
+    ...camelCaseItem,
+    owner: toCamelCase(item.owner),
+    sharedWith: item.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
+    type: item.type as ItemType,
+    createdAt: new Date(item.created_at),
+    lastModified: new Date(item.last_modified),
+    lastOpened: new Date(item.last_opened),
+  }
 }
 
 export async function addFileOrFolder(

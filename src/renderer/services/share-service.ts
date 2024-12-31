@@ -10,59 +10,67 @@ const getCurrentUserId = () => {
   return user.id
 }
 
+// Helper function to create share records
+const createShareRecords = (itemId: string, itemType: 'file' | 'project', users: UserProfile[], currentUserId: string) => {
+  return users.map(user => ({
+    file_id: itemType === 'file' ? itemId : null,
+    project_id: itemType === 'project' ? itemId : null,
+    shared_with_id: user.id,
+    shared_by_id: currentUserId,
+  }))
+}
+
+// Helper function to insert share records
+const insertShareRecords = async (records: any[], type: 'file' | 'project') => {
+  const { error } = await supabase
+    .from('shared_items')
+    .upsert(records, {
+      onConflict: type === 'file' ? 'file_id,shared_with_id' : 'project_id,shared_with_id',
+      ignoreDuplicates: true
+    })
+
+  if (error) {
+    console.error(`Error sharing ${type}s:`, error)
+    throw error
+  }
+}
+
 export async function shareItems(items: DemoItem[], users: UserProfile[]) {
   const currentUserId = getCurrentUserId()
   
   // Split items into files and projects
-  const fileShares = items
-    .filter(item => item.type === ItemType.FILE)
-    .flatMap(item => 
-      users.map(user => ({
-        file_id: item.id,
-        project_id: null,
-        shared_with_id: user.id,
-        shared_by_id: currentUserId,
-      }))
-    )
+  const fileItems = items.filter(item => item.type === ItemType.FILE)
+  const projectItems = items.filter(item => item.type === ItemType.PROJECT)
 
-  const projectShares = items
-    .filter(item => item.type === ItemType.PROJECT)
-    .flatMap(item => 
-      users.map(user => ({
-        file_id: null,
-        project_id: item.id,
-        shared_with_id: user.id,
-        shared_by_id: currentUserId,
-      }))
-    )
+  // Create share records
+  const fileShares = fileItems.flatMap(item => 
+    createShareRecords(item.id, 'file', users, currentUserId)
+  )
 
-  // Insert file shares
+  const projectShares = projectItems.flatMap(item => 
+    createShareRecords(item.id, 'project', users, currentUserId)
+  )
+
+  // Insert share records
+  const promises: Promise<void>[] = []
   if (fileShares.length > 0) {
-    const { error: fileError } = await supabase
-      .from('shared_items')
-      .upsert(fileShares, {
-        onConflict: 'file_id,shared_with_id',
-        ignoreDuplicates: true
-      })
-
-    if (fileError) {
-      console.error('Error sharing files:', fileError)
-      throw fileError
-    }
+    promises.push(insertShareRecords(fileShares, 'file'))
   }
-
-  // Insert project shares
   if (projectShares.length > 0) {
-    const { error: projectError } = await supabase
-      .from('shared_items')
-      .upsert(projectShares, {
-        onConflict: 'project_id,shared_with_id',
-        ignoreDuplicates: true
-      })
-
-    if (projectError) {
-      console.error('Error sharing projects:', projectError)
-      throw projectError
-    }
+    promises.push(insertShareRecords(projectShares, 'project'))
   }
+
+  await Promise.all(promises)
+}
+
+export async function shareNewItem(
+  itemId: string, 
+  itemType: 'file' | 'project', 
+  users?: UserProfile[]
+) {
+  if (!users || users.length === 0) return
+
+  const currentUserId = getCurrentUserId()
+  const shareRecords = createShareRecords(itemId, itemType, users, currentUserId)
+  await insertShareRecords(shareRecords, itemType)
 } 

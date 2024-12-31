@@ -142,7 +142,7 @@ export const createColumns = ({
     ),
     cell: ({ row }) => {
       const type = row.original.type;
-      const isStarred = row.getValue("isStarred");
+      const isStarred = row.getValue("isStarred") as boolean;
       const tags = row.original.tags;
       const itemId = row.original.id;
 

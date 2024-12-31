@@ -60,7 +60,7 @@ interface DialogManagerProps {
     initialSelections?: DemoItem[]
     location?: 'project' | 'home' | 'save-items' | 'collection'
   }
-  updateItem?: UseMutateFunction<void, Error, DemoItem, unknown>
+  updateItem?: UseMutateFunction<void, Error, { updatedItem: DemoItem, originalItem: DemoItem }, unknown>
   removeItem?: UseMutateFunction<void, Error, string, unknown>
   isLoading: {
     removeItem: boolean

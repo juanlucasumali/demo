@@ -89,6 +89,7 @@ function Home() {
         <SubHeader subHeader="All files"/>
         <DataTable 
           columns={createColumns({ 
+            enableStarToggle: true,
             onEditFile: (item) => dialogState.editFile.onOpen({ item }) ,
             onShare: (item) => dialogState.share.onOpen({ item }),
             onDelete: (itemId) => dialogState.delete.onOpen({ itemId }),

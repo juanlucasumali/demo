@@ -11,88 +11,90 @@ const getCurrentUserId = () => {
   return user.id
 }
 
-// Helper function to build base select query
-const buildBaseSelect = (tableName: 'files' | 'projects') => {
-  return supabase
+// Helper function to get sharing information for an item
+async function getItemSharing(itemId: string, itemType: 'file' | 'project'): Promise<UserProfile[]> {
+  const { data, error } = await supabase
+    .from('shared_items')
+    .select(`
+      shared_with:shared_with_id(*)
+    `)
+    .eq(itemType === 'file' ? 'file_id' : 'project_id', itemId);
+
+  if (error) throw error;
+  return data?.map(share => toCamelCase(share.shared_with)) || [];
+}
+
+// Generic function to fetch items with sharing info
+async function getItemsWithSharing(
+  tableName: 'files' | 'projects',
+  userId: string,
+  filters?: {
+    parentFolderId?: string | null,
+    projectId?: string | null,
+    collectionId?: string | null,
+  }
+): Promise<DemoItem[]> {
+  // Get owned items
+  const ownedQuery = supabase
+    .from(tableName)
+    .select(`
+      *,
+      owner:owner_id(*)
+    `)
+    .eq('owner_id', userId);
+
+  // Get shared items
+  const sharedQuery = supabase
     .from(tableName)
     .select(`
       *,
       owner:owner_id(*),
-      shared_with:shared_items(
-        shared_with:shared_with_id(*)
-      )
+      my_share:shared_items!inner(shared_with:shared_with_id(*))
     `)
-}
-
-// Helper function to apply common filters
-const applyCommonFilters = (
-  query: any, 
-  {
-    parentFolderId,
-    projectId,
-    collectionId,
-    fileTypes
-  }: {
-    parentFolderId?: string | null,
-    projectId?: string | null,
-    collectionId?: string | null,
-    fileTypes?: string[]
-  }
-) => {
-  if (parentFolderId !== undefined) {
-    query = parentFolderId ? 
-      query.eq('parent_folder_id', parentFolderId) :
-      query.is('parent_folder_id', null)
-  }
-
-  if (projectId) {
-    query = query.eq('project_id', projectId)
-  }
-
-  if (collectionId) {
-    query = query.eq('collection_id', collectionId)
-  }
-
-  if (fileTypes) {
-    query = query.filter('type', 'in', `(${fileTypes.map(t => `"${t}"`).join(',')})`)
-  }
-
-  return query
-}
-
-// Helper function to fetch both owned and shared items
-async function fetchItems(
-  tableName: 'files' | 'projects',
-  userId: string,
-  filters: {
-    parentFolderId?: string | null,
-    projectId?: string | null,
-    collectionId?: string | null,
-    fileTypes?: string[]
-  }
-) {
-  // Get owned items
-  const ownedQuery = buildBaseSelect(tableName)
-    .eq('owner_id', userId)
-  
-  // Get shared items
-  const sharedQuery = buildBaseSelect(tableName)
     .eq('shared_items.shared_with_id', userId)
-    .neq('owner_id', userId)
-    .select('*, owner:owner_id(*), shared_with:shared_items(shared_with:shared_with_id(*)), my_share:shared_items!inner(shared_with:shared_with_id(*))')
+    .neq('owner_id', userId);
 
-  // Apply filters to both queries
-  const [ownedFiltered, sharedFiltered] = [ownedQuery, sharedQuery].map(q => 
-    applyCommonFilters(q, filters)
-  )
+  // Apply filters if they exist
+  if (filters) {
+    if (filters.parentFolderId !== undefined) {
+      ownedQuery.eq('parent_folder_id', filters.parentFolderId);
+      sharedQuery.eq('parent_folder_id', filters.parentFolderId);
+    }
+    if (filters.projectId) {
+      ownedQuery.eq('project_id', filters.projectId);
+      sharedQuery.eq('project_id', filters.projectId);
+    }
+    if (filters.collectionId) {
+      ownedQuery.eq('collection_id', filters.collectionId);
+      sharedQuery.eq('collection_id', filters.collectionId);
+    }
+  }
 
+  // Execute queries
   const [{ data: owned = [], error: ownedError }, { data: shared = [], error: sharedError }] = 
-    await Promise.all([ownedFiltered, sharedFiltered])
+    await Promise.all([ownedQuery, sharedQuery]);
 
-  if (ownedError) throw ownedError
-  if (sharedError) throw sharedError
+  if (ownedError) throw ownedError;
+  if (sharedError) throw sharedError;
 
-  return [...owned, ...shared]
+  // Get sharing information for each item
+  const items = [...(owned || []), ...(shared || [])];
+  const itemsWithSharing = await Promise.all(
+    items.map(async (item) => {
+      const sharedWith = await getItemSharing(item.id, tableName === 'files' ? 'file' : 'project');
+      return {
+        ...toCamelCase(item),
+        owner: toCamelCase(item.owner),
+        sharedWith,
+        type: tableName === 'files' ? item.type as ItemType : ItemType.PROJECT,
+        createdAt: new Date(item.created_at),
+        lastModified: new Date(item.last_modified),
+        lastOpened: new Date(item.last_opened),
+      };
+    })
+  );
+
+  return itemsWithSharing;
 }
 
 export async function getFilesAndFolders(
@@ -100,38 +102,13 @@ export async function getFilesAndFolders(
   projectId?: string | null,
   collectionId?: string | null
 ): Promise<DemoItem[]> {
-  const userId = getCurrentUserId()
-  
-  const items = await fetchItems('files', userId, {
-    parentFolderId,
-    projectId,
-    collectionId,
-    fileTypes: ['file', 'folder']
-  })
-
-  return items.map(formatItemResponse)
+  const userId = getCurrentUserId();
+  return getItemsWithSharing('files', userId, { parentFolderId, projectId, collectionId });
 }
 
 export async function getProjects(): Promise<DemoItem[]> {
-  const userId = getCurrentUserId()
-  
-  const projects = await fetchItems('projects', userId, {})
-  
-  return projects.map(formatItemResponse)
-}
-
-// Helper to format response consistently
-function formatItemResponse(item: any): DemoItem {
-  const camelCaseItem = toCamelCase(item)
-  return {
-    ...camelCaseItem,
-    owner: toCamelCase(item.owner),
-    sharedWith: item.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
-    type: item.type as ItemType,
-    createdAt: new Date(item.created_at),
-    lastModified: new Date(item.last_modified),
-    lastOpened: new Date(item.last_opened),
-  }
+  const userId = getCurrentUserId();
+  return getItemsWithSharing('projects', userId);
 }
 
 interface ShareRecord {
@@ -346,6 +323,8 @@ export async function updateItem(item: DemoItem, originalItem: DemoItem) {
 
 export async function toggleItemStar(id: string, isStarred: boolean) {
   const userId = getCurrentUserId()
+
+  console.log('Toggling star for item:', id, isStarred)
   
   // Try to update in both tables - one will succeed based on where the item exists
   await Promise.all([

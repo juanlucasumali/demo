@@ -59,7 +59,6 @@ export function ShareDialog({
     e.preventDefault();
     
     try {
-      console.log("selectedItems, selectedUsers", selectedItems, selectedUsers)
       await shareItems({ 
         items: selectedItems, 
         users: selectedUsers 

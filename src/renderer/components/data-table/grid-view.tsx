@@ -1,7 +1,7 @@
 import { Table } from "@tanstack/react-table"
 import { cn } from "@renderer/lib/utils"
 import { ItemType } from "@renderer/types/items"
-import { Star, Folder, File } from "lucide-react"
+import { Star } from "lucide-react"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 import TagBadge from "@renderer/components/tag-badge"
@@ -25,11 +25,6 @@ export function DataTableGridView<TData>({
   onRowClick,
   onToggleStar
 }: DataTableGridViewProps<TData>) {
-  
-  // Helper function to determine if row is clickable
-  const isRowClickable = (original: any) => {
-    return original.type === ItemType.FOLDER
-  }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
@@ -40,7 +35,7 @@ export function DataTableGridView<TData>({
         const hasCollaborators = !row.getValue("icon") && sharedWith && sharedWith.length > 0
         const itemId = row.getValue("id") as string
         const isStarred = row.getValue("isStarred") as boolean
-        const isClickable = isRowClickable(row.original)
+        const isProject = row.getValue("type") === ItemType.PROJECT
 
         const content = (
           <div 
@@ -49,12 +44,12 @@ export function DataTableGridView<TData>({
               "transition-all duration-200",
               "hover:bg-muted/50",
               "data-[state=selected]:bg-muted",
-              isClickable && enableRowLink && "cursor-pointer hover:bg-muted/50",
-              !isClickable && "cursor-default"
+              isProject && enableRowLink && "cursor-pointer hover:bg-muted/50",
+              !isProject && "cursor-default"
             )}
             data-state={isSelected ? "selected" : undefined}
             onClick={() => {
-              if (isClickable && onRowClick) {
+              if (isProject && onRowClick) {
                 onRowClick(row.original)
               }
             }}
@@ -131,7 +126,7 @@ export function DataTableGridView<TData>({
 
         return (
           <div key={row.id}>
-            {enableRowLink && isClickable ? (
+            {enableRowLink && isProject ? (
               <Link 
                 to={`/projects/${itemId}`}
                 className="no-underline text-foreground"

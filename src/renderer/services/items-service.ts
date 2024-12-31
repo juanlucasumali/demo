@@ -134,16 +134,22 @@ export async function getProjects(): Promise<DemoItem[]> {
   });
 }
 
-export async function addFileOrFolder(item: Omit<DemoItem, 'id'>) {
-  const { error } = await supabase
+export async function addFileOrFolder(
+  item: Omit<DemoItem, 'id'>, 
+  sharedWith?: UserProfile[]
+): Promise<DemoItem> {
+  const currentUserId = getCurrentUserId();
+
+  // Start a Supabase transaction
+  const { data, error } = await supabase
     .from('files')
     .insert({
+      name: item.name,
+      type: item.type,
+      parent_folder_id: item.parentFolderId,
       project_id: item.projectId,
       collection_id: item.collectionId,
-      parent_folder_id: item.parentFolderId,
-      owner_id: getCurrentUserId(),
-      type: item.type,
-      name: item.name,
+      owner_id: currentUserId,
       description: item.description,
       icon_url: item.icon,
       is_starred: item.isStarred,
@@ -153,24 +159,89 @@ export async function addFileOrFolder(item: Omit<DemoItem, 'id'>) {
       duration: item.duration,
       file_path: item.filePath,
     })
+    .select()
+    .single();
 
-    console.log("error", error);
+  if (error) throw error;
 
-  if (error) throw error
+  // If we have users to share with, create the share records
+  if (sharedWith && sharedWith.length > 0) {
+    const shareRecords = sharedWith.map(user => ({
+      file_id: data.id,
+      project_id: null,
+      shared_with_id: user.id,
+      shared_by_id: currentUserId,
+    }));
+
+    const { error: shareError } = await supabase
+      .from('shared_items')
+      .upsert(shareRecords, {
+        onConflict: 'file_id,shared_with_id',
+        ignoreDuplicates: true
+      });
+
+    if (shareError) throw shareError;
+  }
+
+  return {
+    ...toCamelCase(data),
+    id: data.id,
+    owner: item.owner,
+    sharedWith: sharedWith || [],
+    type: item.type,
+    createdAt: new Date(data.created_at),
+    lastModified: new Date(data.last_modified),
+    lastOpened: new Date(data.last_opened),
+  };
 }
 
-export async function addProject(item: Omit<DemoItem, 'id'>) {
-  const { error } = await supabase
+export async function addProject(item: Omit<DemoItem, 'id'>, sharedWith?: UserProfile[]) {
+  const currentUserId = getCurrentUserId();
+
+  // Insert the project
+  const { data, error } = await supabase
     .from('projects')
     .insert({
-      owner_id: getCurrentUserId(),
+      owner_id: currentUserId,
       name: item.name,
       description: item.description,
       icon_url: item.icon,
       is_starred: item.isStarred,
     })
+    .select()
+    .single();
 
-  if (error) throw error
+  if (error) throw error;
+
+  // If we have users to share with, create the share records
+  if (sharedWith && sharedWith.length > 0) {
+    const shareRecords = sharedWith.map(user => ({
+      file_id: null,
+      project_id: data.id,
+      shared_with_id: user.id,
+      shared_by_id: currentUserId,
+    }));
+
+    const { error: shareError } = await supabase
+      .from('shared_items')
+      .upsert(shareRecords, {
+        onConflict: 'project_id,shared_with_id',
+        ignoreDuplicates: true
+      });
+
+    if (shareError) throw shareError;
+  }
+
+  return {
+    ...toCamelCase(data),
+    id: data.id,
+    owner: item.owner,
+    sharedWith: sharedWith || [],
+    type: ItemType.PROJECT,
+    createdAt: new Date(data.created_at),
+    lastModified: new Date(data.last_modified),
+    lastOpened: new Date(data.last_opened),
+  };
 }
 
 export async function removeItem(id: string) {
@@ -406,12 +477,5 @@ export async function searchFriends(searchTerm?: string): Promise<UserProfile[]>
   const { data, error } = await query;
   if (error) throw error;
 
-  return data.map(user => toCamelCase({
-    id: user.id,
-    username: user.username,
-    name: user.name,
-    avatar: user.avatar_url,
-    email: user.email,
-    description: user.description
-  }));
+  return data
 } 

@@ -121,13 +121,16 @@ export function CreateItem({
         collectionId: location === 'collection' ? collectionId : null,
       };
 
-      console.log(newItem);
-
-      await addFileOrFolder(newItem);
+      await addFileOrFolder({ 
+        item: newItem, 
+        sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined 
+      });
 
       toast({
         title: "Success!",
-        description: `${type === 'file' ? 'File uploaded' : 'Folder created'} successfully.`,
+        description: selectedUsers.length > 0
+          ? `${type === 'file' ? 'File' : 'Folder'} created and shared with ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}.`
+          : `${type === 'file' ? 'File uploaded' : 'Folder created'} successfully.`,
         variant: "default",
       });
 
@@ -137,7 +140,7 @@ export function CreateItem({
       onClose();
     } catch (error) {
       toast({
-        title: "Error!",
+        title: "Error",
         description: `Failed to ${type === 'file' ? 'upload file' : 'create folder'}.`,
         variant: "destructive",
       });

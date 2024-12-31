@@ -23,13 +23,12 @@ import {
   FormControl,
   FormMessage,
 } from "../ui/form";
-import { DemoItem } from "@renderer/types/items";
+import { DemoItem, ItemType } from "@renderer/types/items";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { maxFileNameLength } from "@renderer/lib/utils";
 import { UseMutateFunction } from "@tanstack/react-query";
 import { useItems } from "@renderer/hooks/use-items";
-import { Textarea } from "../ui/textarea";
 
 // Schema and validation rules remain the same
 const editFileSchema = z.object({
@@ -139,10 +138,11 @@ export function EditFileDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
+            {existingFile.type !== ItemType.FILE && (
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
                 <FormItem>
                   <FormLabel htmlFor="description">Description</FormLabel>
                   <FormControl>
@@ -151,7 +151,8 @@ export function EditFileDialog({
                   <FormMessage />
                 </FormItem>
               )}
-            />
+              />
+            )}
 
             <FormField
               control={form.control}

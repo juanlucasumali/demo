@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as itemsService from '@renderer/services/items-service'
+import { DemoItem } from '@renderer/types/items';
+import { UserProfile } from '@renderer/types/users';
 
 interface UseItemsOptions {
   parentFolderId?: string;
@@ -32,18 +34,21 @@ export function useItems(options?: UseItemsOptions) {
 
   // Add file or folder mutation
   const addFileOrFolder = useMutation({
-    mutationFn: itemsService.addFileOrFolder,
+    mutationFn: ({ item, sharedWith }: { 
+      item: Omit<DemoItem, 'id'>, 
+      sharedWith?: UserProfile[] 
+    }) => itemsService.addFileOrFolder(item, sharedWith),
     onSuccess: () => {
-      // Invalidate both root-level and folder-specific queries
-      queryClient.invalidateQueries({ 
-        queryKey: ['files-and-folders']
-      })
+      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] })
     }
   })
 
   // Add project mutation
   const addProject = useMutation({
-    mutationFn: itemsService.addProject,
+    mutationFn: ({ item, sharedWith }: { 
+      item: Omit<DemoItem, 'id'>, 
+      sharedWith?: UserProfile[] 
+    }) => itemsService.addProject(item, sharedWith),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
     }

@@ -98,11 +98,13 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
         collectionId: null,
       };
 
-      await addProject(newProject);
+      await addProject({ item: newProject, sharedWith: selectedUsers });
 
       toast({
         title: "Success!",
-        description: "Your project has been successfully created.",
+        description: selectedUsers.length > 0
+          ? `Project created and shared with ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}.`
+          : "Project created successfully.",
         variant: "default",
       });
 

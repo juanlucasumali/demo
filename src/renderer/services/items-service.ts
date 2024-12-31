@@ -134,6 +134,38 @@ function formatItemResponse(item: any): DemoItem {
   }
 }
 
+interface ShareRecord {
+  file_id: string | null;
+  project_id: string | null;
+  shared_with_id: string;
+  shared_by_id: string;
+}
+
+async function createShareRecords(
+  itemId: string,
+  itemType: 'file' | 'project',
+  sharedWith: UserProfile[],
+  sharedById: string
+) {
+  if (!sharedWith || sharedWith.length === 0) return;
+
+  const shareRecords: ShareRecord[] = sharedWith.map(user => ({
+    file_id: itemType === 'file' ? itemId : null,
+    project_id: itemType === 'project' ? itemId : null,
+    shared_with_id: user.id,
+    shared_by_id: sharedById,
+  }));
+
+  const { error: shareError } = await supabase
+    .from('shared_items')
+    .upsert(shareRecords, {
+      onConflict: `${itemType}_id,shared_with_id`,
+      ignoreDuplicates: true
+    });
+
+  if (shareError) throw shareError;
+}
+
 export async function addFileOrFolder(
   item: Omit<DemoItem, 'id'>, 
   sharedWith?: UserProfile[]
@@ -166,21 +198,7 @@ export async function addFileOrFolder(
 
   // If we have users to share with, create the share records
   if (sharedWith && sharedWith.length > 0) {
-    const shareRecords = sharedWith.map(user => ({
-      file_id: data.id,
-      project_id: null,
-      shared_with_id: user.id,
-      shared_by_id: currentUserId,
-    }));
-
-    const { error: shareError } = await supabase
-      .from('shared_items')
-      .upsert(shareRecords, {
-        onConflict: 'file_id,shared_with_id',
-        ignoreDuplicates: true
-      });
-
-    if (shareError) throw shareError;
+    await createShareRecords(data.id, 'file', sharedWith || [], currentUserId);
   }
 
   return {
@@ -215,21 +233,7 @@ export async function addProject(item: Omit<DemoItem, 'id'>, sharedWith?: UserPr
 
   // If we have users to share with, create the share records
   if (sharedWith && sharedWith.length > 0) {
-    const shareRecords = sharedWith.map(user => ({
-      file_id: null,
-      project_id: data.id,
-      shared_with_id: user.id,
-      shared_by_id: currentUserId,
-    }));
-
-    const { error: shareError } = await supabase
-      .from('shared_items')
-      .upsert(shareRecords, {
-        onConflict: 'project_id,shared_with_id',
-        ignoreDuplicates: true
-      });
-
-    if (shareError) throw shareError;
+    await createShareRecords(data.id, 'project', sharedWith || [], currentUserId);
   }
 
   return {

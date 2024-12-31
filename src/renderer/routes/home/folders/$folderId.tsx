@@ -38,6 +38,8 @@ function FolderPage() {
   const { filesAndFolders, currentFolder, isLoading, updateItem, removeItem } = useItems({ parentFolderId: folderId });
   const dialogState = useDialogState();
   const navigate = useNavigate();
+
+  console.log(folderId, filesAndFolders);
   
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {

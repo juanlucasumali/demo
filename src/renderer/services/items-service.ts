@@ -17,6 +17,8 @@ export async function getFilesAndFolders(
   collectionId?: string | null
 ): Promise<DemoItem[]> {
   const userId = getCurrentUserId()
+
+  console.log(parentFolderId, projectId, collectionId);
   
   // Get owned files and folders with people they're shared with
   let query = supabase
@@ -33,6 +35,7 @@ export async function getFilesAndFolders(
 
   if (parentFolderId) {
     query = query.eq('parent_folder_id', parentFolderId)
+    console.log("Querying parent folder", parentFolderId);
   } else {
     query = query.is('parent_folder_id', null)
   }
@@ -48,8 +51,10 @@ export async function getFilesAndFolders(
   const { data: ownedItems = [], error: ownedError } = await query
   if (ownedError) throw ownedError
 
+  console.log("Owned items", ownedItems);
+
   // Get files shared with me and who they're shared with
-  const { data: sharedItems = [], error: sharedError } = await supabase
+  let sharedQuery = supabase
     .from('files')
     .select(`
       *,
@@ -65,9 +70,27 @@ export async function getFilesAndFolders(
     .neq('owner_id', userId)
     .filter('type', 'in', '("file","folder")')
 
+  if (parentFolderId) {
+    sharedQuery = sharedQuery.eq('parent_folder_id', parentFolderId)
+  } else {
+    sharedQuery = sharedQuery.is('parent_folder_id', null)
+  }
+
+  if (projectId) {
+    sharedQuery = sharedQuery.eq('project_id', projectId)
+  }
+
+  if (collectionId) {
+    sharedQuery = sharedQuery.eq('collection_id', collectionId)
+  }
+
+  const { data: sharedItems = [], error: sharedError } = await sharedQuery
+
   if (sharedError) throw sharedError
 
   const allItems = [...(ownedItems ?? []), ...(sharedItems ?? [])]
+
+  console.log("All items", allItems);
 
   return allItems.map(item => {
     const camelCaseItem = toCamelCase(item);

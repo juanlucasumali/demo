@@ -52,6 +52,34 @@ $$;
 
 ALTER FUNCTION "public"."get_root_folder_id"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $_$
+BEGIN
+  RETURN EXISTS (
+    -- Direct share
+    SELECT 1 FROM shared_items 
+    WHERE item_id = $1 AND shared_with_id = $2
+    
+    UNION
+    
+    -- Parent folder share
+    SELECT 1 FROM files f
+    JOIN shared_items si ON si.item_id = f.parent_folder_id
+    WHERE f.id = $1 AND si.shared_with_id = $2
+    
+    UNION
+    
+    -- Project share
+    SELECT 1 FROM files f
+    JOIN shared_items si ON si.item_id = f.project_id
+    WHERE f.id = $1 AND si.shared_with_id = $2
+  );
+END;
+$_$;
+
+ALTER FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -121,12 +149,12 @@ ALTER TABLE "public"."projects" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."shared_items" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "item_id" "uuid" NOT NULL,
-    "item_type" "text" NOT NULL,
     "shared_with_id" "uuid" NOT NULL,
     "shared_by_id" "uuid" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    CONSTRAINT "shared_items_item_type_check" CHECK (("item_type" = ANY (ARRAY['file'::"text", 'project'::"text", 'folder'::"text"])))
+    "file_id" "uuid",
+    "project_id" "uuid",
+    CONSTRAINT "shared_items_one_id_not_null" CHECK (((("file_id" IS NOT NULL) AND ("project_id" IS NULL)) OR (("project_id" IS NOT NULL) AND ("file_id" IS NULL))))
 );
 
 ALTER TABLE "public"."shared_items" OWNER TO "postgres";
@@ -157,10 +185,13 @@ ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE ONLY "public"."shared_items"
-    ADD CONSTRAINT "shared_items_item_id_shared_with_id_key" UNIQUE ("item_id", "shared_with_id");
+    ADD CONSTRAINT "shared_items_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE ONLY "public"."shared_items"
-    ADD CONSTRAINT "shared_items_pkey" PRIMARY KEY ("id");
+    ADD CONSTRAINT "shared_items_unique_file_share" UNIQUE ("file_id", "shared_with_id");
+
+ALTER TABLE ONLY "public"."shared_items"
+    ADD CONSTRAINT "shared_items_unique_project_share" UNIQUE ("project_id", "shared_with_id");
 
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_email_key" UNIQUE ("email");
@@ -178,8 +209,6 @@ CREATE INDEX "files_parent_folder_id_idx" ON "public"."files" USING "btree" ("pa
 CREATE INDEX "files_project_id_idx" ON "public"."files" USING "btree" ("project_id");
 
 CREATE INDEX "notifications_to_user_id_idx" ON "public"."notifications" USING "btree" ("to_user_id");
-
-CREATE INDEX "shared_items_item_id_idx" ON "public"."shared_items" USING "btree" ("item_id");
 
 ALTER TABLE ONLY "public"."collections"
     ADD CONSTRAINT "collections_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
@@ -212,16 +241,16 @@ ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."shared_items"
-    ADD CONSTRAINT "shared_items_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "shared_items_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."shared_items"
-    ADD CONSTRAINT "shared_items_item_id_fkey1" FOREIGN KEY ("item_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "shared_items_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."shared_items"
     ADD CONSTRAINT "shared_items_shared_by_id_fkey" FOREIGN KEY ("shared_by_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."shared_items"
-    ADD CONSTRAINT "shared_items_shared_with_id_fkey1" FOREIGN KEY ("shared_with_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "shared_items_shared_with_id_fkey" FOREIGN KEY ("shared_with_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 CREATE POLICY "No manual deletion" ON "public"."users" FOR DELETE TO "authenticated" USING (false);
 
@@ -230,6 +259,8 @@ CREATE POLICY "Users can only be created on auth signup" ON "public"."users" FOR
 CREATE POLICY "Users can update own profile" ON "public"."users" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
 
 CREATE POLICY "Users can view all profiles" ON "public"."users" FOR SELECT TO "authenticated", "anon" USING (true);
+
+CREATE POLICY "Users can view files they have access to" ON "public"."files" FOR SELECT USING ((("owner_id" = "auth"."uid"()) OR "public"."user_has_access"("id", "auth"."uid"())));
 
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
 
@@ -247,6 +278,10 @@ GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "service_
 GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "anon";
 GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") TO "service_role";
 
 GRANT ALL ON TABLE "public"."collections" TO "anon";
 GRANT ALL ON TABLE "public"."collections" TO "authenticated";

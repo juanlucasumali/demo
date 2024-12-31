@@ -95,6 +95,9 @@ export function AvatarGroup({
             <TooltipContent side="top">
               <div className="flex items-center gap-1">
                 <p className="text-xs">@{user.username}</p>
+                {index === 0 && owner && (
+                  <span className="text-xs text-muted-foreground">(Owner)</span>
+                )}
                 {showRemove && onRemove && user.id !== owner?.id && (
                   <button
                     onClick={() => onRemove(user.id)}

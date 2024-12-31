@@ -8,6 +8,8 @@ import { DataTable } from "@renderer/components/data-table/data-table"
 import { DemoItem } from "@renderer/types/items"
 import { useState, useEffect } from "react"
 import { useItems } from "@renderer/hooks/use-items"
+import { ChevronLeft, Folder, ChevronRight} from "lucide-react"
+import { useFolderNavigationStore } from '@renderer/stores/folder-navigation-store'
 
 interface SelectFilesDialogProps {
   open: boolean
@@ -24,18 +26,71 @@ export function SelectFilesDialog({
   initialSelections = [],
   location
 }: SelectFilesDialogProps) {
-  const { filesAndFolders, projects } = useItems()
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const { filesAndFolders, projects, currentFolder, isLoading } = useItems({ parentFolderId: currentFolderId || undefined })
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>(initialSelections);
   const [activeTab, setActiveTab] = useState<string>("home");
+  
+  const { addFolder, goBack, goForward, canGoBack, canGoForward, reset, initializeHistory } = useFolderNavigationStore();
+
+  // Initialize history when dialog opens
+  useEffect(() => {
+    if (open) {
+      initializeHistory();
+    } else {
+      setCurrentFolderId(null);
+      reset();
+    }
+  }, [open, initializeHistory, reset]);
 
   // Update selected items when initialSelections changes
   useEffect(() => {
     setSelectedItems(initialSelections);
   }, [initialSelections]);
 
+  // Helper function to check if an item is in initialSelections
+  const isItemSelected = (item: DemoItem) => {
+    return selectedItems.some(selected => selected.id === item.id);
+  };
+
+  // When setting selected items, preserve initial selections
+  const handleSelectionChange = (items: DemoItem[]) => {
+    const currentViewIds = new Set(filesAndFolders.map(item => item.id));
+    
+    // Keep previously selected items that are not in current view
+    const preservedSelections = selectedItems.filter(item => !currentViewIds.has(item.id));
+    
+    // Filter out any duplicates when combining preserved and new selections
+    const newSelections = [...preservedSelections];
+    items.forEach(item => {
+      if (!newSelections.some(existing => existing.id === item.id)) {
+        newSelections.push(item);
+      }
+    });
+    
+    setSelectedItems(newSelections);
+  };
+
   const handleConfirm = () => {
     onConfirm(selectedItems);
     onOpenChange(false);
+  };
+
+  const handleRowClick = (item: DemoItem) => {
+    if (item.type === "folder") {
+      setCurrentFolderId(item.id);
+      addFolder(item.id);
+    }
+  };
+
+  const handleBackClick = () => {
+    const previousFolderId = goBack();
+    setCurrentFolderId(previousFolderId);
+  };
+
+  const handleForwardClick = () => {
+    const nextFolderId = goForward();
+    setCurrentFolderId(nextFolderId);
   };
 
   const getButtonText = () => {
@@ -56,9 +111,35 @@ export function SelectFilesDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-4xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>{location === "project" || location === "collection" ? "Select files" : 
-             location === "save-items" ? "Select location(s)" :
-             "Select files"}</AlertDialogTitle>
+          <AlertDialogTitle>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center mr-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleBackClick}
+                  className="h-6 w-6"
+                  disabled={!canGoBack()}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleForwardClick}
+                  className="h-6 w-6"
+                  disabled={!canGoForward()}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              {currentFolderId ? <Folder className="h-4 w-4 text-muted-foreground fill-current" /> : null}  
+              {currentFolder ? currentFolder.name : 
+                location === "project" || location === "collection" ? "Select files" : 
+                location === "save-items" ? "Select location(s)" :
+                "Select files"}
+            </div>
+          </AlertDialogTitle>
           <AlertDialogDescription>
             {location === "project" ? "Select files to include in your project" : 
              location === "save-items" ? "Select where you want to save the shared items" : 
@@ -68,10 +149,10 @@ export function SelectFilesDialog({
         </AlertDialogHeader>
 
         <Tabs defaultValue="home" onValueChange={setActiveTab}>
-          <TabsList className="flex flex-row justify-start mb-2">
+          {location !== "project" && location !== "collection" ? <TabsList className="flex flex-row justify-start mb-2">
             <TabsTrigger value="home">Home</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
-          </TabsList>
+          </TabsList> : null}
           
           <TabsContent value="home">
             <div className="space-y-4">
@@ -87,8 +168,10 @@ export function SelectFilesDialog({
                 enableSelection={true}
                 enableActions={false}
                 pageSize={8}
-                onSelectionChange={setSelectedItems}
-                initialSelectedItems={selectedItems}
+                onSelectionChange={handleSelectionChange}
+                initialSelectedItems={filesAndFolders.filter(isItemSelected)}
+                onRowClick={handleRowClick}
+                isLoading={isLoading.filesAndFolders}
               />
             </div>
           </TabsContent>
@@ -107,6 +190,7 @@ export function SelectFilesDialog({
               onSelectionChange={setSelectedItems}
               initialSelectedItems={selectedItems}
               enableRowLink={false}
+              isLoading={isLoading.projects}
             />
           </TabsContent>
         </Tabs>

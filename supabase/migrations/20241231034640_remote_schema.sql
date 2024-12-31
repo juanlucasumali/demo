@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS "public"."shared_items" (
     "shared_with_id" "uuid" NOT NULL,
     "shared_by_id" "uuid" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    CONSTRAINT "shared_items_item_type_check" CHECK (("item_type" = ANY (ARRAY['file'::"text", 'project'::"text"])))
+    CONSTRAINT "shared_items_item_type_check" CHECK (("item_type" = ANY (ARRAY['file'::"text", 'project'::"text", 'folder'::"text"])))
 );
 
 ALTER TABLE "public"."shared_items" OWNER TO "postgres";
@@ -222,9 +222,6 @@ ALTER TABLE ONLY "public"."shared_items"
 
 ALTER TABLE ONLY "public"."shared_items"
     ADD CONSTRAINT "shared_items_shared_with_id_fkey1" FOREIGN KEY ("shared_with_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."users"
-    ADD CONSTRAINT "users_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 CREATE POLICY "No manual deletion" ON "public"."users" FOR DELETE TO "authenticated" USING (false);
 

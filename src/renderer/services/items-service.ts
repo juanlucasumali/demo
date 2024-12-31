@@ -17,6 +17,7 @@ export async function getFilesAndFolders(
 ): Promise<DemoItem[]> {
   const userId = getCurrentUserId()
   
+  // Get owned files and folders with people they're shared with
   let query = supabase
     .from('files')
     .select(`
@@ -43,14 +44,33 @@ export async function getFilesAndFolders(
     query = query.eq('collection_id', collectionId)
   }
 
-  const { data, error } = await query
+  const { data: ownedItems = [], error: ownedError } = await query
+  if (ownedError) throw ownedError
 
-  if (error) throw error
+  // Get files shared with me and who they're shared with
+  const { data: sharedItems = [], error: sharedError } = await supabase
+    .from('files')
+    .select(`
+      *,
+      owner:owner_id(*),
+      shared_with:shared_items(
+        shared_with:shared_with_id(*)
+      ),
+      my_share:shared_items!inner(
+        shared_with:shared_with_id(*)
+      )
+    `)
+    .eq('shared_items.shared_with_id', userId)
+    .filter('type', 'in', '("file","folder")')
 
-  return data.map(item => ({
+  if (sharedError) throw sharedError
+
+  const allItems = [...(ownedItems ?? []), ...(sharedItems ?? [])]
+
+  return allItems.map(item => ({
     ...item,
     owner: item.owner,
-    sharedWith: item.shared_with?.map(share => share.shared_with),
+    sharedWith: item.shared_with?.map(share => share.shared_with) || [],
     type: item.type as ItemType,
     createdAt: new Date(item.created_at),
     lastModified: new Date(item.last_modified),
@@ -61,7 +81,8 @@ export async function getFilesAndFolders(
 export async function getProjects(): Promise<DemoItem[]> {
   const userId = getCurrentUserId()
 
-  const { data, error } = await supabase
+  // Get owned projects with people they're shared with
+  const { data: ownedProjects = [], error: ownedError } = await supabase
     .from('projects')
     .select(`
       *,
@@ -72,12 +93,31 @@ export async function getProjects(): Promise<DemoItem[]> {
     `)
     .eq('owner_id', userId)
 
-  if (error) throw error
+  if (ownedError) throw ownedError
 
-  return data.map(item => ({
+  // Get projects shared with me and who they're shared with
+  const { data: sharedProjects = [], error: sharedError } = await supabase
+    .from('projects')
+    .select(`
+      *,
+      owner:owner_id(*),
+      shared_with:shared_items(
+        shared_with:shared_with_id(*)
+      ),
+      my_share:shared_items!inner(
+        shared_with:shared_with_id(*)
+      )
+    `)
+    .eq('shared_items.shared_with_id', userId)
+
+  if (sharedError) throw sharedError
+
+  const allProjects = [...(ownedProjects ?? []), ...(sharedProjects ?? [])]
+
+  return allProjects.map(item => ({
     ...item,
     owner: item.owner,
-    sharedWith: item.shared_with?.map(share => share.shared_with),
+    sharedWith: item.shared_with?.map(share => share.shared_with) || [],
     type: ItemType.PROJECT,
     createdAt: new Date(item.created_at),
     lastModified: new Date(item.last_modified),

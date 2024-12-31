@@ -82,6 +82,23 @@ export function DataTable<DemoItem>({
     });
   };
 
+  // Add this effect in the DataTable component
+  React.useEffect(() => {
+      if (initialSelectedItems?.length) {
+        const newRowSelection = initialSelectedItems.reduce((acc, item) => {
+          const rowIndex = data.findIndex(dataItem => 
+          (dataItem as any).id === (item as any).id
+        );
+        if (rowIndex !== -1) {
+          acc[rowIndex] = true;
+        }
+        return acc;
+      }, {} as Record<string, boolean>);
+      
+      setRowSelection(newRowSelection);
+    }
+  }, [data, initialSelectedItems]);
+
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     isStarred: false,
@@ -194,9 +211,9 @@ export function DataTable<DemoItem>({
         </div>
       )}
   
-      <div className="rounded-md border">
+      <div className={cn("rounded-md border", viewMode === 'grid' && "rounded-md border-none")}>
         {isLoading ? (
-          <div className="flex items-center justify-center h-[100px]">
+          <div className="flex items-center justify-center h-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : viewMode === 'table' ? (
@@ -251,7 +268,7 @@ export function DataTable<DemoItem>({
               ) : (
                 // Existing no results row
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <TableCell colSpan={columns.length} className="h-12 text-center">
                     No results.
                   </TableCell>
                 </TableRow>

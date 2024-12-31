@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from "../ui/dialog";
 import { useToast } from "@renderer/hooks/use-toast";
-import { File, FolderOpen, Link, Box, X } from "lucide-react";
+import { File, FolderOpen, Link, Box, X, Loader2 } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { SelectFilesDialog } from "./select-files";
@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { cn } from "@renderer/lib/utils";
 import { useItems } from "@renderer/hooks/use-items";
 import { useEffect } from "react";
+import { useShare } from "@renderer/hooks/use-share";
 
 interface ShareDialogProps {
   open: boolean;
@@ -44,33 +45,43 @@ export function ShareDialog({
     if (open) {
       setSelectedItems(initialItem ? [initialItem] : []);
     }
-    console.log("initialItem", initialItem);
   }, [open, initialItem]);
 
   // Use the friends query
   const { friends, isLoading } = useItems({ searchTerm });
+  const { shareItems, isSharing } = useShare();
 
   const handleConfirmSelection = (items: DemoItem[]) => {
     setSelectedItems(items);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simulate sending data
-    console.log("Sharing the following items:", selectedItems);
-    console.log("With users:", selectedUsers);
+    try {
+      console.log("selectedItems, selectedUsers", selectedItems, selectedUsers)
+      await shareItems({ 
+        items: selectedItems, 
+        users: selectedUsers 
+      });
 
-    toast({
-      title: "Success!",
-      description: `Shared ${selectedItems.length} items with ${selectedUsers.length} users.`,
-      variant: "default",
-    });
+      toast({
+        title: "Success!",
+        description: `Shared ${selectedItems.length} items with ${selectedUsers.length} users.`,
+        variant: "default",
+      });
 
-    // Reset form
-    setSelectedItems([]);
-    setSelectedUsers([]);
-    onOpenChange(false);
+      // Reset form
+      setSelectedItems([]);
+      setSelectedUsers([]);
+      onOpenChange(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to share items. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRemoveItem = (itemId: string) => {
@@ -221,9 +232,16 @@ export function ShareDialog({
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={selectedItems.length === 0 || selectedUsers.length === 0}
+                  disabled={selectedItems.length === 0 || selectedUsers.length === 0 || isSharing}
                 >
-                  Send
+                  {isSharing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    'Send'
+                  )}
                 </Button>
               </div>
             </div>

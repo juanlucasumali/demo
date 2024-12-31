@@ -18,8 +18,7 @@ import { Route as CreateProfileIndexImport } from './routes/create-profile/index
 import { Route as AuthIndexImport } from './routes/auth/index'
 import { Route as ProjectsProjectIdIndexImport } from './routes/projects/$projectId/index'
 import { Route as HomeFoldersFolderIdImport } from './routes/home/folders/$folderId'
-import { Route as ProjectsProjectIdCollectionsIndexImport } from './routes/projects/$projectId/collections/index'
-import { Route as ProjectsProjectIdCollectionsCollectionIdIndexImport } from './routes/projects/$projectId/collections/$collectionId/index'
+import { Route as ProjectsProjectIdCollectionIdIndexImport } from './routes/projects/$projectId/$collectionId/index'
 
 // Create/Update Routes
 
@@ -65,17 +64,10 @@ const HomeFoldersFolderIdRoute = HomeFoldersFolderIdImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ProjectsProjectIdCollectionsIndexRoute =
-  ProjectsProjectIdCollectionsIndexImport.update({
-    id: '/projects/$projectId/collections/',
-    path: '/projects/$projectId/collections/',
-    getParentRoute: () => rootRoute,
-  } as any)
-
-const ProjectsProjectIdCollectionsCollectionIdIndexRoute =
-  ProjectsProjectIdCollectionsCollectionIdIndexImport.update({
-    id: '/projects/$projectId/collections/$collectionId/',
-    path: '/projects/$projectId/collections/$collectionId/',
+const ProjectsProjectIdCollectionIdIndexRoute =
+  ProjectsProjectIdCollectionIdIndexImport.update({
+    id: '/projects/$projectId/$collectionId/',
+    path: '/projects/$projectId/$collectionId/',
     getParentRoute: () => rootRoute,
   } as any)
 
@@ -132,18 +124,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdIndexImport
       parentRoute: typeof rootRoute
     }
-    '/projects/$projectId/collections/': {
-      id: '/projects/$projectId/collections/'
-      path: '/projects/$projectId/collections'
-      fullPath: '/projects/$projectId/collections'
-      preLoaderRoute: typeof ProjectsProjectIdCollectionsIndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/projects/$projectId/collections/$collectionId/': {
-      id: '/projects/$projectId/collections/$collectionId/'
-      path: '/projects/$projectId/collections/$collectionId'
-      fullPath: '/projects/$projectId/collections/$collectionId'
-      preLoaderRoute: typeof ProjectsProjectIdCollectionsCollectionIdIndexImport
+    '/projects/$projectId/$collectionId/': {
+      id: '/projects/$projectId/$collectionId/'
+      path: '/projects/$projectId/$collectionId'
+      fullPath: '/projects/$projectId/$collectionId'
+      preLoaderRoute: typeof ProjectsProjectIdCollectionIdIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -159,8 +144,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsIndexRoute
   '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
-  '/projects/$projectId/collections': typeof ProjectsProjectIdCollectionsIndexRoute
-  '/projects/$projectId/collections/$collectionId': typeof ProjectsProjectIdCollectionsCollectionIdIndexRoute
+  '/projects/$projectId/$collectionId': typeof ProjectsProjectIdCollectionIdIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -171,8 +155,7 @@ export interface FileRoutesByTo {
   '/projects': typeof ProjectsIndexRoute
   '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
-  '/projects/$projectId/collections': typeof ProjectsProjectIdCollectionsIndexRoute
-  '/projects/$projectId/collections/$collectionId': typeof ProjectsProjectIdCollectionsCollectionIdIndexRoute
+  '/projects/$projectId/$collectionId': typeof ProjectsProjectIdCollectionIdIndexRoute
 }
 
 export interface FileRoutesById {
@@ -184,8 +167,7 @@ export interface FileRoutesById {
   '/projects/': typeof ProjectsIndexRoute
   '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
-  '/projects/$projectId/collections/': typeof ProjectsProjectIdCollectionsIndexRoute
-  '/projects/$projectId/collections/$collectionId/': typeof ProjectsProjectIdCollectionsCollectionIdIndexRoute
+  '/projects/$projectId/$collectionId/': typeof ProjectsProjectIdCollectionIdIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -198,8 +180,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/home/folders/$folderId'
     | '/projects/$projectId'
-    | '/projects/$projectId/collections'
-    | '/projects/$projectId/collections/$collectionId'
+    | '/projects/$projectId/$collectionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -209,8 +190,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/home/folders/$folderId'
     | '/projects/$projectId'
-    | '/projects/$projectId/collections'
-    | '/projects/$projectId/collections/$collectionId'
+    | '/projects/$projectId/$collectionId'
   id:
     | '__root__'
     | '/auth/'
@@ -220,8 +200,7 @@ export interface FileRouteTypes {
     | '/projects/'
     | '/home/folders/$folderId'
     | '/projects/$projectId/'
-    | '/projects/$projectId/collections/'
-    | '/projects/$projectId/collections/$collectionId/'
+    | '/projects/$projectId/$collectionId/'
   fileRoutesById: FileRoutesById
 }
 
@@ -233,8 +212,7 @@ export interface RootRouteChildren {
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   HomeFoldersFolderIdRoute: typeof HomeFoldersFolderIdRoute
   ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
-  ProjectsProjectIdCollectionsIndexRoute: typeof ProjectsProjectIdCollectionsIndexRoute
-  ProjectsProjectIdCollectionsCollectionIdIndexRoute: typeof ProjectsProjectIdCollectionsCollectionIdIndexRoute
+  ProjectsProjectIdCollectionIdIndexRoute: typeof ProjectsProjectIdCollectionIdIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -245,10 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsIndexRoute: ProjectsIndexRoute,
   HomeFoldersFolderIdRoute: HomeFoldersFolderIdRoute,
   ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
-  ProjectsProjectIdCollectionsIndexRoute:
-    ProjectsProjectIdCollectionsIndexRoute,
-  ProjectsProjectIdCollectionsCollectionIdIndexRoute:
-    ProjectsProjectIdCollectionsCollectionIdIndexRoute,
+  ProjectsProjectIdCollectionIdIndexRoute:
+    ProjectsProjectIdCollectionIdIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -268,8 +244,7 @@ export const routeTree = rootRoute
         "/projects/",
         "/home/folders/$folderId",
         "/projects/$projectId/",
-        "/projects/$projectId/collections/",
-        "/projects/$projectId/collections/$collectionId/"
+        "/projects/$projectId/$collectionId/"
       ]
     },
     "/auth/": {
@@ -293,11 +268,8 @@ export const routeTree = rootRoute
     "/projects/$projectId/": {
       "filePath": "projects/$projectId/index.tsx"
     },
-    "/projects/$projectId/collections/": {
-      "filePath": "projects/$projectId/collections/index.tsx"
-    },
-    "/projects/$projectId/collections/$collectionId/": {
-      "filePath": "projects/$projectId/collections/$collectionId/index.tsx"
+    "/projects/$projectId/$collectionId/": {
+      "filePath": "projects/$projectId/$collectionId/index.tsx"
     }
   }
 }

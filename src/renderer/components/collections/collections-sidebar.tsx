@@ -62,7 +62,7 @@ export function CollectionsSidebar({ projectId, onCreateCollection }: Collection
           </Link>
 
           {collections?.map((collection) => {
-            const isActive = routerState.location.pathname.startsWith(`/projects/${projectId}/collections/${collection.id}`)
+            const isActive = routerState.location.pathname.startsWith(`/projects/${projectId}/${collection.id}`)
 
             return (
               <div
@@ -70,7 +70,7 @@ export function CollectionsSidebar({ projectId, onCreateCollection }: Collection
                 className="flex items-center justify-between group"
               >
                 <Link
-                  to={`/projects/${projectId}/collections/${collection.id}`}
+                  to={`/projects/${projectId}/${collection.id}`}
                   className={cn(
                     'flex items-center gap-2 px-3 py-2 text-sm grow',
                     'rounded-md hover:bg-muted',

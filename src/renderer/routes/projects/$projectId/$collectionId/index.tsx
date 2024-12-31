@@ -6,8 +6,6 @@ import { Box, Upload, FileSearch, Folder } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
-import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
-import { useState } from 'react'
 import { DemoItem, ItemType } from '@renderer/types/items'
 import {
   DropdownMenu,
@@ -17,19 +15,17 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@renderer/components/ui/dropdown-menu'
-import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
-import { CreateItem } from '@renderer/components/dialogs/create-item'
 import { useItems } from '@renderer/hooks/use-items'
 import { CollectionsSidebar } from '@renderer/components/collections/collections-sidebar'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
 
-export const Route = createFileRoute('/projects/$projectId/collections/$collectionId/')({
+export const Route = createFileRoute('/projects/$projectId/$collectionId/')({
   component: CollectionPage,
 })
 
 function CollectionPage() {
-  const { projectId, collectionId } = useParams({ from: '/projects/$projectId/collections/$collectionId/' })
+  const { projectId, collectionId } = useParams({ from: '/projects/$projectId/$collectionId/' })
   const { currentCollection, currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ collectionId, projectId })
   const dialogState = useDialogState();
   const navigate = useNavigate();

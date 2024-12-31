@@ -21,6 +21,7 @@ import { cn } from "@renderer/lib/utils";
 import { useItems } from "@renderer/hooks/use-items";
 import { useEffect } from "react";
 import { useShare } from "@renderer/hooks/use-share";
+import { shareItems } from "@renderer/services/items-service";
 
 interface ShareDialogProps {
   open: boolean;
@@ -49,8 +50,7 @@ export function ShareDialog({
   }, [open, initialItem]);
 
   // Use the friends query
-  const { friends, isLoading } = useItems({ searchTerm });
-  const { shareItems, isSharing } = useShare();
+  const { friends, shareItems, isLoading } = useItems({ searchTerm });
 
   const handleConfirmSelection = (items: DemoItem[]) => {
     setSelectedItems(items);
@@ -232,9 +232,9 @@ export function ShareDialog({
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={selectedItems.length === 0 || selectedUsers.length === 0 || isSharing}
+                  disabled={selectedItems.length === 0 || selectedUsers.length === 0 || isLoading.shareItems}
                 >
-                  {isSharing ? (
+                  {isLoading.shareItems ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Sending...

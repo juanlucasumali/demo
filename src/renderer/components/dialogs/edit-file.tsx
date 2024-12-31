@@ -51,7 +51,7 @@ interface EditFileDialogProps {
   setEditFile: (value: boolean) => void;
   existingFile: DemoItem;
   handleDialogClose: (value: boolean) => void;
-  updateItem: UseMutateFunction<void, Error, DemoItem, unknown>;
+  updateItem: UseMutateFunction<void, Error, { updatedItem: DemoItem, originalItem: DemoItem }, unknown>;
 }
 
 export function EditFileDialog({
@@ -91,8 +91,8 @@ export function EditFileDialog({
         sharedWith: selectedUsers,
       };
 
-      // Call updateItem mutation
-      await updateItem(updatedItem);
+      // Call updateItem mutation with both new and original items
+      await updateItem({ updatedItem, originalItem: existingFile });
 
       toast({
         title: "Changes saved",

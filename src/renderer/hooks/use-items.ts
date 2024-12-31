@@ -65,16 +65,19 @@ export function useItems(options?: UseItemsOptions) {
 
   // Update item mutation
   const updateItem = useMutation({
-    mutationFn: itemsService.updateItem,
+    mutationFn: ({ updatedItem, originalItem }: { 
+      updatedItem: DemoItem, 
+      originalItem: DemoItem 
+    }) => itemsService.updateItem(updatedItem, originalItem),
     onSuccess: (_, variables) => {
-      const baseQueryKey = variables.type === 'project' ? ['projects'] : ['files-and-folders']
+      const baseQueryKey = variables.updatedItem.type === 'project' ? ['projects'] : ['files-and-folders']
       queryClient.invalidateQueries({ 
         queryKey: baseQueryKey 
       })
       // Also invalidate the specific project query
-      if (variables.type === 'project') {
+      if (variables.updatedItem.type === 'project') {
         queryClient.invalidateQueries({ 
-          queryKey: ['project', variables.id]
+          queryKey: ['project', variables.updatedItem.id]
         })
       }
       // Invalidate project files if in project context
@@ -111,6 +114,17 @@ export function useItems(options?: UseItemsOptions) {
           queryKey: ['files-and-folders', null, options.projectId]
         });
       }
+    }
+  });
+
+  // Add this inside useItems function
+  const shareItemsMutation = useMutation({
+    mutationFn: ({ items, users }: { items: DemoItem[], users: UserProfile[] }) =>
+      itemsService.shareItems(items, users),
+    onSuccess: () => {
+      // Invalidate queries that might be affected by sharing
+      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     }
   });
 
@@ -175,6 +189,7 @@ export function useItems(options?: UseItemsOptions) {
     updateItem: updateItem.mutate,
     toggleStar: toggleStar.mutate,
     addCollection: addCollection.mutate,
+    shareItems: shareItemsMutation.mutate,
     currentCollection,
     removeCollection,
     friends: searchFriendsQuery.data || [],
@@ -189,6 +204,7 @@ export function useItems(options?: UseItemsOptions) {
       currentFolder: isLoadingCurrentFolder,
       currentProject: isLoadingCurrentProject,
       addCollection: addCollection.isPending,
+      shareItems: shareItemsMutation.isPending,
       collections: isLoadingCollections,
       currentCollection: isLoadingCurrentCollection,
       removeCollection: removeCollection.isPending,

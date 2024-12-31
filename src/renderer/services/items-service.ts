@@ -266,7 +266,7 @@ export async function removeItem(id: string) {
   ])
 }
 
-export async function updateItem(item: DemoItem) {
+export async function updateItem(item: DemoItem, originalItem: DemoItem) {
   const userId = getCurrentUserId()
   
   const dbItem = {
@@ -282,6 +282,7 @@ export async function updateItem(item: DemoItem) {
     file_path: item.filePath,
   }
 
+  // Handle basic item update
   if (item.type === ItemType.PROJECT) {
     const { error } = await supabase
       .from('projects')
@@ -298,6 +299,48 @@ export async function updateItem(item: DemoItem) {
       .eq('owner_id', userId)
 
     if (error) throw error
+  }
+
+  // Handle sharing changes
+  const originalSharedUsers = originalItem.sharedWith || [];
+  const newSharedUsers = item.sharedWith || [];
+
+  // Find users to add and remove
+  const usersToAdd = newSharedUsers.filter(
+    newUser => !originalSharedUsers.some(origUser => origUser.id === newUser.id)
+  );
+  const usersToRemove = originalSharedUsers.filter(
+    origUser => !newSharedUsers.some(newUser => newUser.id === origUser.id)
+  );
+
+  // Create new share records if needed
+  if (usersToAdd.length > 0) {
+    const shareRecords = usersToAdd.map(user => ({
+      file_id: item.type === ItemType.PROJECT ? null : item.id,
+      project_id: item.type === ItemType.PROJECT ? item.id : null,
+      shared_with_id: user.id,
+      shared_by_id: userId,
+    }));
+
+    const { error: shareError } = await supabase
+      .from('shared_items')
+      .upsert(shareRecords, {
+        onConflict: item.type === ItemType.PROJECT ? 'project_id,shared_with_id' : 'file_id,shared_with_id',
+        ignoreDuplicates: true
+      });
+
+    if (shareError) throw shareError;
+  }
+
+  // Remove share records if needed
+  if (usersToRemove.length > 0) {
+    const { error: removeError } = await supabase
+      .from('shared_items')
+      .delete()
+      .eq(item.type === ItemType.PROJECT ? 'project_id' : 'file_id', item.id)
+      .in('shared_with_id', usersToRemove.map(user => user.id));
+
+    if (removeError) throw removeError;
   }
 }
 
@@ -482,4 +525,57 @@ export async function searchFriends(searchTerm?: string): Promise<UserProfile[]>
   if (error) throw error;
 
   return data
+}
+
+export async function shareItems(
+  items: DemoItem[], 
+  users: UserProfile[]
+) {
+  const currentUserId = getCurrentUserId();
+  
+  // Split items into files and projects
+  const fileItems = items.filter(item => item.type === ItemType.FILE || item.type === ItemType.FOLDER);
+  const projectItems = items.filter(item => item.type === ItemType.PROJECT);
+
+  // Create share records for files
+  if (fileItems.length > 0) {
+    const fileShares = fileItems.flatMap(item =>
+      users.map(user => ({
+        file_id: item.id,
+        project_id: null,
+        shared_with_id: user.id,
+        shared_by_id: currentUserId
+      }))
+    );
+
+    const { error: fileError } = await supabase
+      .from('shared_items')
+      .upsert(fileShares, {
+        onConflict: 'file_id,shared_with_id',
+        ignoreDuplicates: true
+      });
+
+    if (fileError) throw fileError;
+  }
+
+  // Create share records for projects
+  if (projectItems.length > 0) {
+    const projectShares = projectItems.flatMap(item =>
+      users.map(user => ({
+        file_id: null,
+        project_id: item.id,
+        shared_with_id: user.id,
+        shared_by_id: currentUserId
+      }))
+    );
+
+    const { error: projectError } = await supabase
+      .from('shared_items')
+      .upsert(projectShares, {
+        onConflict: 'project_id,shared_with_id',
+        ignoreDuplicates: true
+      });
+
+    if (projectError) throw projectError;
+  }
 } 

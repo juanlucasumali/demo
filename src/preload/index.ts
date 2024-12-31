@@ -1,12 +1,19 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { dialog } from '@electron/remote'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  selectFolder: async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory']
+    })
+    return result.filePaths[0]
+  }
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+// renderer only if context isolation is enabled
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)

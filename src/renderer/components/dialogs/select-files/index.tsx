@@ -14,7 +14,7 @@ interface SelectFilesDialogProps {
   onOpenChange: (open: boolean) => void
   onConfirm: (selectedItems: DemoItem[]) => void
   initialSelections?: DemoItem[]
-  location: "home" | "project" | "save-items"
+  location: "home" | "project" | "save-items" | "collection"
 }
 
 export function SelectFilesDialog({
@@ -57,12 +57,13 @@ export function SelectFilesDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-4xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>{location === "project" ? "Select files" : 
+          <AlertDialogTitle>{location === "project" || location === "collection" ? "Select files" : 
              location === "save-items" ? "Select location(s)" :
              "Select files"}</AlertDialogTitle>
           <AlertDialogDescription>
             {location === "project" ? "Select files to include in your project" : 
-             location === "save-items" ? "Select where you want to save the shared items" :
+             location === "save-items" ? "Select where you want to save the shared items" : 
+             location === "collection" ? "Select files to add to your collection" :
              "Select files to share"}
           </AlertDialogDescription>
         </AlertDialogHeader>

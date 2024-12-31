@@ -20,16 +20,14 @@ const collectionSchema = z.object({
 type CollectionFormValues = z.infer<typeof collectionSchema>;
 
 interface CreateCollectionProps {
-  setCreateCollection: React.Dispatch<React.SetStateAction<boolean>>;
-  createCollection: boolean;
-  handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   projectId: string;
 }
 
 export function CreateCollection({
-  setCreateCollection,
-  createCollection,
-  handleDialogClose,
+  open,
+  onOpenChange,
   projectId
 }: CreateCollectionProps) {
   const { toast } = useToast();
@@ -61,7 +59,7 @@ export function CreateCollection({
       });
 
       reset();
-      setCreateCollection(false);
+      onOpenChange(false);
     } catch (error) {
       toast({
         title: "Error",
@@ -72,7 +70,7 @@ export function CreateCollection({
   };
 
   return (
-    <Dialog open={createCollection} onOpenChange={() => handleDialogClose(setCreateCollection)}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[375px]">
         <div className="space-y-4">
           <DialogHeader>

@@ -15,15 +15,8 @@ import { DemoItem } from "@renderer/types/items"
 import { formatDuration } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
 import { useItemsStore } from "@renderer/stores/items-store"
-import { useState } from "react"
-import { useToast } from "@renderer/hooks/use-toast"
-import { DeleteDialog } from "@renderer/components/dialogs/delete-dialog"
-import { EditFileDialog } from "@renderer/components/dialogs/edit-file"
 import { Checkbox } from "@renderer/components/ui/checkbox"
-import { ShareDialog } from "@renderer/components/dialogs/share-dialog"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
-import { useItems } from "@renderer/hooks/use-items"
-import { UseMutateFunction } from "@tanstack/react-query"
 
 interface ColumnOptions {
   enableStarToggle?: boolean;
@@ -32,12 +25,9 @@ interface ColumnOptions {
   showStarColumn?: boolean;
   showFileSelection?: boolean;
   showSelectAll?: boolean;
-  removeItem?: UseMutateFunction<void, Error, string, unknown>;
-  updateItem?: UseMutateFunction<void, Error, DemoItem, unknown>;
-  isLoading?: {
-    removeItem: boolean;
-    updateItem: boolean;
-  };
+  onEditFile?: (item: DemoItem) => void
+  onShare?: (item: DemoItem) => void
+  onDelete?: (itemId: string) => void
 }
 
 export const createColumns = ({
@@ -47,9 +37,9 @@ export const createColumns = ({
   showStarColumn = true,
   showFileSelection = true,
   showSelectAll = true,
-  removeItem,
-  updateItem,
-  isLoading = { removeItem: false, updateItem: false }
+  onEditFile,
+  onShare,
+  onDelete
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
@@ -268,117 +258,51 @@ export const createColumns = ({
 if (enableActions) {
   baseColumns.push({
     id: "actions",
-    cell: ({ row }) => {
-      const [isDeleting, setIsDeleting] = useState(false);
-      const [editFile, setEditFile] = useState(false);
-      const [open, setOpen] = useState(false);
-      const [dropdown, setDropdown] = useState(false);
-      const [share, setShare] = useState(false);
-      const { toast } = useToast();
-
-      const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
-        dialogSetter(false);
-        setDropdown(false);
-      };
-
-      const handleDelete = async () => {
-        try {
-          setIsDeleting(true);
-          await removeItem?.(row.getValue("id"));
-          setDropdown(false);
-          setOpen(false);
-          toast({
-            title: "Success!",
-            description: "Item was successfully deleted.",
-            variant: "destructive"
-          });
-        } catch (error) {
-          toast({
-            title: "Uh oh! Something went wrong.",
-            description: `Failed to delete item: ${error}`,
-            variant: "destructive"
-          });
-        } finally {
-          setIsDeleting(false);
-        }
-      };
-
-      return (
-        <div className="text-end" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenu open={dropdown} onOpenChange={setDropdown} modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={(e) => {
+    cell: ({ row }) => (
+      <div onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              onEditFile?.(row.original)
+            }}>
+              <Edit /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              onShare?.(row.original)
+            }}>
+              <Share /> Share
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
                 e.stopPropagation();
-                setEditFile(true);
-              }}>
-                <Edit /> Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => {
+                navigator.clipboard.writeText(row.getValue("id"));
+              }}
+            >
+              <RefreshCcw /> Convert
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={(e) => {
                 e.stopPropagation();
-                setShare(true);
-              }}>
-                <Share /> Share
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.clipboard.writeText(row.getValue("id"));
-                }}
-              >
-                <RefreshCcw /> Convert
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpen(true);
-                }}
-                className="text-red-500"
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {updateItem && (
-            <EditFileDialog
-              editFile={editFile}
-              setEditFile={setEditFile}
-              existingFile={row.original}
-              handleDialogClose={setDropdown}
-              updateItem={updateItem}
-            />
-          )}
-
-          {share && (
-            <ShareDialog 
-              share={share}
-              setShare={setShare}
-              handleDialogClose={handleDialogClose}
-              initialItem={row.original}
-            />
-          )}
-
-          {removeItem && (
-            <DeleteDialog 
-              open={open}
-              onOpenChange={setOpen}
-              itemId={row.original.id!!}
-              removeItem={removeItem}
-              handleDialogClose={setDropdown}
-              isLoading={isLoading.removeItem}
-            />
-          )}
-        </div>
-      );
-    },
+                onDelete?.(row.getValue("id"))
+              }}
+              className="text-red-500"
+            >
+              <Trash className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    )
   })
 }
 

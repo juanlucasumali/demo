@@ -19,18 +19,17 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { cn } from "@renderer/lib/utils";
 import { useItems } from "@renderer/hooks/use-items";
+import { useEffect } from "react";
 
 interface ShareDialogProps {
-  setShare: React.Dispatch<React.SetStateAction<boolean>>;
-  share: boolean;
-  handleDialogClose: (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   initialItem?: DemoItem;
 }
 
 export function ShareDialog({ 
-  setShare, 
-  share, 
-  handleDialogClose,
+  open, 
+  onOpenChange,
   initialItem 
 }: ShareDialogProps) {
   const { toast } = useToast();
@@ -40,6 +39,13 @@ export function ShareDialog({
   const [selectedItems, setSelectedItems] = React.useState<DemoItem[]>(
     initialItem ? [initialItem] : []
   );
+
+  useEffect(() => {
+    if (open) {
+      setSelectedItems(initialItem ? [initialItem] : []);
+    }
+    console.log("initialItem", initialItem);
+  }, [open, initialItem]);
 
   // Use the friends query
   const { friends, isLoading } = useItems({ searchTerm });
@@ -64,7 +70,7 @@ export function ShareDialog({
     // Reset form
     setSelectedItems([]);
     setSelectedUsers([]);
-    setShare(false);
+    onOpenChange(false);
   };
 
   const handleRemoveItem = (itemId: string) => {
@@ -92,7 +98,7 @@ export function ShareDialog({
 
   return (
     <>
-      <Dialog open={share} onOpenChange={() => handleDialogClose(setShare)}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-[400px]">
           <form onSubmit={handleSubmit} className="space-y-4">
             <DialogHeader>
@@ -124,9 +130,11 @@ export function ShareDialog({
                           "bg-muted/30"
                         )}
                       >
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
                           {renderItemIcon(initialItem.type)}
-                          <span className="text-sm truncate">{initialItem.name}</span>
+                          <span className="text-sm truncate block max-w-[300px]">
+                            {initialItem.name}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -170,9 +178,11 @@ export function ShareDialog({
                                   "hover:bg-muted/50 transition-colors"
                                 )}
                               >
-                                <div className="flex items-center gap-2 min-w-0">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
                                   {renderItemIcon(item.type)}
-                                  <span className="text-sm truncate">{item.name}</span>
+                                  <span className="text-sm truncate block max-w-[200px]">
+                                    {item.name}
+                                  </span>
                                 </div>
                                 <Button
                                   variant="ghost"

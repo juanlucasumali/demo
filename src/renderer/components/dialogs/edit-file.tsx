@@ -26,9 +26,9 @@ import {
 import { DemoItem } from "@renderer/types/items";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
-import { friendsData } from "../home/dummy-data";
 import { maxFileNameLength } from "@renderer/lib/utils";
 import { UseMutateFunction } from "@tanstack/react-query";
+import { useItems } from "@renderer/hooks/use-items";
 
 // Schema and validation rules remain the same
 const editFileSchema = z.object({
@@ -62,6 +62,8 @@ export function EditFileDialog({
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
     existingFile.sharedWith || []
   );
+  const [searchTerm, setSearchTerm] = useState('');
+  const { friends, isLoading } = useItems({ searchTerm: searchTerm });
 
   const form = useForm<EditFileFormValues>({
     resolver: zodResolver(editFileSchema),
@@ -150,11 +152,12 @@ export function EditFileDialog({
 
             <div className="space-y-2">
               <FormLabel>Share With</FormLabel>
-              <FriendsSearch
-                owner={existingFile.owner} 
-                friendsList={friendsData}
+              <FriendsSearch 
+                friendsList={friends}
                 selectedUsers={selectedUsers}
                 setSelectedUsers={setSelectedUsers}
+                onSearch={setSearchTerm}
+                isLoading={isLoading.friends}
               />
             </div>
 

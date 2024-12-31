@@ -1,24 +1,21 @@
-import { Box, Folder, HomeIcon, User, UserCog } from 'lucide-react'
+import { Box, Folder, HomeIcon, UserCog } from 'lucide-react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useState } from 'react'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
 import { Button } from '@renderer/components/ui/button'
 import { Recents } from '@renderer/components/home/recents'
 import { Activity } from '@renderer/components/home/activity'
-import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
-import { CreateProject } from '@renderer/components/dialogs/create-project'
-import { RequestDialog } from '@renderer/components/dialogs/request'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
 import { SubHeader } from '@renderer/components/page-layout/sub-header'
 import { useItems } from '@renderer/hooks/use-items'
-import { CreateItem } from '@renderer/components/dialogs/create-item'
 import { useNavigate } from '@tanstack/react-router'
 import { ItemType } from '@renderer/types/items'
 import { DemoItem } from '@renderer/types/items'
+import { useDialogState } from '@renderer/hooks/use-dialog-state'
+import { DialogManager } from '@renderer/components/dialog-manager'
 
 export const Route = createFileRoute('/home/')({
   beforeLoad: async ({ context }) => {
@@ -36,15 +33,8 @@ export const Route = createFileRoute('/home/')({
 
 function Home() {
   const { filesAndFolders, isLoading, updateItem, removeItem } = useItems();
-  const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null);
-  const [share, setShare] = useState(false);
-  const [createProject, setCreateProject] = useState(false);
-  const [request, setRequest] = useState(false);
+  const dialogState = useDialogState();
   const navigate = useNavigate();
-
-  const handleDialogClose = (dialogSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
-    dialogSetter(false);
-  };
 
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {
@@ -60,40 +50,31 @@ function Home() {
         description="Supercharge creativity, simplify your media."
         icon={HomeIcon}
       >
-        {/* Header Buttons */}
-        <Button variant="default" onClick={() => setCreateItem('file')}>
+        <Button variant="default" onClick={() => dialogState.createItem.onOpen('file')}>
           Upload
         </Button>
 
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button variant="default">
-              Create New
-            </Button>
+            <Button variant="default">Create New</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setCreateItem('folder')}>
-                <Folder/>
-                Create folder
-                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen('folder')}>
+                <Folder/> Create folder
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCreateProject(true)}>
-                <Box/>
-                Create project
-                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
+              <DropdownMenuItem onClick={() => dialogState.createProject.onOpen()}>
+                <Box/> Create project
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setRequest(true)}>
-                <UserCog/>
-                Create Request
-                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-              </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => dialogState.request.onOpen()}>
+              <UserCog/> Create Request
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="default" onClick={() => setShare(true)}>
+        <Button variant="default" onClick={() => dialogState.share.onOpen()}>
           Share
         </Button>
 
@@ -107,24 +88,23 @@ function Home() {
         </div>
         <SubHeader subHeader="All files"/>
         <DataTable 
-          columns={createColumns({ showStarColumn: false, removeItem: removeItem, updateItem: updateItem })} 
+          columns={createColumns({ 
+            onEditFile: dialogState.editFile.onOpen,
+            onShare: dialogState.share.onOpen,
+            onDelete: dialogState.delete.onOpen 
+          })} 
           data={filesAndFolders}
           onRowClick={handleRowClick}
           isLoading={isLoading.filesAndFolders}
         />
       </PageContent>
 
-      {/* Dialogs */}
-      <CreateItem 
-        type={createItem || 'file'}
-        isOpen={!!createItem}
-        onClose={() => setCreateItem(null)}
-        location="home"
-        parentFolderId={null}
+      <DialogManager
+        {...dialogState}
+        updateItem={updateItem}
+        removeItem={removeItem}
+        isLoading={isLoading}
       />
-      <ShareDialog setShare={setShare} share={share} handleDialogClose={handleDialogClose}/>
-      <CreateProject setCreateProject={setCreateProject} createProject={createProject} handleDialogClose={handleDialogClose}/>
-      <RequestDialog setRequest={setRequest} request={request} handleDialogClose={handleDialogClose}/>
     </PageMain>
   )
 }

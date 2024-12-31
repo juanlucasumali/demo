@@ -6,11 +6,7 @@ import { Box, Upload, FileSearch, Folder } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
-import { ShareDialog } from '@renderer/components/dialogs/share-dialog'
-import { useState } from 'react'
 import { DemoItem, ItemType } from '@renderer/types/items'
-import { EditProjectDialog } from '@renderer/components/dialogs/edit-project'
-import { CreateCollection } from '@renderer/components/dialogs/create-collection'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,10 +15,10 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@renderer/components/ui/dropdown-menu'
-import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
-import { CreateItem } from '@renderer/components/dialogs/create-item'
 import { useItems } from '@renderer/hooks/use-items'
 import { CollectionsSidebar } from '@renderer/components/collections/collections-sidebar'
+import { useDialogState } from '@renderer/hooks/use-dialog-state'
+import { DialogManager } from '@renderer/components/dialog-manager'
 
 // Define route params interface
 export interface ProjectParams {
@@ -46,25 +42,8 @@ export const Route = createFileRoute('/projects/$projectId/')({
 function ProjectPage() {
   const { projectId } = useParams({ from: '/projects/$projectId/' })
   const { currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ projectId })
-
-  // Dialog states
-  const [share, setShare] = useState(false)
-  const [editProject, setEditProject] = useState(false)
-  const [createCollection, setCreateCollection] = useState(false)
-  const [createItem, setCreateItem] = useState<'file' | 'folder' | null>(null)
-  const [chooseFiles, setChooseFiles] = useState(false)
-  const [selectedItems, setSelectedItems] = useState<DemoItem[]>([])
+  const dialogState = useDialogState();
   const navigate = useNavigate();
-
-  const handleConfirmSelection = (items: DemoItem[]) => {
-    setSelectedItems(items)
-  }
-
-  const handleDialogClose = (
-    dialogSetter: React.Dispatch<React.SetStateAction<boolean>>,
-  ) => {
-    dialogSetter(false)
-  }
 
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {
@@ -76,11 +55,7 @@ function ProjectPage() {
   if (isLoading.currentProject || isLoading.filesAndFolders) {
     return (
       <PageMain>
-        <PageHeader
-          title=""
-          description=""
-          icon={Box}
-        />
+        <PageHeader title="" description="" icon={Box} />
       </PageMain>
     )
   }
@@ -114,17 +89,20 @@ function ProjectPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setCreateItem('file')}>
+              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen('file', null, 'project', projectId)}>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload file
                 <DropdownMenuShortcut>⇧⌘U</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setChooseFiles(true)}>
+              <DropdownMenuItem onClick={() => dialogState.selectFiles.onOpen({
+                location: 'project',
+                initialSelections: []
+              })}>
                 <FileSearch className="h-4 w-4 mr-2" />
                 Choose files
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCreateItem('folder')}>
+              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen('folder', null, 'project', projectId)}>
                 <Folder/>
                 Create folder
                 <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
@@ -135,7 +113,7 @@ function ProjectPage() {
 
         <Button
           variant="default"
-          onClick={() => setShare(true)}
+          onClick={() => dialogState.share.onOpen(currentProject)}
           className="flex items-center gap-2"
         >
           Share
@@ -144,7 +122,7 @@ function ProjectPage() {
         <Button
           variant="default"
           className="flex items-center gap-2"
-          onClick={() => setEditProject(true)}
+          onClick={() => dialogState.editFile.onOpen(currentProject)}
         >
           Edit
         </Button>
@@ -152,19 +130,18 @@ function ProjectPage() {
 
       <PageContent>
         <div className="flex gap-6 md:flex-row flex-col pt-4">
-          {/* Navigation Sidebar */}
           <CollectionsSidebar 
             projectId={projectId} 
-            onCreateCollection={() => setCreateCollection(true)}
+            onCreateCollection={() => dialogState.createCollection.onOpen(projectId)}
           />
 
-          {/* Main Content */}
           <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
             <DataTable
               columns={createColumns({
                 enableTags: false,
-                removeItem: removeItem,
-                updateItem: updateItem,
+                onEditFile: dialogState.editFile.onOpen,
+                onShare: dialogState.share.onOpen,
+                onDelete: dialogState.delete.onOpen
               })}
               data={filesAndFolders}
               enableSelection={false}
@@ -177,42 +154,11 @@ function ProjectPage() {
         </div>
       </PageContent>
 
-      {/* Dialogs */}
-      <ShareDialog
-        setShare={setShare}
-        share={share}
-        handleDialogClose={handleDialogClose}
-        initialItem={currentProject as DemoItem}
-      />
-
-      <EditProjectDialog
-        editProject={editProject}
-        setEditProject={setEditProject}
-        existingProject={currentProject as DemoItem}
-        handleDialogClose={handleDialogClose}
-      />
-
-      <CreateCollection
-        setCreateCollection={setCreateCollection}
-        createCollection={createCollection}
-        handleDialogClose={handleDialogClose}
-        projectId={projectId}
-      />
-
-      <CreateItem
-        type={createItem || 'file'}
-        isOpen={!!createItem}
-        onClose={() => setCreateItem(null)}
-        location="project"
-        projectId={projectId}
-      />
-
-      <SelectFilesDialog
-        open={chooseFiles}
-        onOpenChange={setChooseFiles}
-        onConfirm={handleConfirmSelection}
-        initialSelections={[]}
-        location="project"
+      <DialogManager
+        {...dialogState}
+        updateItem={updateItem}
+        removeItem={removeItem}
+        isLoading={isLoading}
       />
     </PageMain>
   )

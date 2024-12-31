@@ -34,10 +34,15 @@ export function useItems(options?: UseItemsOptions) {
 
   // Add file or folder mutation
   const addFileOrFolder = useMutation({
-    mutationFn: ({ item, sharedWith }: { 
+    mutationFn: ({ 
+      item, 
+      sharedWith, 
+      fileContent 
+    }: { 
       item: Omit<DemoItem, 'id'>, 
-      sharedWith?: UserProfile[] 
-    }) => itemsService.addFileOrFolder(item, sharedWith),
+      sharedWith?: UserProfile[],
+      fileContent?: ArrayBuffer
+    }) => itemsService.addFileOrFolder(item, sharedWith, fileContent),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files-and-folders'] })
     }

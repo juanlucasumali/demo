@@ -125,10 +125,19 @@ export function CreateItem({
         collectionId: location === 'collection' ? collectionId : null,
       };
 
-      await addFileOrFolder({ 
-        item: newItem, 
-        sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined 
-      });
+      if (type === 'file' && selectedFile) {
+        const fileContent = await selectedFile.arrayBuffer();
+        await addFileOrFolder({ 
+          item: newItem, 
+          sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined,
+          fileContent
+        });
+      } else {
+        await addFileOrFolder({ 
+          item: newItem, 
+          sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined 
+        });
+      }
 
       toast({
         title: "Success!",
@@ -143,6 +152,7 @@ export function CreateItem({
       setSelectedUsers([]);
       onClose();
     } catch (error) {
+      console.error('Creation error:', error);
       toast({
         title: "Error",
         description: `Failed to ${type === 'file' ? 'upload file' : 'create folder'}.`,

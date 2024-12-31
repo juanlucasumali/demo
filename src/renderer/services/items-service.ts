@@ -3,6 +3,7 @@ import { DemoItem, ItemType } from '@renderer/types/items'
 import { useUserStore } from '@renderer/stores/user-store'
 import { UserProfile } from '@renderer/types/users'
 import { toCamelCase } from '@renderer/lib/utils'
+import { b2Service } from '@renderer/services/b2-service'
 
 // Helper function to get current user ID
 const getCurrentUserId = () => {
@@ -145,49 +146,106 @@ async function createShareRecords(
 
 export async function addFileOrFolder(
   item: Omit<DemoItem, 'id'>, 
-  sharedWith?: UserProfile[]
+  sharedWith?: UserProfile[],
+  fileContent?: ArrayBuffer
 ): Promise<DemoItem> {
   const currentUserId = getCurrentUserId();
-
-  // Start a Supabase transaction
-  const { data, error } = await supabase
-    .from('files')
-    .insert({
-      name: item.name,
-      type: item.type,
-      parent_folder_id: item.parentFolderId,
-      project_id: item.projectId,
-      collection_id: item.collectionId,
-      owner_id: currentUserId,
-      description: item.description,
-      icon_url: item.icon,
-      is_starred: item.isStarred,
-      tags: item.tags,
-      format: item.format,
-      size: item.size,
-      duration: item.duration,
-      file_path: item.filePath,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  // If we have users to share with, create the share records
-  if (sharedWith && sharedWith.length > 0) {
-    await createShareRecords(data.id, 'file', sharedWith || [], currentUserId);
-  }
-
-  return {
-    ...toCamelCase(data),
-    id: data.id,
-    owner: item.owner,
-    sharedWith: sharedWith || [],
+  console.log('📝 Adding item:', {
+    name: item.name,
     type: item.type,
-    createdAt: new Date(data.created_at),
-    lastModified: new Date(data.last_modified),
-    lastOpened: new Date(data.last_opened),
-  };
+    size: fileContent?.byteLength,
+    hasContent: !!fileContent,
+    sharedWithCount: sharedWith?.length
+  });
+
+  try {
+    const { data, error } = await supabase
+      .from('files')
+      .insert({
+        name: item.name,
+        type: item.type,
+        parent_folder_id: item.parentFolderId,
+        project_id: item.projectId,
+        collection_id: item.collectionId,
+        owner_id: currentUserId,
+        description: item.description,
+        icon_url: item.icon,
+        is_starred: item.isStarred,
+        tags: item.tags,
+        format: item.format,
+        size: fileContent ? fileContent.byteLength : item.size,
+        duration: item.duration,
+        file_path: item.filePath,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Database insert failed:', error);
+      throw error;
+    }
+
+    console.log('✅ Database record created:', { id: data.id });
+
+    if (item.type === ItemType.FILE && fileContent) {
+      try {
+        console.log('📤 Starting B2 upload process');
+        const b2FileId = await b2Service.storeFile(
+          currentUserId,
+          data.id,
+          item.name,
+          fileContent
+        );
+        console.log('✅ B2 upload complete:', { b2FileId });
+
+        const { error: updateError } = await supabase
+          .from('files')
+          .update({ file_path: b2FileId })
+          .eq('id', data.id);
+
+        if (updateError) {
+          console.error('❌ Failed to update storage_file_id:', updateError);
+          await b2Service.removeFile(b2FileId, item.name);
+          throw updateError;
+        }
+        
+        console.log('✅ Database updated with B2 file ID');
+      } catch (error: any) {
+        console.error('❌ B2 upload process failed:', {
+          error,
+          stack: error.stack
+        });
+        await supabase.from('files').delete().eq('id', data.id);
+        throw error;
+      }
+    }
+
+    // Handle sharing
+    if (sharedWith?.length) {
+      await createShareRecords(data.id, 'file', sharedWith, currentUserId);
+    }
+
+    return {
+      ...toCamelCase(data),
+      id: data.id,
+      owner: item.owner,
+      sharedWith: sharedWith || [],
+      type: item.type,
+      createdAt: new Date(data.created_at),
+      lastModified: new Date(data.last_modified),
+      lastOpened: new Date(data.last_opened),
+    };
+  } catch (error: any) {
+    console.error('❌ addFileOrFolder failed:', {
+      error,
+      stack: error.stack,
+      item: {
+        name: item.name,
+        type: item.type
+      }
+    });
+    throw error;
+  }
 }
 
 export async function addProject(item: Omit<DemoItem, 'id'>, sharedWith?: UserProfile[]) {

@@ -7,7 +7,6 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
 import { useToast } from "@renderer/hooks/use-toast";
-import { currentUser, friendsData } from "../home/dummy-data";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
 import { useState } from "react";
@@ -16,6 +15,7 @@ import { useItems } from "@renderer/hooks/use-items";
 import FileTagsDropdown from "./file-tags-dropdown";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
 import { maxFileNameLength } from "@renderer/lib/utils";
+import { currentUser } from "../home/dummy-data";
 
 const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
 
@@ -64,6 +64,8 @@ export function CreateItem({
   const { addFileOrFolder } = useItems();
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const { friends, isLoading } = useItems({ searchTerm });  
 
   const form = useForm<CreateItemFormValues>({
     resolver: zodResolver(createItemSchema),
@@ -90,7 +92,6 @@ export function CreateItem({
       if (type === 'file' && !selectedFile) return;
 
       const newItem = {
-        id: undefined,
         createdAt: new Date(),
         lastModified: new Date(),
         lastOpened: new Date(),
@@ -203,9 +204,11 @@ export function CreateItem({
               <div>
                 <FormLabel>Share with</FormLabel>
                 <FriendsSearch
-                  friendsList={friendsData}
+                  friendsList={friends}
                   selectedUsers={selectedUsers}
                   setSelectedUsers={setSelectedUsers}
+                  onSearch={setSearchTerm}
+                  isLoading={isLoading.friends}
                 />
               </div>
             )}

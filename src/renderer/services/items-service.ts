@@ -1,6 +1,7 @@
 import { supabase } from '@renderer/lib/supabase'
 import { DemoItem, ItemType } from '@renderer/types/items'
 import { useUserStore } from '@renderer/stores/user-store'
+import { UserProfile } from '@renderer/types/users'
 
 // Helper function to get current user ID
 const getCurrentUserId = () => {
@@ -84,11 +85,10 @@ export async function getProjects(): Promise<DemoItem[]> {
   }))
 }
 
-export async function addFileOrFolder(item: DemoItem) {
+export async function addFileOrFolder(item: Omit<DemoItem, 'id'>) {
   const { error } = await supabase
     .from('files')
     .insert({
-      id: item.id,
       project_id: item.projectId,
       collection_id: item.collectionId,
       parent_folder_id: item.parentFolderId,
@@ -110,11 +110,10 @@ export async function addFileOrFolder(item: DemoItem) {
   if (error) throw error
 }
 
-export async function addProject(item: DemoItem) {
+export async function addProject(item: Omit<DemoItem, 'id'>) {
   const { error } = await supabase
     .from('projects')
     .insert({
-      id: item.id,
       owner_id: getCurrentUserId(),
       name: item.name,
       description: item.description,
@@ -348,4 +347,31 @@ export async function removeCollection(collectionId: string) {
     .eq('id', collectionId);
 
   if (error) throw error;
+}
+
+export async function searchFriends(searchTerm?: string): Promise<UserProfile[]> {
+  const userId = getCurrentUserId();
+  
+  let query = supabase
+    .from('users')
+    .select('*')
+    .neq('id', userId) // Exclude current user
+    .limit(5);
+
+  if (searchTerm) {
+    const cleanSearchTerm = searchTerm.replace('@', '').toLowerCase();
+    query = query.ilike('username', `%${cleanSearchTerm}%`)
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return data.map(user => ({
+    id: user.id,
+    username: user.username,
+    name: user.name,
+    avatar: user.avatar_url,
+    email: user.email,
+    description: user.description
+  }));
 } 

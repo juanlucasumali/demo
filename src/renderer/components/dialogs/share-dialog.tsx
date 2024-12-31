@@ -13,12 +13,12 @@ import { useToast } from "@renderer/hooks/use-toast";
 import { File, FolderOpen, Link, Box, X } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
-import { friendsData } from "../home/dummy-data";
 import { SelectFilesDialog } from "./select-files";
 import { DemoItem, ItemType } from "@renderer/types/items";
 import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { cn } from "@renderer/lib/utils";
+import { useItems } from "@renderer/hooks/use-items";
 
 interface ShareDialogProps {
   setShare: React.Dispatch<React.SetStateAction<boolean>>;
@@ -35,10 +35,14 @@ export function ShareDialog({
 }: ShareDialogProps) {
   const { toast } = useToast();
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
+  const [searchTerm, setSearchTerm] = React.useState("");
   const [chooseFiles, setChooseFiles] = React.useState(false);
   const [selectedItems, setSelectedItems] = React.useState<DemoItem[]>(
     initialItem ? [initialItem] : []
   );
+
+  // Use the friends query
+  const { friends, isLoading } = useItems({ searchTerm });
 
   const handleConfirmSelection = (items: DemoItem[]) => {
     setSelectedItems(items);
@@ -100,9 +104,11 @@ export function ShareDialog({
               <div>
                 <DialogTitle className="text-sm mb-2">Share with</DialogTitle>
                 <FriendsSearch
-                  friendsList={friendsData}
+                  friendsList={friends}
                   selectedUsers={selectedUsers}
                   setSelectedUsers={setSelectedUsers}
+                  onSearch={setSearchTerm}
+                  isLoading={isLoading.friends}
                 />
               </div>
 

@@ -27,6 +27,7 @@ import { FriendsSearch } from "@renderer/components/friends-search";
 import { Textarea } from "@renderer/components/ui/textarea";
 import { friendsData } from "../home/dummy-data";
 import { UserProfile } from "@renderer/types/users";
+import { useItems } from "@renderer/hooks/use-items";
 
 const shareFileSchema = z.object({
     description: z
@@ -44,7 +45,8 @@ interface RequestDialogProps {
 
 export function RequestDialog({ setRequest, request, handleDialogClose }: RequestDialogProps) {
   const { toast } = useToast();
-  const addFileOrFolder = useItemsStore((state) => state.addFileOrFolder);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const { friends, isLoading } = useItems({ searchTerm });
 
   const [selectedType, setSelectedType] = React.useState("file");
 
@@ -156,10 +158,12 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
               <FormLabel>Request from</FormLabel>
               {/* Use the new FriendsSearch component here */}
               <FriendsSearch
-                friendsList={friendsData}
+                friendsList={friends}
                 selectedUsers={selectedUsers}
                 setSelectedUsers={setSelectedUsers}
                 singleSelect={true}
+                onSearch={setSearchTerm}
+                isLoading={isLoading.friends}
               />
             </div>
 

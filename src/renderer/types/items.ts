@@ -17,7 +17,7 @@ export enum ItemType {
 }
 
 export interface DemoItem {
-    id: string | undefined;
+    id: string;
     projectId: string | null;
     parentFolderId: string | null;
     collectionId: string | null;

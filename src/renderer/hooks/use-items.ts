@@ -5,6 +5,7 @@ interface UseItemsOptions {
   parentFolderId?: string;
   projectId?: string;
   collectionId?: string;
+  searchTerm?: string;
 }
 
 export function useItems(options?: UseItemsOptions) {
@@ -150,6 +151,12 @@ export function useItems(options?: UseItemsOptions) {
     }
   });
 
+  const searchFriendsQuery = useQuery({
+    queryKey: ['friends', options?.searchTerm],
+    queryFn: () => itemsService.searchFriends(options?.searchTerm),
+    enabled: true,
+  });
+
   return {
     filesAndFolders,
     projects,
@@ -165,6 +172,7 @@ export function useItems(options?: UseItemsOptions) {
     addCollection: addCollection.mutate,
     currentCollection,
     removeCollection,
+    friends: searchFriendsQuery.data || [],
     isLoading: {
       addFileOrFolder: addFileOrFolder.isPending,
       addProject: addProject.isPending,
@@ -178,7 +186,8 @@ export function useItems(options?: UseItemsOptions) {
       addCollection: addCollection.isPending,
       collections: isLoadingCollections,
       currentCollection: isLoadingCurrentCollection,
-      removeCollection: removeCollection.isPending
+      removeCollection: removeCollection.isPending,
+      friends: searchFriendsQuery.isLoading
     }
   }
 } 

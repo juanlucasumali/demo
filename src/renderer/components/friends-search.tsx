@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   Command,
@@ -10,8 +11,15 @@ import {
   CommandItem,
   CommandList,
 } from "./ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "./ui/popover";
+import { Button } from "./ui/button";
 import { UserProfile } from "@renderer/types/users";
 import { AvatarGroup } from "./ui/avatar-group";
+import { cn } from "@renderer/lib/utils";
 
 interface FriendsSearchProps {
   /** Owner that will always appear first and can't be removed */
@@ -28,46 +36,34 @@ interface FriendsSearchProps {
 
   /** Optional prop to enable single-select mode */
   singleSelect?: boolean;
+
+  /** Callback function to handle search term changes */
+  onSearch?: (term: string) => void;
+
+  /** Optional prop to indicate loading state */
+  isLoading?: boolean;
 }
 
-/**
- * A reusable component that handles searching for friends and selecting them.
- */
 export function FriendsSearch({
   owner,
   friendsList = [],
   selectedUsers = [],
   setSelectedUsers,
   singleSelect = false,
+  onSearch,
+  isLoading = false,
 }: FriendsSearchProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [isFocused, setIsFocused] = React.useState(false);
 
-  // Close the dropdown if clicking outside of container
-  React.useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        // Check if clicking on an interactive element
-        const target = e.target as HTMLElement;
-        const isButton = target.closest('button');
-        const isInput = target.closest('input');
-        
-        // If clicking on another interactive element, don't close the dropdown
-        if (isButton || isInput) {
-          return;
-        }
-        
-        setIsFocused(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Handle search term changes
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    onSearch?.(term);
+  };
 
   // Filtered suggestions based on search term, excluding already selected
   const suggestions = React.useMemo(() => {
-    // Safety checks to avoid "undefined is not iterable"
     if (!Array.isArray(friendsList) || !Array.isArray(selectedUsers)) return [];
 
     const filteredFriends = friendsList.filter(
@@ -78,7 +74,6 @@ export function FriendsSearch({
       return filteredFriends.slice(0, 5);
     }
 
-    // Remove @ symbol from search term if present
     const cleanSearchTerm = searchTerm.replace('@', '').toLowerCase();
     
     return filteredFriends
@@ -90,30 +85,28 @@ export function FriendsSearch({
       .slice(0, 5);
   }, [friendsList, selectedUsers, searchTerm]);
 
-  // Add user to selected
+  // Handle user selection
   const handleSelectUser = (user: UserProfile) => {
     if (singleSelect) {
-      setSelectedUsers([user]); // Replace the current selection
+      setSelectedUsers([user]);
     } else {
-      // Only add if not already selected
       if (!selectedUsers.find((u) => u.id === user.id)) {
         setSelectedUsers((prev) => [...prev, user]);
       }
     }
-    // NOTE: We do NOT setSearchTerm("") if you want the list to remain open
-    // setSearchTerm("");
+    // Reset search term instead of closing popover
+    setSearchTerm("");
+    onSearch?.("");
   };
 
   // Remove user
   const handleRemoveUser = (userId: string) => {
-    // Don't remove if it's the owner
     if (owner?.id === userId) return;
-    
     setSelectedUsers((prev) => prev.filter((u) => u.id !== userId));
   };
 
   return (
-    <div className="space-y-2 !mt-0 !mb-4">
+    <div className="space-y-2">
       <AvatarGroup
         owner={owner}
         users={selectedUsers}
@@ -123,42 +116,72 @@ export function FriendsSearch({
         limit={10}
       />
 
-      <Command ref={containerRef}className="border rounded">
-        <CommandInput
-          placeholder="@"
-          value={searchTerm}
-          onValueChange={setSearchTerm}
-          onFocus={() => setIsFocused(true)}
-        />
-        {isFocused && (
-          <CommandList>
-            <CommandEmpty>No friends found.</CommandEmpty>
-            <CommandGroup>
-              {suggestions.map((user) => (
-                <CommandItem key={user.id} onSelect={() => handleSelectUser(user)}>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      {user.avatar ? (
-                        <AvatarImage src={user.avatar} alt={user.username} />
-                      ) : (
-                        <AvatarFallback>
-                          {user.username[0]?.toUpperCase() || "?"}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div>
-                      <div>{user.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        @{user.username}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            <span className="text-muted-foreground">
+              {selectedUsers.length > 0 
+                ? `${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''} selected`
+                : "@"}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput 
+              placeholder="@" 
+              value={searchTerm}
+              onValueChange={handleSearch}
+            />
+            <CommandList>
+              <CommandEmpty>
+                {isLoading ? "Searching..." : "No users found."}
+              </CommandEmpty>
+              <CommandGroup>
+                {suggestions.map((user) => (
+                  <CommandItem
+                    key={user.id}
+                    value={user.username}
+                    onSelect={() => handleSelectUser(user)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        {user.avatar ? (
+                          <AvatarImage src={user.avatar} alt={user.username} />
+                        ) : (
+                          <AvatarFallback>
+                            {user.username[0]?.toUpperCase() || "?"}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <div>{user.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          @{user.username}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        )}
-      </Command>
+                    <Check
+                      className={cn(
+                        "ml-auto h-4 w-4",
+                        selectedUsers.find((u) => u.id === user.id)
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

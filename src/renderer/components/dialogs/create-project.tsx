@@ -20,7 +20,7 @@ import { Textarea } from "@renderer/components/ui/textarea";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import React from "react";
 import { UserProfile } from "@renderer/types/users";
-import { currentUser, friendsData } from "../home/dummy-data";
+import { currentUser } from "../home/dummy-data";
 import { DemoItem, ItemType } from "@renderer/types/items";
 import { useItems } from "@renderer/hooks/use-items";
 import { Loader2 } from "lucide-react";
@@ -52,9 +52,11 @@ interface CreateProjectProps {
 }
 
 export function CreateProject({ createProject, setCreateProject, handleDialogClose }: CreateProjectProps) {
-  const { addProject, isLoading } = useItems();
   const { toast } = useToast();
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
+  const [searchTerm, setSearchTerm] = React.useState('');
+
+  const { addProject, isLoading, friends } = useItems({ searchTerm });
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -75,8 +77,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
 
   const handleSubmit: SubmitHandler<ProjectFormValues> = async (data) => {
     try {
-      const newProject: DemoItem = {
-        id: undefined,
+      const newProject: Omit<DemoItem, 'id'> = {
         createdAt: new Date(),
         lastModified: new Date(),
         lastOpened: new Date(),
@@ -176,9 +177,11 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
               
               <FormLabel>Share with</FormLabel>
               <FriendsSearch
-                friendsList={friendsData}
+                friendsList={friends}
                 selectedUsers={selectedUsers}
                 setSelectedUsers={setSelectedUsers}
+                onSearch={setSearchTerm}
+                isLoading={isLoading.friends}
               />
 
               <FormField

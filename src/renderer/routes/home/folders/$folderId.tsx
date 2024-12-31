@@ -66,6 +66,8 @@ function FolderPage() {
         title={currentFolder?.name || ""}
         description=""
         icon={FolderIcon}
+        owner={currentFolder?.owner || undefined}
+        sharedWith={currentFolder?.sharedWith}
       >
         {/* Header Buttons */}
         <Button variant="default" onClick={() => setCreateItem('file')}>

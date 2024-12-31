@@ -27,6 +27,7 @@ interface ColumnOptions {
   onEditFile?: (item: DemoItem) => void
   onShare?: (item: DemoItem) => void
   onDelete?: (itemId: string) => void
+  onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
 export const createColumns = ({
@@ -38,7 +39,8 @@ export const createColumns = ({
   showSelectAll = true,
   onEditFile,
   onShare,
-  onDelete
+  onDelete,
+  onToggleStar
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
@@ -140,26 +142,30 @@ export const createColumns = ({
     ),
     cell: ({ row }) => {
       const type = row.original.type;
-      const isStarred = row.original.isStarred;
+      const isStarred = row.getValue("isStarred");
       const tags = row.original.tags;
-      // const toggleIsStarred = useItemsStore((state) => state.toggleIsStarred);
+      const itemId = row.original.id;
 
-  
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
           <div className="flex items-center gap-2 whitespace-nowrap">
             {showStarColumn && (
               <div
-                // onClick={enableStarToggle ? () => toggleIsStarred(row.getValue("id")) : undefined}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (enableStarToggle && onToggleStar) {
+                    onToggleStar(itemId, !isStarred);
+                  }
+                }}
                 style={{ cursor: enableStarToggle ? 'pointer' : 'default' }}
                 title={enableStarToggle ? (isStarred ? 'Unstar' : 'Star') : undefined}
-            >
-              {isStarred ? (
-                <Star className="h-4 w-4 text-yellow-500 fill-current" />
-              ) : (
-                <Star className="h-4 w-4 text-gray-400" />
-              )}
-            </div>
+              >
+                {isStarred ? (
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                ) : (
+                  <Star className="h-4 w-4 text-gray-400 hover:text-gray-500" />
+                )}
+              </div>
             )}
             {type === "folder" ? (
               <Folder className="h-4 w-4 text-muted-foreground fill-current" />

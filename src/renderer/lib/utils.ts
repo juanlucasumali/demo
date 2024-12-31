@@ -86,3 +86,20 @@ export function isMatch(match: any, path: string): boolean {
 
   return true
 }
+
+export function toCamelCase<T extends object>(obj: T): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => toCamelCase(v));
+  } else if (obj !== null && obj.constructor === Object) {
+    return Object.keys(obj).reduce(
+      (result, key) => ({
+        ...result,
+        [key.replace(/([-_][a-z])/g, group =>
+          group.toUpperCase().replace('-', '').replace('_', '')
+        )]: toCamelCase((obj as any)[key])
+      }),
+      {}
+    );
+  }
+  return obj;
+}

@@ -32,7 +32,7 @@ export const Route = createFileRoute('/home/')({
 })
 
 function Home() {
-  const { filesAndFolders, isLoading, updateItem, removeItem } = useItems();
+  const { filesAndFolders, isLoading, updateItem, removeItem, toggleStar } = useItems();
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -91,7 +91,8 @@ function Home() {
           columns={createColumns({ 
             onEditFile: dialogState.editFile.onOpen,
             onShare: dialogState.share.onOpen,
-            onDelete: dialogState.delete.onOpen 
+            onDelete: dialogState.delete.onOpen,
+            onToggleStar: (id, isStarred) => toggleStar({ id, isStarred })
           })} 
           data={filesAndFolders}
           onRowClick={handleRowClick}

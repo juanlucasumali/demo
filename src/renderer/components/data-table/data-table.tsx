@@ -32,6 +32,7 @@ import { Skeleton } from "@renderer/components/ui/skeleton"
 import { Card } from "@renderer/components/ui/card"
 import { Loader2 } from "lucide-react"
 import { ItemType } from '@renderer/types/items'
+import { DataTableGridView } from "./grid-view"
 
 interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
@@ -49,6 +50,7 @@ interface DataTableProps<DemoItem> {
   showSearch?: boolean
   onRowClick?: (item: DemoItem) => void
   isLoading?: boolean
+  onToggleStar?: (id: string, isStarred: boolean) => void
 }
 
 export function DataTable<DemoItem>({
@@ -67,6 +69,7 @@ export function DataTable<DemoItem>({
   showSearch = true,
   onRowClick,
   isLoading = false,
+  onToggleStar,
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -276,34 +279,13 @@ export function DataTable<DemoItem>({
             </TableBody>
           </Table>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-            {isLoading ? (
-              Array.from({ length: pageSize }).map((_, i) => (
-                <Card key={i} className="p-4">
-                  <Skeleton className="h-12 w-12 rounded-full mb-4" />
-                  <Skeleton className="h-4 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </Card>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              // Existing grid items
-              table.getRowModel().rows.map((row) => (
-                <GridItem
-                  key={row.id}
-                  row={row}
-                  isSelected={row.getIsSelected()}
-                  onSelectionChange={(checked) => row.toggleSelected(!!checked)}
-                  enableSelection={enableSelection}
-                  enableRowLink={enableRowLink}
-                />
-              ))
-            ) : (
-              // Existing no results message
-              <div className="col-span-full text-center py-12 text-muted-foreground">
-                No results.
-              </div>
-            )}
-          </div>
+          <DataTableGridView
+            table={table}
+            enableSelection={enableSelection}
+            enableRowLink={enableRowLink}
+            onRowClick={onRowClick}
+            onToggleStar={onToggleStar}
+            />
         )}
       </div>
   

@@ -2,6 +2,7 @@ import { supabase } from '@renderer/lib/supabase'
 import { DemoItem, ItemType } from '@renderer/types/items'
 import { useUserStore } from '@renderer/stores/user-store'
 import { UserProfile } from '@renderer/types/users'
+import { toCamelCase } from '@renderer/lib/utils'
 
 // Helper function to get current user ID
 const getCurrentUserId = () => {
@@ -61,21 +62,25 @@ export async function getFilesAndFolders(
       )
     `)
     .eq('shared_items.shared_with_id', userId)
+    .neq('owner_id', userId)
     .filter('type', 'in', '("file","folder")')
 
   if (sharedError) throw sharedError
 
   const allItems = [...(ownedItems ?? []), ...(sharedItems ?? [])]
 
-  return allItems.map(item => ({
-    ...item,
-    owner: item.owner,
-    sharedWith: item.shared_with?.map(share => share.shared_with) || [],
-    type: item.type as ItemType,
-    createdAt: new Date(item.created_at),
-    lastModified: new Date(item.last_modified),
-    lastOpened: new Date(item.last_opened),
-  }))
+  return allItems.map(item => {
+    const camelCaseItem = toCamelCase(item);
+    return {
+      ...camelCaseItem,
+      owner: toCamelCase(item.owner),
+      sharedWith: item.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
+      type: item.type as ItemType,
+      createdAt: new Date(item.created_at),
+      lastModified: new Date(item.last_modified),
+      lastOpened: new Date(item.last_opened),
+    };
+  });
 }
 
 export async function getProjects(): Promise<DemoItem[]> {
@@ -108,21 +113,25 @@ export async function getProjects(): Promise<DemoItem[]> {
         shared_with:shared_with_id(*)
       )
     `)
+    .neq('owner_id', userId)
     .eq('shared_items.shared_with_id', userId)
 
   if (sharedError) throw sharedError
 
   const allProjects = [...(ownedProjects ?? []), ...(sharedProjects ?? [])]
 
-  return allProjects.map(item => ({
-    ...item,
-    owner: item.owner,
-    sharedWith: item.shared_with?.map(share => share.shared_with) || [],
-    type: ItemType.PROJECT,
-    createdAt: new Date(item.created_at),
-    lastModified: new Date(item.last_modified),
-    lastOpened: new Date(item.last_opened),
-  }))
+  return allProjects.map(item => {
+    const camelCaseItem = toCamelCase(item);
+    return {
+      ...camelCaseItem,
+      owner: toCamelCase(item.owner),
+      sharedWith: item.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
+      type: ItemType.PROJECT,
+      createdAt: new Date(item.created_at),
+      lastModified: new Date(item.last_modified),
+      lastOpened: new Date(item.last_opened),
+    };
+  });
 }
 
 export async function addFileOrFolder(item: Omit<DemoItem, 'id'>) {
@@ -185,16 +194,23 @@ export async function removeItem(id: string) {
 export async function updateItem(item: DemoItem) {
   const userId = getCurrentUserId()
   
+  const dbItem = {
+    name: item.name,
+    description: item.description,
+    icon_url: item.icon,
+    is_starred: item.isStarred,
+    last_modified: new Date().toISOString(),
+    tags: item.tags,
+    format: item.format,
+    size: item.size,
+    duration: item.duration,
+    file_path: item.filePath,
+  }
+
   if (item.type === ItemType.PROJECT) {
     const { error } = await supabase
       .from('projects')
-      .update({
-        name: item.name,
-        description: item.description,
-        icon_url: item.icon,
-        is_starred: item.isStarred,
-        last_modified: new Date().toISOString(),
-      })
+      .update(dbItem)
       .eq('id', item.id)
       .eq('owner_id', userId)
 
@@ -202,18 +218,7 @@ export async function updateItem(item: DemoItem) {
   } else {
     const { error } = await supabase
       .from('files')
-      .update({
-        name: item.name,
-        description: item.description,
-        icon_url: item.icon,
-        is_starred: item.isStarred,
-        tags: item.tags,
-        format: item.format,
-        size: item.size,
-        duration: item.duration,
-        file_path: item.filePath,
-        last_modified: new Date().toISOString(),
-      })
+      .update(dbItem)
       .eq('id', item.id)
       .eq('owner_id', userId)
 
@@ -256,9 +261,9 @@ export async function getFolder(folderId: string): Promise<DemoItem | null> {
   if (!data) return null;
 
   return {
-    ...data,
-    owner: data.owner,
-    sharedWith: data.shared_with?.map(share => share.shared_with),
+    ...toCamelCase(data),
+    owner: toCamelCase(data.owner),
+    sharedWith: data.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
     type: data.type as ItemType,
     createdAt: new Date(data.created_at),
     lastModified: new Date(data.last_modified),
@@ -277,7 +282,7 @@ export async function createCollection(projectId: string, name: string) {
     .single();
 
   if (error) throw error;
-  return data;
+  return toCamelCase(data);
 }
 
 export async function getProject(projectId: string): Promise<DemoItem | null> {
@@ -297,9 +302,9 @@ export async function getProject(projectId: string): Promise<DemoItem | null> {
   if (!data) return null;
 
   return {
-    ...data,
-    owner: data.owner,
-    sharedWith: data.shared_with?.map(share => share.shared_with),
+    ...toCamelCase(data),
+    owner: toCamelCase(data.owner),
+    sharedWith: data.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
     type: ItemType.PROJECT,
     createdAt: new Date(data.created_at),
     lastModified: new Date(data.last_modified),
@@ -321,12 +326,9 @@ export async function getCollections(projectId: string | undefined): Promise<Dem
   if (error) throw error;
 
   return data.map(collection => ({
-    id: collection.id,
-    name: collection.name,
-    createdAt: new Date(collection.created_at),
-    projectId: collection.project_id,
-    // Add other necessary fields with default values
+    ...toCamelCase(collection),
     type: ItemType.FOLDER,
+    createdAt: new Date(collection.created_at),
     lastModified: new Date(collection.created_at),
     lastOpened: new Date(collection.created_at),
     isStarred: false,
@@ -358,11 +360,9 @@ export async function getCollection(collectionId: string): Promise<DemoItem | nu
   if (!data) return null;
 
   return {
-    id: data.id,
-    name: data.name,
-    createdAt: new Date(data.created_at),
-    projectId: data.project_id,
+    ...toCamelCase(data),
     type: ItemType.FOLDER,
+    createdAt: new Date(data.created_at),
     lastModified: new Date(data.created_at),
     lastOpened: new Date(data.created_at),
     isStarred: false,
@@ -406,7 +406,7 @@ export async function searchFriends(searchTerm?: string): Promise<UserProfile[]>
   const { data, error } = await query;
   if (error) throw error;
 
-  return data.map(user => ({
+  return data.map(user => toCamelCase({
     id: user.id,
     username: user.username,
     name: user.name,

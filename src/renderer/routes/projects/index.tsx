@@ -22,7 +22,7 @@ export const Route = createFileRoute('/projects/')({
 })
 
 export default function Projects() {
-  const { projects, isLoading, updateItem, removeItem } = useItems();
+  const { projects, isLoading, updateItem, removeItem, toggleStar } = useItems();
   const dialogState = useDialogState();
 
   return (
@@ -56,6 +56,7 @@ export default function Projects() {
           viewMode="grid"
           pageSize={12}
           isLoading={isLoading.projects}
+          onToggleStar={(id, isStarred) => toggleStar({ id, isStarred })}
         />
       </PageContent>
 

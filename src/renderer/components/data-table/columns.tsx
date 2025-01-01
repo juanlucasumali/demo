@@ -7,16 +7,20 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
 import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
-import { DemoItem } from "@renderer/types/items"
-import { formatDuration } from "@renderer/lib/utils"
+import { DemoItem, FileFormat } from "@renderer/types/items"
+import { formatDuration, mimeTypes } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 import { b2Service } from '@renderer/services/b2-service'
+import { AudioConverterService } from '@renderer/services/audio-converter'
 
 interface ColumnOptions {
   enableStarToggle?: boolean;
@@ -289,27 +293,82 @@ if (enableActions) {
             }}>
               <Share className="mr-2 h-4 w-4" /> Share
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(row.getValue("id"));
-              }}
-            >
-              <RefreshCcw className="mr-2 h-4 w-4" /> Convert
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <RefreshCcw className="mr-2 h-4 w-4" /> Convert
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem
+                  disabled={row.original.format !== FileFormat.WAV}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      // First, show the save dialog to get user interaction
+                      const handle = await window.showSaveFilePicker({
+                        suggestedName: row.original.name.replace(/\.wav$/i, '.mp3'),
+                        types: [{
+                          description: 'MP3 Audio',
+                          accept: { 'audio/mpeg': ['.mp3'] }
+                        }]
+                      });
+
+                      // Then download and convert
+                      const wavData = await b2Service.retrieveFile(row.original.filePath!);
+                      const mp3Data = await AudioConverterService.wavToMp3(wavData);
+                      
+                      // Save the converted file
+                      const writable = await handle.createWritable();
+                      await writable.write(mp3Data);
+                      await writable.close();
+                      
+                      console.log('✅ WAV to MP3 conversion saved successfully');
+                    } catch (error) {
+                      if (error instanceof Error && error.name !== 'AbortError') {
+                        console.error('❌ Conversion failed:', error);
+                      }
+                    }
+                  }}
+                >
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={row.original.format !== FileFormat.MP3}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      // First, show the save dialog to get user interaction
+                      const handle = await window.showSaveFilePicker({
+                        suggestedName: row.original.name.replace(/\.mp3$/i, '.wav'),
+                        types: [{
+                          description: 'WAV Audio',
+                          accept: { 'audio/wav': ['.wav'] }
+                        }]
+                      });
+
+                      // Then download and convert
+                      const mp3Data = await b2Service.retrieveFile(row.original.filePath!);
+                      const wavData = await AudioConverterService.mp3ToWav(mp3Data);
+                      
+                      // Save the converted file
+                      const writable = await handle.createWritable();
+                      await writable.write(wavData);
+                      await writable.close();
+                      
+                      console.log('✅ MP3 to WAV conversion saved successfully');
+                    } catch (error) {
+                      if (error instanceof Error && error.name !== 'AbortError') {
+                        console.error('❌ Conversion failed:', error);
+                      }
+                    }
+                  }}
+                >
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             {row.original.type === "file" && row.original.filePath && (
               <DropdownMenuItem
                 onClick={async (e) => {
                   e.stopPropagation();
                   try {
-                    const mimeTypes = {
-                      'mp3': 'audio/mpeg',
-                      'wav': 'audio/wav',
-                      'pdf': 'application/pdf',
-                      'png': 'image/png',
-                      'jpg': 'image/jpeg',
-                      'jpeg': 'image/jpeg'
-                    };
                     
                     const extension = row.original.format?.toLowerCase() || '';
                     const handle = await window.showSaveFilePicker({

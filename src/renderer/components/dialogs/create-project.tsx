@@ -103,7 +103,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
       toast({
         title: "Success!",
         description: selectedUsers.length > 0
-          ? `Project created and shared with ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}.`
+          ? `Project created!`
           : "Project created successfully.",
         variant: "default",
       });

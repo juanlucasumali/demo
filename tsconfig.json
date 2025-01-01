@@ -6,5 +6,6 @@
     "paths": {
       "@/*": ["./src/renderer/*"]
     },
+    "types": [ "@types/wicg-file-system-access"]
   }
 }

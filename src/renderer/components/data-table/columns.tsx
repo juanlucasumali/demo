@@ -9,13 +9,14 @@ import {
   DropdownMenuTrigger,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash } from "lucide-react"
+import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem } from "@renderer/types/items"
 import { formatDuration } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
+import { b2Service } from '@renderer/services/b2-service'
 
 interface ColumnOptions {
   enableStarToggle?: boolean;
@@ -280,13 +281,13 @@ if (enableActions) {
               e.stopPropagation();
               onEditFile?.(row.original)
             }}>
-              <Edit /> Edit
+              <Edit className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => {
               e.stopPropagation();
               onShare?.(row.original)
             }}>
-              <Share /> Share
+              <Share className="mr-2 h-4 w-4" /> Share
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={(e) => {
@@ -294,8 +295,49 @@ if (enableActions) {
                 navigator.clipboard.writeText(row.getValue("id"));
               }}
             >
-              <RefreshCcw /> Convert
+              <RefreshCcw className="mr-2 h-4 w-4" /> Convert
             </DropdownMenuItem>
+            {row.original.type === "file" && row.original.filePath && (
+              <DropdownMenuItem
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const mimeTypes = {
+                      'mp3': 'audio/mpeg',
+                      'wav': 'audio/wav',
+                      'pdf': 'application/pdf',
+                      'png': 'image/png',
+                      'jpg': 'image/jpeg',
+                      'jpeg': 'image/jpeg'
+                    };
+                    
+                    const extension = row.original.format?.toLowerCase() || '';
+                    const handle = await window.showSaveFilePicker({
+                      suggestedName: `${row.original.name}.${extension}`,
+                      types: [{
+                        description: `${extension.toUpperCase()} File`,
+                        accept: {
+                          [mimeTypes[extension] || 'application/octet-stream']: [`.${extension}`]
+                        }
+                      }]
+                    });
+                    
+                    // Download the file from B2
+                    const fileData = await b2Service.retrieveFile(row.original.filePath!);
+                    
+                    // Write directly as ArrayBuffer
+                    const writable = await handle.createWritable();
+                    await writable.write(fileData);
+                    await writable.close();
+
+                  } catch (error) {
+                    console.error('❌ Download failed:', error)
+                  }
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" /> Download
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               onClick={(e) => {
@@ -304,8 +346,7 @@ if (enableActions) {
               }}
               className="text-red-500"
             >
-              <Trash className="mr-2 h-4 w-4" />
-              Delete
+              <Trash className="mr-2 h-4 w-4" /> Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

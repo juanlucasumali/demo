@@ -157,23 +157,30 @@ class B2Service {
   }
 
   async downloadFile(fileId: string): Promise<ArrayBuffer> {
-    console.log(`Starting download for file: ${fileId}`);
+    console.log(`⬇️ Starting B2 download for fileId: ${fileId}`);
     await this.ensureAuthorized();
 
     try {
+      console.log('🔄 Making B2 download request...');
       const response = await this.b2.downloadFileById({
         fileId,
         responseType: 'arraybuffer',
         onDownloadProgress: (event: any) => {
           const progress = Math.round((event.loaded * 100) / event.total);
-          console.log(`Download progress: ${progress}%`);
+          console.log(`📊 Download progress: ${progress}%`);
         }
       });
 
-      console.log('Download successful');
+      console.log('📦 B2 download response:', {
+        status: response.status,
+        headers: response.headers,
+        dataType: Object.prototype.toString.call(response.data),
+        dataLength: response.data?.byteLength
+      });
+
       return response.data;
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error('❌ B2 download failed:', error);
       throw error;
     }
   }
@@ -214,11 +221,17 @@ class B2Service {
   }
 
   async retrieveFile(b2FileId: string): Promise<ArrayBuffer> {
-    console.log(`Retrieving file with B2 fileId: ${b2FileId}`);
+    console.log(`🎯 Retrieving file with B2 fileId: ${b2FileId}`);
     try {
-      return await this.downloadFile(b2FileId);
+      const data = await this.downloadFile(b2FileId);
+      console.log('📦 Retrieved file data:', {
+        byteLength: data.byteLength,
+        type: Object.prototype.toString.call(data),
+        hasData: new Uint8Array(data).some(byte => byte !== 0)
+      });
+      return data;
     } catch (error) {
-      console.error('Failed to retrieve file:', error);
+      console.error('❌ Failed to retrieve file:', error);
       throw error;
     }
   }

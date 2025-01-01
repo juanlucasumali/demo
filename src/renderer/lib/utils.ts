@@ -103,3 +103,12 @@ export function toCamelCase<T extends object>(obj: T): any {
   }
   return obj;
 }
+
+export const mimeTypes = {
+  'mp3': 'audio/mpeg',
+  'wav': 'audio/wav',
+  'pdf': 'application/pdf',
+  'png': 'image/png',
+  'jpg': 'image/jpeg',
+  'jpeg': 'image/jpeg'
+};

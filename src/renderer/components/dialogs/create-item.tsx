@@ -142,7 +142,7 @@ export function CreateItem({
       toast({
         title: "Success!",
         description: selectedUsers.length > 0
-          ? `${type === 'file' ? 'File' : 'Folder'} created and shared with ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}.`
+          ? `${type === 'file' ? 'File' : 'Folder'} created!`
           : `${type === 'file' ? 'File uploaded' : 'Folder created'} successfully.`,
         variant: "default",
       });
@@ -180,7 +180,7 @@ export function CreateItem({
                     <FormControl>
                       <Input
                         type="file"
-                        accept={allowedFormats.map((f) => `.${f}`).join(",")}
+                        // accept={allowedFormats.map((f) => `.${f}`).join(",")}
                         onChange={handleFileChange}
                         className="pt-2"
                       />

@@ -17,8 +17,6 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { maxFileNameLength } from "@renderer/lib/utils";
 import { useUserStore } from "@renderer/stores/user-store";
 
-const allowedFormats = ["mp3", "wav", "mp4", "flp", "als", "zip"];
-
 const createItemSchema = z.object({
   name: z
     .string()
@@ -31,15 +29,6 @@ const createItemSchema = z.object({
     .max(200, { message: "Description must not exceed 200 characters." }),
   tags: z.any().nullable(),
   file: z.custom<File>().optional()
-    .refine(
-      (file) => {
-        if (!file) return true; // Optional for folders
-        return allowedFormats.includes(file.name.split(".").pop() || "")
-      },
-      {
-        message: `File format must be one of: ${allowedFormats.join(", ")}`,
-      }
-    ),
 });
 
 type CreateItemFormValues = z.infer<typeof createItemSchema>;

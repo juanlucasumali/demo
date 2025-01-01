@@ -369,10 +369,16 @@ if (enableActions) {
                 onClick={async (e) => {
                   e.stopPropagation();
                   try {
-                    
+                    const fileName = row.original.name;
                     const extension = row.original.format?.toLowerCase() || '';
+                    
+                    // Remove existing extension if it matches the format
+                    const baseFileName = fileName.toLowerCase().endsWith(`.${extension}`) 
+                      ? fileName 
+                      : `${fileName}.${extension}`;
+
                     const handle = await window.showSaveFilePicker({
-                      suggestedName: `${row.original.name}.${extension}`,
+                      suggestedName: baseFileName,
                       types: [{
                         description: `${extension.toUpperCase()} File`,
                         accept: {

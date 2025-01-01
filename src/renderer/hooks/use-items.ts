@@ -34,7 +34,7 @@ export function useItems(options?: UseItemsOptions) {
 
   // Add file or folder mutation
   const addFileOrFolder = useMutation({
-    mutationFn: ({ 
+    mutationFn: async ({ 
       item, 
       sharedWith, 
       fileContent 
@@ -42,11 +42,18 @@ export function useItems(options?: UseItemsOptions) {
       item: Omit<DemoItem, 'id'>, 
       sharedWith?: UserProfile[],
       fileContent?: ArrayBuffer
-    }) => itemsService.addFileOrFolder(item, sharedWith, fileContent),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] })
-    }
-  })
+    }) => {
+      // Wait for the entire operation to complete
+      const result = await itemsService.addFileOrFolder(item, sharedWith, fileContent);
+      
+      // Invalidate queries after successful completion
+      await queryClient.invalidateQueries({ 
+        queryKey: ['files-and-folders'] 
+      });
+      
+      return result;
+    },
+  });
 
   // Add project mutation
   const addProject = useMutation({

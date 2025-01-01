@@ -16,6 +16,7 @@ import FileTagsDropdown from "./file-tags-dropdown";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
 import { maxFileNameLength } from "@renderer/lib/utils";
 import { useUserStore } from "@renderer/stores/user-store";
+import { Loader2 } from "lucide-react";
 
 const createItemSchema = z.object({
   name: z
@@ -63,6 +64,7 @@ export function CreateItem({
   const [searchTerm, setSearchTerm] = useState("");
   const { friends, isLoading } = useItems({ searchTerm });  
   const currentUser = useUserStore((state) => state.profile);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<CreateItemFormValues>({
     resolver: zodResolver(createItemSchema),
@@ -88,6 +90,15 @@ export function CreateItem({
     try {
       if (!currentUser) return;
       if (type === 'file' && !selectedFile) return;
+
+      setIsUploading(true);
+      toast({
+        title: "Uploading...",
+        description: type === 'file' 
+          ? "Your file is being uploaded" 
+          : "Creating folder",
+        variant: "default",
+      });
 
       const newItem = {
         createdAt: new Date(),
@@ -116,25 +127,59 @@ export function CreateItem({
 
       if (type === 'file' && selectedFile) {
         const fileContent = await selectedFile.arrayBuffer();
-        await addFileOrFolder({ 
-          item: newItem, 
-          sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined,
-          fileContent
+        await new Promise<void>((resolve, reject) => {
+          addFileOrFolder({ 
+            item: newItem, 
+            sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined,
+            fileContent
+          }, {
+            onSuccess: () => {
+              toast({
+                title: "Success!",
+                description: selectedUsers.length > 0
+                  ? `${type === 'file' ? 'File' : 'Folder'} created!`
+                  : `${type === 'file' ? 'File uploaded' : 'Folder created'} successfully.`,
+                variant: "default",
+              });
+              resolve();
+            },
+            onError: (error) => {
+              console.error('Creation error:', error);
+              toast({
+                title: "Error",
+                description: `Failed to ${type === 'file' ? 'upload file' : 'create folder'}.`,
+                variant: "destructive",
+              });
+              reject(error);
+            }
+          });
         });
       } else {
-        await addFileOrFolder({ 
-          item: newItem, 
-          sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined 
+        await new Promise<void>((resolve, reject) => {
+          addFileOrFolder({ 
+            item: newItem, 
+            sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined 
+          }, {
+            onSuccess: () => {
+              toast({
+                title: "Success!",
+                description: `Folder created successfully.`,
+                variant: "default",
+              });
+              resolve();
+            },
+            onError: (error) => {
+              console.error('Creation error:', error);
+              toast({
+                title: "Error",
+                description: "Failed to create folder.",
+                variant: "destructive",
+              });
+              reject(error);
+            }
+          });
         });
       }
-
-      toast({
-        title: "Success!",
-        description: selectedUsers.length > 0
-          ? `${type === 'file' ? 'File' : 'Folder'} created!`
-          : `${type === 'file' ? 'File uploaded' : 'Folder created'} successfully.`,
-        variant: "default",
-      });
 
       form.reset();
       setSelectedFile(null);
@@ -147,6 +192,8 @@ export function CreateItem({
         description: `Failed to ${type === 'file' ? 'upload file' : 'create folder'}.`,
         variant: "destructive",
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -238,8 +285,19 @@ export function CreateItem({
               </div>
             )}
 
-            <Button type="submit" className="w-full">
-              {type === 'file' ? 'Upload' : 'Create'}
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {type === 'file' ? 'Uploading...' : 'Creating...'}
+                </>
+              ) : (
+                type === 'file' ? 'Upload' : 'Create'
+              )}
             </Button>
           </form>
         </Form>

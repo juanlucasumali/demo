@@ -31,6 +31,8 @@ import { Skeleton } from "@renderer/components/ui/skeleton"
 import { Loader2, Play, Pause, File } from "lucide-react"
 import { ItemType } from '@renderer/types/items'
 import { DataTableGridView } from "./grid-view"
+import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
+
 
 interface DataTableProps<DemoItem> {
   columns: ColumnDef<DemoItem>[]
@@ -162,6 +164,14 @@ export function DataTable<DemoItem>({
       ...prev,
       playingRow: prev.playingRow === rowId ? null : rowId
     }));
+
+    // Get the current row's data
+    const row = table.getRowModel().rowsById[rowId];
+    if (row) {
+      const currentTrack = row.original as DemoItem;
+      const setCurrentTrack = useMediaPlayerStore.getState().setCurrentTrack;
+      setCurrentTrack(audioState.playingRow === rowId ? null : (currentTrack as any).id);
+    }
   };
 
   const table = useReactTable({

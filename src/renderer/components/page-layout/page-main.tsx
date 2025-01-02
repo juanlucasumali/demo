@@ -1,8 +1,10 @@
 import { cn } from '@renderer/lib/utils'
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 import { SidebarProvider } from '../ui/sidebar'
 import { AppSidebar } from '../sidebar/app-sidebar'
 import { AppTopbar } from '../topbar/app-topbar'
+import { MediaPlayer } from '../media-player/media-player'
+import { useMediaPlayerStore } from '@renderer/stores/use-media-player-store'
 
 interface PageContentProps {
     children: ReactNode
@@ -10,6 +12,7 @@ interface PageContentProps {
 }
 
 export function PageMain({ children, className }: PageContentProps) {
+
     return (
 <SidebarProvider>
 <AppSidebar />
@@ -20,7 +23,7 @@ export function PageMain({ children, className }: PageContentProps) {
       'peer-data-[state=collapsed]:w-[calc(100%-var(--sidebar-width-icon))]',
       'peer-data-[state=expanded]:w-[calc(100%-var(--sidebar-width))]',
       'transition-[width] ease-linear duration-200',
-      'h-svh flex flex-col'
+      'h-svh flex flex-col',
     )}
   >
   <AppTopbar/>
@@ -28,6 +31,7 @@ export function PageMain({ children, className }: PageContentProps) {
             {children}
         </div>
 </div>
+<MediaPlayer />
 </SidebarProvider>
     )
 }

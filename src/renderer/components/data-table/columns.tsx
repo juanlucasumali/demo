@@ -21,12 +21,14 @@ import { Checkbox } from "@renderer/components/ui/checkbox"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 import { b2Service } from '@renderer/services/b2-service'
 import { AudioConverterService } from '@renderer/services/audio-converter'
+import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
 
 interface CellContextWithAudio<TData> {
   audioState?: {
     hoveredRow: string | null;
     playingRow: string | null;
     loadingRow: string | null;
+    currentRow: string | null;
   };
   onPlayToggle?: (rowId: string) => void;
 }
@@ -164,7 +166,15 @@ export const createColumns = ({
       const format = row.original.format;
       const isAudio = type === "file" && isAudioFile(format);
       const isHovered = audioState?.hoveredRow === row.id;
-      const isPlaying = audioState?.playingRow === row.id;
+      const isCurrent = audioState?.currentRow === row.id;
+      const isPlaying = isCurrent && useMediaPlayerStore.getState().isPlaying;
+
+      console.log('🎨 Icon state:', {
+        rowId: row.id,
+        isCurrent,
+        isPlaying,
+        storePlayingState: useMediaPlayerStore.getState().isPlaying
+      });
 
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
@@ -200,7 +210,7 @@ export const createColumns = ({
                 <Folder className="h-4 w-4 text-muted-foreground fill-current" />
               ) : isAudio && audioState?.loadingRow === row.id ? (
                 <Loader2 className="h-4 w-4 text-primary animate-spin" />
-              ) : isAudio && (isHovered || isPlaying) ? (
+              ) : isAudio && (isHovered || isCurrent) ? (
                 isPlaying ? (
                   <Pause className="h-4 w-4 text-primary" />
                 ) : (

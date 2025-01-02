@@ -74,7 +74,7 @@ export function ProfileDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className='w-56' align='end' forceMount>
-        <DropdownMenuSeparator />
+        {/* <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem 
             onClick={() => navigate({ to: '/profile' })}
@@ -93,7 +93,7 @@ export function ProfileDropdown() {
           </DropdownMenuItem>
           <DropdownMenuItem disabled={isLoading}>New Team</DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator /> */}
         <DropdownMenuItem 
           onClick={e => {
             e.preventDefault()

@@ -13,7 +13,8 @@ function formatTime(seconds: number): string {
 
 export function MediaPlayer() {
   const isVisible = useMediaPlayerStore(state => state.isVisible);
-  const currentTrack = useMediaPlayerStore(state => state.currentTrack);
+  const currentTrackId = useMediaPlayerStore(state => state.currentTrackId);
+  const currentTrackName = useMediaPlayerStore(state => state.currentTrackName);
   const isPlaying = useMediaPlayerStore(state => state.isPlaying);
   const arrayBuffer = useMediaPlayerStore(state => state.arrayBuffer);
   const setWavesurfer = useMediaPlayerStore(state => state.setWavesurfer);
@@ -103,7 +104,7 @@ export function MediaPlayer() {
             <Square className="h-4 w-4" />
           </Button>
 
-          <div>{currentTrack}</div>
+          <div>{currentTrackName}</div>
         </div>
       </div>
     </div>

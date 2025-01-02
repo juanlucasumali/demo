@@ -57,6 +57,7 @@ type AudioState = {
   hoveredRow: string | null;
   playingRow: string | null;
   loadingRow: string | null;
+  currentRow: string | null;
 }
 
 export function DataTable<DemoItem>({
@@ -150,7 +151,8 @@ export function DataTable<DemoItem>({
   const [audioState, setAudioState] = React.useState<AudioState>({
     hoveredRow: null,
     playingRow: null,
-    loadingRow: null
+    loadingRow: null,
+    currentRow: null
   });
 
   const handleRowMouseEnter = (rowId: string) => {
@@ -168,32 +170,48 @@ export function DataTable<DemoItem>({
     const currentTrack = row.original as DemoItem;
     const mediaPlayerStore = useMediaPlayerStore.getState();
     
-    // If this row is already playing, pause it
-    if (audioState.playingRow === rowId) {
+    // If this row is current AND playing, pause it
+    if (audioState.currentRow === rowId && mediaPlayerStore.isPlaying) {
+      console.log('⏸️ Pausing current track');
       mediaPlayerStore.pauseTrack();
       setAudioState(prev => ({ ...prev, playingRow: null }));
       return;
     }
 
     try {
-      setAudioState(prev => ({ ...prev, loadingRow: rowId }));
-      
-      mediaPlayerStore.onPause = () => {
-        setAudioState(prev => ({ ...prev, playingRow: null }));
-      };
+      // If we're switching to a different track
+      if (mediaPlayerStore.currentTrackId !== (currentTrack as any).id) {
+        console.log('🔄 Loading new track:', (currentTrack as any).name);
+        setAudioState(prev => ({ 
+          ...prev, 
+          loadingRow: rowId,
+          currentRow: rowId // Set current row when loading new track
+        }));
+        
+        mediaPlayerStore.onPause = () => {
+          console.log('📢 onPause callback triggered');
+          setAudioState(prev => ({ ...prev, playingRow: null })); // Keep currentRow unchanged
+        };
 
-      // If we're switching tracks
-      if (mediaPlayerStore.currentTrack !== (currentTrack as any).id) {
-        await mediaPlayerStore.playTrack((currentTrack as any).name, (currentTrack as any).filePath!);
+        await mediaPlayerStore.playTrack((currentTrack as any).id, (currentTrack as any).name, (currentTrack as any).filePath!);
+        setAudioState(prev => ({ 
+          ...prev, 
+          playingRow: rowId, 
+          loadingRow: null,
+          currentRow: rowId 
+        }));
       } else {
-        // If it's the same track, just resume
+        console.log('▶️ Resuming existing track');
         mediaPlayerStore.resumeTrack();
+        setAudioState(prev => ({ ...prev, playingRow: rowId }));
       }
-      
-      setAudioState(prev => ({ ...prev, playingRow: rowId, loadingRow: null }));
     } catch (error) {
-      console.error('Failed to play audio:', error);
-      setAudioState(prev => ({ ...prev, playingRow: null, loadingRow: null }));
+      console.error('❌ Failed to play audio:', error);
+      setAudioState(prev => ({ 
+        ...prev, 
+        playingRow: null, 
+        loadingRow: null 
+      })); // Keep currentRow unchanged on error
     }
   };
 
@@ -322,7 +340,7 @@ export function DataTable<DemoItem>({
                     className={cn(
                       isRowClickable(row) && "hover:bg-muted/50",
                       isRowClickable(row) && "cursor-pointer",
-                      audioState.playingRow === row.id && "bg-muted/50"
+                      audioState.currentRow === row.id && "bg-muted/50"
                     )}
                     onMouseEnter={() => handleRowMouseEnter(row.id)}
                     onMouseLeave={handleRowMouseLeave}

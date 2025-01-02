@@ -3,7 +3,8 @@ import { b2Service } from '@renderer/services/b2-service'
 
 interface MediaPlayerStore {
   isVisible: boolean;
-  currentTrack: string | null;
+  currentTrackId: string | null;
+  currentTrackName: string | null;
   isPlaying: boolean;
   isLoading: boolean;
   arrayBuffer: ArrayBuffer | null;
@@ -11,8 +12,8 @@ interface MediaPlayerStore {
   wavesurfer: any | null;
   setWavesurfer: (ws: any) => void;
   setIsVisible: (visible: boolean) => void;
-  setCurrentTrack: (trackId: string | null) => void;
-  playTrack: (fileId: string, filePath: string) => Promise<void>;
+  setCurrentTrack: (trackId: string | null, trackName: string | null) => void;
+  playTrack: (fileId: string, fileName: string, filePath: string) => Promise<void>;
   pauseTrack: () => void;
   resumeTrack: () => void;
   stopTrack: () => void;
@@ -21,7 +22,8 @@ interface MediaPlayerStore {
 
 export const useMediaPlayerStore = create<MediaPlayerStore>((set, get) => ({
   isVisible: false,
-  currentTrack: null,
+  currentTrackId: null,
+  currentTrackName: null,
   isPlaying: false,
   isLoading: false,
   arrayBuffer: null,
@@ -30,9 +32,9 @@ export const useMediaPlayerStore = create<MediaPlayerStore>((set, get) => ({
 
   setWavesurfer: (ws) => set({ wavesurfer: ws }),
   setIsVisible: (visible) => set({ isVisible: visible }),
-  setCurrentTrack: (trackId) => set({ currentTrack: trackId, isVisible: !!trackId }),
+  setCurrentTrack: (trackId, trackName) => set({ currentTrackId: trackId, currentTrackName: trackName, isVisible: !!trackId }),
 
-  playTrack: async (fileId: string, filePath: string) => {
+  playTrack: async (fileId: string, fileName: string, filePath: string) => {
     const state = get();
     
     if (state.isLoading) return;
@@ -53,7 +55,8 @@ export const useMediaPlayerStore = create<MediaPlayerStore>((set, get) => ({
 
       set({ 
         arrayBuffer: audioData,
-        currentTrack: fileId,
+        currentTrackId: fileId,
+        currentTrackName: fileName,
         isVisible: true,
         isLoading: false
       });
@@ -87,7 +90,8 @@ export const useMediaPlayerStore = create<MediaPlayerStore>((set, get) => ({
       wavesurfer.stop();
       set({ 
         isPlaying: false,
-        currentTrack: null,
+        currentTrackId: null,
+        currentTrackName: null,
         isVisible: false,
         arrayBuffer: null
       });

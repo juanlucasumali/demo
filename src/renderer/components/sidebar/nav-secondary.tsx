@@ -18,7 +18,7 @@ export function NavSecondary({
       <SidebarGroupContent>
         <SidebarMenu>
             
-            <SidebarMenuItem key={'Contact Us'}>
+            {/* <SidebarMenuItem key={'Contact Us'}>
               <SidebarMenuButton asChild size="sm" tooltip={'Contact Us'}>
                 <a href={'/contact-us'}>
                   <Send />
@@ -34,7 +34,7 @@ export function NavSecondary({
                   <span>{'Profile'}</span>
                 </a>
               </SidebarMenuButton>
-            </SidebarMenuItem>
+            </SidebarMenuItem> */}
 
         </SidebarMenu>
       </SidebarGroupContent>

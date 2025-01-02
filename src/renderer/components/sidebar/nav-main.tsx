@@ -16,7 +16,7 @@ export function NavMain({}: {
   const currentRoute = useRouterState().location.pathname
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      {/* <SidebarGroupLabel>Platform</SidebarGroupLabel> */}
       <SidebarMenu>
 
       <SidebarMenuItem>

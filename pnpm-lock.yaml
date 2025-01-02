@@ -86,6 +86,9 @@ importers:
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
+      '@wavesurfer/react':
+        specifier: ^1.0.8
+        version: 1.0.8(react@18.3.1)(wavesurfer.js@7.8.14)
       backblaze-b2:
         specifier: ^1.7.0
         version: 1.7.0
@@ -137,6 +140,9 @@ importers:
       update-electron-app:
         specifier: ^3.1.0
         version: 3.1.0
+      wavesurfer.js:
+        specifier: ^7.8.14
+        version: 7.8.14
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -1755,6 +1761,12 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0 || ^6.0.0
+
+  '@wavesurfer/react@1.0.8':
+    resolution: {integrity: sha512-YowJcynQTTC1oWBWlxr7IkZn9QlYfvOC2rYqOvVA2DwBh+nMEoZca7718disoFNnnX7/NzTKqZd/VuWI5RbhMQ==}
+    peerDependencies:
+      react: ^19.0.0
+      wavesurfer.js: '>=7.8.11'
 
   '@xmldom/xmldom@0.8.10':
     resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
@@ -3803,6 +3815,9 @@ packages:
       terser:
         optional: true
 
+  wavesurfer.js@7.8.14:
+    resolution: {integrity: sha512-VwljnCf97GxpA/I6gKWVriBvGYEcwAsOCaLb3vauPE4Jm6rIl1C9zVZ2S0a9CCLjVzeG0UukHZxXSblQV8dReA==}
+
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
@@ -5421,6 +5436,11 @@ snapshots:
       vite: 5.4.11(@types/node@20.17.10)
     transitivePeerDependencies:
       - supports-color
+
+  '@wavesurfer/react@1.0.8(react@18.3.1)(wavesurfer.js@7.8.14)':
+    dependencies:
+      react: 18.3.1
+      wavesurfer.js: 7.8.14
 
   '@xmldom/xmldom@0.8.10': {}
 
@@ -7838,6 +7858,8 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.17.10
       fsevents: 2.3.3
+
+  wavesurfer.js@7.8.14: {}
 
   webidl-conversions@3.0.1: {}
 

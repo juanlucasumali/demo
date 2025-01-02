@@ -6,7 +6,7 @@
     <!-- Updated CSP to allow blob: URLs for images -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co https://*.backblazeb2.com https://*.backblaze.com"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src blob: 'self'; connect-src 'self' blob: https://*.supabase.co https://*.backblazeb2.com https://*.backblaze.com"
     />
   </head>
 

@@ -26,9 +26,9 @@ import {
 } from "@renderer/components/ui/table"
 import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
-import { cn } from "@renderer/lib/utils"
+import { cn, isAudioFile } from "@renderer/lib/utils"
 import { Skeleton } from "@renderer/components/ui/skeleton"
-import { Loader2, Play, Pause, File } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { ItemType } from '@renderer/types/items'
 import { DataTableGridView } from "./grid-view"
 import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
@@ -56,6 +56,7 @@ interface DataTableProps<DemoItem> {
 type AudioState = {
   hoveredRow: string | null;
   playingRow: string | null;
+  loadingRow: string | null;
 }
 
 export function DataTable<DemoItem>({
@@ -148,7 +149,8 @@ export function DataTable<DemoItem>({
 
   const [audioState, setAudioState] = React.useState<AudioState>({
     hoveredRow: null,
-    playingRow: null
+    playingRow: null,
+    loadingRow: null
   });
 
   const handleRowMouseEnter = (rowId: string) => {
@@ -160,55 +162,46 @@ export function DataTable<DemoItem>({
   };
 
   const handlePlayToggle = async (rowId: string) => {
-    console.log('🎵 handlePlayToggle called with rowId:', rowId);
-    console.log('Current audioState:', audioState);
-
     const row = table.getRowModel().rowsById[rowId];
     if (!row) return;
 
     const currentTrack = row.original as DemoItem;
     const mediaPlayerStore = useMediaPlayerStore.getState();
-    console.log('Current MediaPlayerStore state:', {
-      isPlaying: mediaPlayerStore.isPlaying,
-      currentTrack: mediaPlayerStore.currentTrack
-    });
     
     // If this row is already playing, pause it
     if (audioState.playingRow === rowId) {
-      console.log('🎵 Pausing current track');
       mediaPlayerStore.pauseTrack();
+      setAudioState(prev => ({ ...prev, playingRow: null }));
       return;
     }
 
     try {
-      // Set up pause callback
+      setAudioState(prev => ({ ...prev, loadingRow: rowId }));
+      
       mediaPlayerStore.onPause = () => {
-        console.log('🎵 Pause callback triggered');
-        setAudioState(prev => {
-          console.log('Updating audioState in pause callback:', {
-            previous: prev,
-            new: { ...prev, playingRow: null }
-          });
-          return { ...prev, playingRow: null };
-        });
+        setAudioState(prev => ({ ...prev, playingRow: null }));
       };
 
-      // Start playing the new track
-      console.log('🎵 Starting new track:', (currentTrack as any).name);
-      await mediaPlayerStore.playTrack((currentTrack as any).id, (currentTrack as any).filePath!);
-      setAudioState(prev => {
-        console.log('Updating audioState after play:', {
-          previous: prev,
-          new: { ...prev, playingRow: rowId }
-        });
-        return { ...prev, playingRow: rowId };
-      });
+      // If we're switching tracks
+      if (mediaPlayerStore.currentTrack !== (currentTrack as any).id) {
+        await mediaPlayerStore.playTrack((currentTrack as any).name, (currentTrack as any).filePath!);
+      } else {
+        // If it's the same track, just resume
+        mediaPlayerStore.resumeTrack();
+      }
+      
+      setAudioState(prev => ({ ...prev, playingRow: rowId, loadingRow: null }));
     } catch (error) {
       console.error('Failed to play audio:', error);
-      setAudioState(prev => ({
-        ...prev,
-        playingRow: null
-      }));
+      setAudioState(prev => ({ ...prev, playingRow: null, loadingRow: null }));
+    }
+  };
+
+  const handleRowDoubleClick = (row: Row<any>) => {
+    const item = row.original as any;
+    // Only handle double click for audio files
+    if (item.format && isAudioFile(item.format)) {
+      handlePlayToggle(row.id);
     }
   };
 
@@ -328,11 +321,13 @@ export function DataTable<DemoItem>({
                     data-state={row.getIsSelected() && "selected"}
                     className={cn(
                       isRowClickable(row) && "hover:bg-muted/50",
-                      isRowClickable(row) && "cursor-pointer"
+                      isRowClickable(row) && "cursor-pointer",
+                      audioState.playingRow === row.id && "bg-muted/50"
                     )}
                     onMouseEnter={() => handleRowMouseEnter(row.id)}
                     onMouseLeave={handleRowMouseLeave}
                     onClick={() => isRowClickable(row) && onRowClick?.(row.original)}
+                    onDoubleClick={() => handleRowDoubleClick(row)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

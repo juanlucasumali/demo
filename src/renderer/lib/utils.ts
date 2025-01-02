@@ -116,3 +116,8 @@ export const mimeTypes = {
   'als': 'audio/x-aiff',
   'zip': 'application/zip'
 };
+
+export const isAudioFile = (format: string | null): boolean => {
+  if (!format) return false;
+  return ['mp3', 'wav', 'm4a', 'aac', 'ogg'].includes(format.toLowerCase());
+};

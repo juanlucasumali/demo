@@ -12,10 +12,10 @@ import {
   DropdownMenuSubContent,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef, CellContext } from "@tanstack/react-table"
-import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download, Play, Pause } from "lucide-react"
+import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download, Play, Pause, Loader2 } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem, FileFormat } from "@renderer/types/items"
-import { formatDuration, mimeTypes } from "@renderer/lib/utils"
+import { formatDuration, isAudioFile, mimeTypes } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
@@ -26,6 +26,7 @@ interface CellContextWithAudio<TData> {
   audioState?: {
     hoveredRow: string | null;
     playingRow: string | null;
+    loadingRow: string | null;
   };
   onPlayToggle?: (rowId: string) => void;
 }
@@ -44,11 +45,6 @@ interface ColumnOptions {
   onDelete?: (itemId: string) => void
   onToggleStar?: (id: string, isStarred: boolean) => void;
 }
-
-const isAudioFile = (format: string | null): boolean => {
-  if (!format) return false;
-  return ['mp3', 'wav', 'm4a', 'aac', 'ogg'].includes(format.toLowerCase());
-};
 
 export const createColumns = ({
   enableStarToggle = true,
@@ -202,6 +198,8 @@ export const createColumns = ({
             >
               {type === "folder" ? (
                 <Folder className="h-4 w-4 text-muted-foreground fill-current" />
+              ) : isAudio && audioState?.loadingRow === row.id ? (
+                <Loader2 className="h-4 w-4 text-primary animate-spin" />
               ) : isAudio && (isHovered || isPlaying) ? (
                 isPlaying ? (
                   <Pause className="h-4 w-4 text-primary" />

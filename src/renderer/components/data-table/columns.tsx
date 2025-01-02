@@ -22,6 +22,8 @@ import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 import { b2Service } from '@renderer/services/b2-service'
 import { AudioConverterService } from '@renderer/services/audio-converter'
 import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
+import { useToast } from "@renderer/hooks/use-toast"
+import { AudioState } from "./data-table"
 
 interface CellContextWithAudio<TData> {
   audioState?: {
@@ -29,7 +31,9 @@ interface CellContextWithAudio<TData> {
     playingRow: string | null;
     loadingRow: string | null;
     currentRow: string | null;
+    downloadingRow: string | null;
   };
+  setAudioState?: React.Dispatch<React.SetStateAction<AudioState>>;
   onPlayToggle?: (rowId: string) => void;
 }
 
@@ -60,6 +64,7 @@ export const createColumns = ({
   onDelete,
   onToggleStar
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
+  const { toast } = useToast();
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
     {
@@ -168,13 +173,6 @@ export const createColumns = ({
       const isHovered = audioState?.hoveredRow === row.id;
       const isCurrent = audioState?.currentRow === row.id;
       const isPlaying = isCurrent && useMediaPlayerStore.getState().isPlaying;
-
-      console.log('🎨 Icon state:', {
-        rowId: row.id,
-        isCurrent,
-        isPlaying,
-        storePlayingState: useMediaPlayerStore.getState().isPlaying
-      });
 
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
@@ -314,14 +312,21 @@ export const createColumns = ({
 if (enableActions) {
   baseColumns.push({
     id: "actions",
-    cell: ({ row }) => (
+    cell: ({ row, audioState, setAudioState }: ExtendedCellContext<DemoItem>) => (
       <div onClick={(e) => e.stopPropagation()}>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+            { audioState?.downloadingRow === row.id ? (
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </Button>
+            ) : (
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={(e) => {
@@ -414,10 +419,13 @@ if (enableActions) {
                 onClick={async (e) => {
                   e.stopPropagation();
                   try {
+                    setAudioState?.(prev => {
+                      return { ...prev, downloadingRow: row.id };
+                    });
+                    
                     const fileName = row.original.name;
                     const extension = row.original.format?.toLowerCase() || '';
                     
-                    // Remove existing extension if it matches the format
                     const baseFileName = fileName.toLowerCase().endsWith(`.${extension}`) 
                       ? fileName 
                       : `${fileName}.${extension}`;
@@ -440,12 +448,27 @@ if (enableActions) {
                     await writable.write(fileData);
                     await writable.close();
 
+                    toast({
+                      title: "Download Complete",
+                      description: `Successfully downloaded ${fileName}`,
+                    });
+
                   } catch (error) {
-                    console.error('❌ Download failed:', error)
+                    if (error instanceof Error && error.name !== 'AbortError') {
+                      console.error('❌ Download failed:', error);
+                      toast({
+                        variant: "destructive",
+                        title: "Download Failed",
+                        description: "There was an error downloading your file.",
+                      });
+                    }
+                  } finally {
+                    setAudioState?.(prev => ({ ...prev, downloadingRow: null }));
                   }
                 }}
               >
-                <Download className="mr-2 h-4 w-4" /> Download
+              <Download className="mr-2 h-4 w-4" />
+                Download
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />

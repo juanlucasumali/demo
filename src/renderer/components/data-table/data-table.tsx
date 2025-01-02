@@ -53,11 +53,12 @@ interface DataTableProps<DemoItem> {
   onToggleStar?: (id: string, isStarred: boolean) => void
 }
 
-type AudioState = {
+export type AudioState = {
   hoveredRow: string | null;
   playingRow: string | null;
   loadingRow: string | null;
   currentRow: string | null;
+  downloadingRow: string | null;
 }
 
 export function DataTable<DemoItem>({
@@ -152,7 +153,8 @@ export function DataTable<DemoItem>({
     hoveredRow: null,
     playingRow: null,
     loadingRow: null,
-    currentRow: null
+    currentRow: null,
+    downloadingRow: null
   });
 
   const handleRowMouseEnter = (rowId: string) => {
@@ -185,7 +187,8 @@ export function DataTable<DemoItem>({
         setAudioState(prev => ({ 
           ...prev, 
           loadingRow: rowId,
-          currentRow: rowId // Set current row when loading new track
+          currentRow: rowId,
+          downloadingRow: null // Reset downloadingRow when loading new track
         }));
         
         mediaPlayerStore.onPause = () => {
@@ -351,7 +354,12 @@ export function DataTable<DemoItem>({
                       <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell, 
-                          { ...cell.getContext(), audioState, onPlayToggle: handlePlayToggle }
+                          { 
+                            ...cell.getContext(), 
+                            audioState, 
+                            setAudioState,
+                            onPlayToggle: handlePlayToggle 
+                          }
                         )}
                       </TableCell>
                     ))}

@@ -159,18 +159,56 @@ export function DataTable<DemoItem>({
     setAudioState(prev => ({ ...prev, hoveredRow: null }));
   };
 
-  const handlePlayToggle = (rowId: string) => {
-    setAudioState(prev => ({
-      ...prev,
-      playingRow: prev.playingRow === rowId ? null : rowId
-    }));
+  const handlePlayToggle = async (rowId: string) => {
+    console.log('🎵 handlePlayToggle called with rowId:', rowId);
+    console.log('Current audioState:', audioState);
 
-    // Get the current row's data
     const row = table.getRowModel().rowsById[rowId];
-    if (row) {
-      const currentTrack = row.original as DemoItem;
-      const setCurrentTrack = useMediaPlayerStore.getState().setCurrentTrack;
-      setCurrentTrack(audioState.playingRow === rowId ? null : (currentTrack as any).id);
+    if (!row) return;
+
+    const currentTrack = row.original as DemoItem;
+    const mediaPlayerStore = useMediaPlayerStore.getState();
+    console.log('Current MediaPlayerStore state:', {
+      isPlaying: mediaPlayerStore.isPlaying,
+      currentTrack: mediaPlayerStore.currentTrack
+    });
+    
+    // If this row is already playing, pause it
+    if (audioState.playingRow === rowId) {
+      console.log('🎵 Pausing current track');
+      mediaPlayerStore.pauseTrack();
+      return;
+    }
+
+    try {
+      // Set up pause callback
+      mediaPlayerStore.onPause = () => {
+        console.log('🎵 Pause callback triggered');
+        setAudioState(prev => {
+          console.log('Updating audioState in pause callback:', {
+            previous: prev,
+            new: { ...prev, playingRow: null }
+          });
+          return { ...prev, playingRow: null };
+        });
+      };
+
+      // Start playing the new track
+      console.log('🎵 Starting new track:', (currentTrack as any).name);
+      await mediaPlayerStore.playTrack((currentTrack as any).id, (currentTrack as any).filePath!);
+      setAudioState(prev => {
+        console.log('Updating audioState after play:', {
+          previous: prev,
+          new: { ...prev, playingRow: rowId }
+        });
+        return { ...prev, playingRow: rowId };
+      });
+    } catch (error) {
+      console.error('Failed to play audio:', error);
+      setAudioState(prev => ({
+        ...prev,
+        playingRow: null
+      }));
     }
   };
 

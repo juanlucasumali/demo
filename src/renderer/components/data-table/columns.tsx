@@ -11,8 +11,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@renderer/components/ui/dropdown-menu"
-import { ColumnDef } from "@tanstack/react-table"
-import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download } from "lucide-react"
+import { ColumnDef, CellContext } from "@tanstack/react-table"
+import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download, Play, Pause } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem, FileFormat } from "@renderer/types/items"
 import { formatDuration, mimeTypes } from "@renderer/lib/utils"
@@ -21,6 +21,16 @@ import { Checkbox } from "@renderer/components/ui/checkbox"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 import { b2Service } from '@renderer/services/b2-service'
 import { AudioConverterService } from '@renderer/services/audio-converter'
+
+interface CellContextWithAudio<TData> {
+  audioState?: {
+    hoveredRow: string | null;
+    playingRow: string | null;
+  };
+  onPlayToggle?: (rowId: string) => void;
+}
+
+type ExtendedCellContext<TData> = CellContext<TData, unknown> & CellContextWithAudio<TData>;
 
 interface ColumnOptions {
   enableStarToggle?: boolean;
@@ -34,6 +44,11 @@ interface ColumnOptions {
   onDelete?: (itemId: string) => void
   onToggleStar?: (id: string, isStarred: boolean) => void;
 }
+
+const isAudioFile = (format: string | null): boolean => {
+  if (!format) return false;
+  return ['mp3', 'wav', 'm4a', 'aac', 'ogg'].includes(format.toLowerCase());
+};
 
 export const createColumns = ({
   enableStarToggle = true,
@@ -145,11 +160,15 @@ export const createColumns = ({
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" disabled={true}/>
     ),
-    cell: ({ row }) => {
+    cell: ({ row, audioState, onPlayToggle }: ExtendedCellContext<DemoItem>) => {
       const type = row.original.type;
       const isStarred = row.getValue("isStarred") as boolean;
       const tags = row.original.tags;
       const itemId = row.original.id;
+      const format = row.original.format;
+      const isAudio = type === "file" && isAudioFile(format);
+      const isHovered = audioState?.hoveredRow === row.id;
+      const isPlaying = audioState?.playingRow === row.id;
 
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
@@ -172,11 +191,27 @@ export const createColumns = ({
                 )}
               </div>
             )}
-            {type === "folder" ? (
-              <Folder className="h-4 w-4 text-muted-foreground fill-current" />
-            ) : (
-              <File className="h-4 w-4 text-muted-foreground" />
-            )}
+            <div 
+              onClick={(e) => {
+                if (isAudio) {
+                  e.stopPropagation();
+                  onPlayToggle?.(row.id);
+                }
+              }}
+              className={isAudio ? "cursor-pointer" : ""}
+            >
+              {type === "folder" ? (
+                <Folder className="h-4 w-4 text-muted-foreground fill-current" />
+              ) : isAudio && (isHovered || isPlaying) ? (
+                isPlaying ? (
+                  <Pause className="h-4 w-4 text-primary" />
+                ) : (
+                  <Play className="h-4 w-4 text-primary" />
+                )
+              ) : (
+                <File className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
             <span className="font-medium truncate max-w-[15rem]">{row.getValue("name")}</span>
           </div>
           {enableTags && tags && (
@@ -329,6 +364,7 @@ if (enableActions) {
                     }
                   }}
                 >
+                  WAV to MP3
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={row.original.format !== FileFormat.MP3}
@@ -361,6 +397,7 @@ if (enableActions) {
                     }
                   }}
                 >
+                  MP3 to WAV
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>

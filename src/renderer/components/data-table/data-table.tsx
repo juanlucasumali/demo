@@ -28,7 +28,7 @@ import { Input } from "@renderer/components/ui/input"
 import { DataTablePagination } from "./data-table-pagination"
 import { cn } from "@renderer/lib/utils"
 import { Skeleton } from "@renderer/components/ui/skeleton"
-import { Loader2 } from "lucide-react"
+import { Loader2, Play, Pause, File } from "lucide-react"
 import { ItemType } from '@renderer/types/items'
 import { DataTableGridView } from "./grid-view"
 
@@ -49,6 +49,11 @@ interface DataTableProps<DemoItem> {
   onRowClick?: (item: DemoItem) => void
   isLoading?: boolean
   onToggleStar?: (id: string, isStarred: boolean) => void
+}
+
+type AudioState = {
+  hoveredRow: string | null;
+  playingRow: string | null;
 }
 
 export function DataTable<DemoItem>({
@@ -138,6 +143,26 @@ export function DataTable<DemoItem>({
     pageIndex: 0,
     pageSize: pageSize
   })
+
+  const [audioState, setAudioState] = React.useState<AudioState>({
+    hoveredRow: null,
+    playingRow: null
+  });
+
+  const handleRowMouseEnter = (rowId: string) => {
+    setAudioState(prev => ({ ...prev, hoveredRow: rowId }));
+  };
+
+  const handleRowMouseLeave = () => {
+    setAudioState(prev => ({ ...prev, hoveredRow: null }));
+  };
+
+  const handlePlayToggle = (rowId: string) => {
+    setAudioState(prev => ({
+      ...prev,
+      playingRow: prev.playingRow === rowId ? null : rowId
+    }));
+  };
 
   const table = useReactTable({
     data,
@@ -257,11 +282,16 @@ export function DataTable<DemoItem>({
                       isRowClickable(row) && "hover:bg-muted/50",
                       isRowClickable(row) && "cursor-pointer"
                     )}
+                    onMouseEnter={() => handleRowMouseEnter(row.id)}
+                    onMouseLeave={handleRowMouseLeave}
                     onClick={() => isRowClickable(row) && onRowClick?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell, 
+                          { ...cell.getContext(), audioState, onPlayToggle: handlePlayToggle }
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>

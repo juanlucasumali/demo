@@ -94,9 +94,7 @@ export function CreateItem({
       setIsUploading(true);
       toast({
         title: "Uploading...",
-        description: type === 'file' 
-          ? "Your file is being uploaded" 
-          : "Creating folder",
+        description: type === 'file' ? "Your file is being uploaded" : "Creating folder",
         variant: "default",
       });
 
@@ -106,23 +104,19 @@ export function CreateItem({
         lastOpened: new Date(),
         name: data.name,
         isStarred: false,
-        parentFolderId: parentFolderId,
-        filePath: type === 'file' 
-          ? `/files/${data.name}` 
-          : data.name,
+        parentFolderIds: parentFolderId ? [parentFolderId] : [],
+        filePath: type === 'file' ? `/files/${data.name}` : data.name,
         type: type === 'file' ? ItemType.FILE : ItemType.FOLDER,
         duration: type === 'file' ? 0 : null,
-        format: type === 'file' 
-          ? (selectedFile?.name.split(".").pop() as FileFormat) 
-          : null,
+        format: type === 'file' ? (selectedFile?.name.split(".").pop() as FileFormat) : null,
         owner: currentUser,
         sharedWith: selectedUsers,
         tags: data.tags,
-        projectId: location === 'project' || location === 'collection' ? projectId : null,
+        projectIds: location === 'project' || location === 'collection' ? [projectId!] : [],
         size: type === 'file' ? selectedFile?.size ?? null : null,
         description: data.description || "",
         icon: null,
-        collectionId: location === 'collection' ? collectionId : null,
+        collectionIds: location === 'collection' ? [collectionId!] : [],
       };
 
       if (type === 'file' && selectedFile) {

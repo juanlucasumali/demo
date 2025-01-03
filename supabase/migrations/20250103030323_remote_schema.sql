@@ -42,71 +42,34 @@ $$;
 
 ALTER FUNCTION "public"."check_email_exists"("email" "text") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_root_folder_id"() RETURNS "uuid"
-    LANGUAGE "plpgsql" IMMUTABLE
+CREATE OR REPLACE FUNCTION "public"."migrate_existing_relationships"() RETURNS "void"
+    LANGUAGE "plpgsql"
     AS $$
 BEGIN
-    RETURN '00000000-0000-0000-0000-000000000000'::uuid;
+    -- Migrate project relationships
+    INSERT INTO file_projects (file_id, project_id)
+    SELECT id, project_id 
+    FROM files 
+    WHERE project_id IS NOT NULL
+    ON CONFLICT DO NOTHING;
+
+    -- Migrate collection relationships
+    INSERT INTO file_collections (file_id, collection_id)
+    SELECT id, collection_id 
+    FROM files 
+    WHERE collection_id IS NOT NULL
+    ON CONFLICT DO NOTHING;
+
+    -- Migrate folder relationships
+    INSERT INTO file_folders (file_id, folder_id)
+    SELECT id, parent_folder_id 
+    FROM files 
+    WHERE parent_folder_id IS NOT NULL
+    ON CONFLICT DO NOTHING;
 END;
 $$;
 
-ALTER FUNCTION "public"."get_root_folder_id"() OWNER TO "postgres";
-
-CREATE OR REPLACE FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") RETURNS boolean
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $_$
-DECLARE
-    has_access boolean;
-BEGIN
-    -- Check direct share
-    SELECT EXISTS (
-        SELECT 1 FROM shared_items 
-        WHERE (file_id = $1 OR project_id = $1) AND shared_with_id = $2
-    ) INTO has_access;
-
-    IF has_access THEN
-        RETURN true;
-    END IF;
-
-    -- Check parent folder hierarchy
-    SELECT EXISTS (
-        WITH RECURSIVE folder_hierarchy AS (
-            -- Base case: start with the current file
-            SELECT id, parent_folder_id
-            FROM files
-            WHERE id = $1
-
-            UNION ALL
-
-            -- Recursive case: join with parent folders
-            SELECT f.id, f.parent_folder_id
-            FROM files f
-            INNER JOIN folder_hierarchy fh ON f.id = fh.parent_folder_id
-            WHERE f.parent_folder_id IS NOT NULL
-        )
-        SELECT 1 
-        FROM folder_hierarchy fh
-        JOIN shared_items si ON si.file_id = fh.parent_folder_id
-        WHERE si.shared_with_id = $2
-    ) INTO has_access;
-
-    IF has_access THEN
-        RETURN true;
-    END IF;
-
-    -- Check project share
-    SELECT EXISTS (
-        SELECT 1 
-        FROM files f
-        JOIN shared_items si ON si.project_id = f.project_id
-        WHERE f.id = $1 AND si.shared_with_id = $2
-    ) INTO has_access;
-
-    RETURN has_access;
-END;
-$_$;
-
-ALTER FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."migrate_existing_relationships"() OWNER TO "postgres";
 
 SET default_tablespace = '';
 
@@ -121,11 +84,35 @@ CREATE TABLE IF NOT EXISTS "public"."collections" (
 
 ALTER TABLE "public"."collections" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."file_collections" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "file_id" "uuid" NOT NULL,
+    "collection_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+);
+
+ALTER TABLE "public"."file_collections" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."file_folders" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "file_id" "uuid" NOT NULL,
+    "folder_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+);
+
+ALTER TABLE "public"."file_folders" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."file_projects" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "file_id" "uuid" NOT NULL,
+    "project_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+);
+
+ALTER TABLE "public"."file_projects" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."files" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "project_id" "uuid",
-    "collection_id" "uuid",
-    "parent_folder_id" "uuid",
     "owner_id" "uuid" NOT NULL,
     "type" "text" NOT NULL,
     "name" "text" NOT NULL,
@@ -217,6 +204,24 @@ ALTER TABLE "public"."users" OWNER TO "postgres";
 ALTER TABLE ONLY "public"."collections"
     ADD CONSTRAINT "collections_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."file_collections"
+    ADD CONSTRAINT "file_collections_file_id_collection_id_key" UNIQUE ("file_id", "collection_id");
+
+ALTER TABLE ONLY "public"."file_collections"
+    ADD CONSTRAINT "file_collections_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."file_folders"
+    ADD CONSTRAINT "file_folders_file_id_folder_id_key" UNIQUE ("file_id", "folder_id");
+
+ALTER TABLE ONLY "public"."file_folders"
+    ADD CONSTRAINT "file_folders_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."file_projects"
+    ADD CONSTRAINT "file_projects_file_id_project_id_key" UNIQUE ("file_id", "project_id");
+
+ALTER TABLE ONLY "public"."file_projects"
+    ADD CONSTRAINT "file_projects_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
 
@@ -247,28 +252,43 @@ ALTER TABLE ONLY "public"."users"
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_username_key" UNIQUE ("username");
 
-CREATE INDEX "files_collection_id_idx" ON "public"."files" USING "btree" ("collection_id");
+CREATE INDEX "idx_file_collections_collection_id" ON "public"."file_collections" USING "btree" ("collection_id");
 
-CREATE INDEX "files_parent_folder_id_idx" ON "public"."files" USING "btree" ("parent_folder_id");
+CREATE INDEX "idx_file_collections_file_id" ON "public"."file_collections" USING "btree" ("file_id");
 
-CREATE INDEX "files_project_id_idx" ON "public"."files" USING "btree" ("project_id");
+CREATE INDEX "idx_file_folders_file_id" ON "public"."file_folders" USING "btree" ("file_id");
+
+CREATE INDEX "idx_file_folders_folder_id" ON "public"."file_folders" USING "btree" ("folder_id");
+
+CREATE INDEX "idx_file_projects_file_id" ON "public"."file_projects" USING "btree" ("file_id");
+
+CREATE INDEX "idx_file_projects_project_id" ON "public"."file_projects" USING "btree" ("project_id");
 
 CREATE INDEX "notifications_to_user_id_idx" ON "public"."notifications" USING "btree" ("to_user_id");
 
 ALTER TABLE ONLY "public"."collections"
     ADD CONSTRAINT "collections_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE ONLY "public"."files"
-    ADD CONSTRAINT "files_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "public"."collections"("id") ON UPDATE CASCADE ON DELETE SET NULL;
+ALTER TABLE ONLY "public"."file_collections"
+    ADD CONSTRAINT "file_collections_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "public"."collections"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."file_collections"
+    ADD CONSTRAINT "file_collections_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."file_folders"
+    ADD CONSTRAINT "file_folders_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."file_folders"
+    ADD CONSTRAINT "file_folders_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "public"."files"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."file_projects"
+    ADD CONSTRAINT "file_projects_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."file_projects"
+    ADD CONSTRAINT "file_projects_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."files"
-    ADD CONSTRAINT "files_parent_folder_id_fkey" FOREIGN KEY ("parent_folder_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."files"
-    ADD CONSTRAINT "files_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."integrations"
     ADD CONSTRAINT "integrations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
@@ -326,17 +346,25 @@ GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "anon";
-GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_root_folder_id"() TO "service_role";
-
-GRANT ALL ON FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") TO "service_role";
+GRANT ALL ON FUNCTION "public"."migrate_existing_relationships"() TO "anon";
+GRANT ALL ON FUNCTION "public"."migrate_existing_relationships"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."migrate_existing_relationships"() TO "service_role";
 
 GRANT ALL ON TABLE "public"."collections" TO "anon";
 GRANT ALL ON TABLE "public"."collections" TO "authenticated";
 GRANT ALL ON TABLE "public"."collections" TO "service_role";
+
+GRANT ALL ON TABLE "public"."file_collections" TO "anon";
+GRANT ALL ON TABLE "public"."file_collections" TO "authenticated";
+GRANT ALL ON TABLE "public"."file_collections" TO "service_role";
+
+GRANT ALL ON TABLE "public"."file_folders" TO "anon";
+GRANT ALL ON TABLE "public"."file_folders" TO "authenticated";
+GRANT ALL ON TABLE "public"."file_folders" TO "service_role";
+
+GRANT ALL ON TABLE "public"."file_projects" TO "anon";
+GRANT ALL ON TABLE "public"."file_projects" TO "authenticated";
+GRANT ALL ON TABLE "public"."file_projects" TO "service_role";
 
 GRANT ALL ON TABLE "public"."files" TO "anon";
 GRANT ALL ON TABLE "public"."files" TO "authenticated";

@@ -83,8 +83,8 @@ function Home() {
       {/* Page Content */}
       <PageContent>
         <div className='lg:grid lg:grid-cols-5 gap-4 pt-8'>
-          <Recents />
-          <Activity />
+          {/* <Recents />
+          <Activity /> */}
         </div>
         <SubHeader subHeader="All files"/>
         <DataTable 

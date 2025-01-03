@@ -1,5 +1,6 @@
 "use client"
 
+import { useUserStore } from "@renderer/stores/user-store"
 import {
   Avatar,
   AvatarFallback,
@@ -10,19 +11,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "../../components/ui/sidebar"
-import { UserProfile } from "@renderer/types/users"
 import { Link, useRouterState } from "@tanstack/react-router"
 
-export const user: UserProfile = 
-  {
-    id: "9092012803",
-    avatar: null,
-    name: "Juan Lucas Umali",
-    description: "hiiiiiii tis meeee!",
-    username: "juanlucasumali"
-  }
-
 export function NavUser({}: {}) {
+  const profile = useUserStore((state) => state.profile)  
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -32,11 +24,11 @@ export function NavUser({}: {}) {
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user.avatar ?? undefined} alt={user.username} />
-              <AvatarFallback className="rounded-lg">{user.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+              <AvatarImage src={profile?.avatar ?? undefined} alt={profile?.username} />
+              <AvatarFallback className="rounded-lg">{profile?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-normal">@{user.username}</span>
+              <span className="truncate font-normal">@{profile?.username}</span>
             </div>
           </SidebarMenuButton>
         </Link>

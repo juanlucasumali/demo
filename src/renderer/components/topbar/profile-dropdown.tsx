@@ -1,6 +1,6 @@
 import { User as UserIcon } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
-import { Avatar, AvatarFallback } from '../ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,7 @@ export function ProfileDropdown() {
   const navigate = useNavigate()
   const { signOut } = useAuth()
   const { toast } = useToast()
-  const user = useUserStore((state) => state.user)
+  const profile = useUserStore((state) => state.profile)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleLogout = async () => {
@@ -49,7 +49,7 @@ export function ProfileDropdown() {
     }
   }
 
-  if (!user) {
+  if (!profile) {
     return (
       <div className="flex items-center space-x-4">
         <Skeleton className="h-8 w-8 rounded-full" />
@@ -57,7 +57,7 @@ export function ProfileDropdown() {
     )
   }
 
-  const initials = user.email
+  const initials = profile.email
     ?.split('@')[0]
     ?.slice(0, 2)
     ?.toUpperCase() || 'U'
@@ -67,6 +67,7 @@ export function ProfileDropdown() {
       <DropdownMenuTrigger asChild disabled={isLoading}>
         <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
           <Avatar className='h-8 w-8'>
+            <AvatarImage src={profile.avatar || undefined} />
             <AvatarFallback>
               {initials || <UserIcon className="h-4 w-4" />}
             </AvatarFallback>

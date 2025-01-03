@@ -60,9 +60,14 @@ export function CreateProfile() {
     try {
       setIsLoading(true)
       
-      let avatarUrl = ""
+      let avatarInfo: { b2FileId: string; fileName: string } | undefined = undefined
       if (avatarFile) {
-        avatarUrl = await uploadAvatar(user.id, avatarFile)
+        toast({
+          title: "Uploading avatar...",
+          description: "Please wait while we upload your profile picture",
+        })
+        
+        avatarInfo = await uploadAvatar(user.id, avatarFile)
       }
       
       await createProfile({
@@ -71,17 +76,18 @@ export function CreateProfile() {
         name: data.name,
         email: user.email,
         description: data.description || null,
-        avatar: avatarUrl,
-      })
-
+        avatar: avatarInfo ? avatarInfo.b2FileId : null,
+      }, avatarInfo)
+  
       await checkProfile(user.id)
-
+  
+      toast({
+        title: "Profile created!",
+        description: "Your profile has been set up successfully",
+      })
+      
       setTimeout(() => {
         navigate({ to: '/home' })
-        toast({
-          title: "Profile created!",
-          description: "Your profile has been set up successfully",
-        })
         setIsLoading(false)
       }, 1000)
     } catch (error) {
@@ -116,7 +122,11 @@ export function CreateProfile() {
                   <FormItem>
                     <div className="flex flex-col items-center space-y-2">
                       <Avatar className="h-32 w-32">
-                        <AvatarImage src={avatarPreview || undefined} />
+                        <AvatarImage 
+                          src={avatarPreview || undefined} 
+                          className="object-cover"
+                          style={{ aspectRatio: '1/1' }}
+                        />
                         <AvatarFallback className="text-4xl">
                           {form.watch('name')?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>

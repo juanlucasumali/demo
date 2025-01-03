@@ -476,7 +476,7 @@ if (enableActions) {
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            {(location === 'folder' || location === 'project' || location === 'collection') && (
+            {/* {(location === 'folder' || location === 'project' || location === 'collection') && (
               <DropdownMenuItem 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -491,7 +491,7 @@ if (enableActions) {
                   ""
                 }
               </DropdownMenuItem>
-            )}
+            )} */}
             <DropdownMenuItem 
               onClick={(e) => {
                 e.stopPropagation();

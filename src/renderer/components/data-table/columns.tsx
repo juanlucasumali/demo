@@ -50,6 +50,7 @@ interface ColumnOptions {
   onEditFile?: (item: DemoItem) => void
   onShare?: (item: DemoItem) => void
   onDelete?: (item: DemoItem) => void
+  onRemove?: (item: DemoItem) => void
   onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
@@ -64,7 +65,8 @@ export const createColumns = ({
   onEditFile,
   onShare,
   onDelete,
-  onToggleStar
+  onToggleStar,
+  onRemove
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
   const { toast } = useToast();
   const baseColumns: ColumnDef<DemoItem>[] = [
@@ -474,13 +476,11 @@ if (enableActions) {
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            {(row.original.parentFolderIds?.length > 0 || 
-              row.original.projectIds?.length > 0 || 
-              row.original.collectionIds?.length > 0) && (
+            {(location === 'folder' || location === 'project' || location === 'collection') && (
               <DropdownMenuItem 
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete?.(row.original)
+                  onRemove?.(row.original)
                 }}
                 className="text-orange-500"
               >

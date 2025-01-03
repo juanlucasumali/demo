@@ -10,6 +10,7 @@ import { SaveItemsDialog } from "./dialogs/save-items-dialog"
 import { SelectFilesDialog } from "./dialogs/select-files"
 import { UserProfile } from "@renderer/types/users"
 import { CreateCollection } from "./dialogs/create-collection"
+import { RemoveDialog } from "./dialogs/remove-dialog"
 
 interface DialogManagerProps {
   editFile: {
@@ -72,6 +73,12 @@ interface DialogManagerProps {
     onClose: () => void
     projectId?: string
   }
+  remove: {
+    isOpen: boolean
+    onClose: () => void
+    item?: DemoItem
+    location?: 'folder' | 'project' | 'collection'
+  }
 }
 
 export function DialogManager({
@@ -86,7 +93,8 @@ export function DialogManager({
   updateItem,
   removeItem,
   isLoading,
-  createCollection
+  createCollection,
+  remove
 }: DialogManagerProps) {
   return (
     <>
@@ -167,6 +175,18 @@ export function DialogManager({
           open={createCollection.isOpen}
           onOpenChange={() => createCollection.onClose()}
           projectId={createCollection.projectId}
+        />
+      )}
+
+      {remove.item && removeItem && (
+        <RemoveDialog
+          open={remove.isOpen}
+          onOpenChange={() => remove.onClose()}
+          item={remove.item}
+          removeItem={removeItem}
+          handleDialogClose={() => remove.onClose()}
+          isLoading={isLoading.removeItem}
+          location={remove.location}
         />
       )}
     </>

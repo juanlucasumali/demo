@@ -37,6 +37,7 @@ function CollectionPage() {
       onEditFile: (item) => dialogState.editFile.onOpen({ item }),
       onShare: (item) => dialogState.share.onOpen({ item }),
       onDelete: (item) => dialogState.delete.onOpen({ item }),
+      onRemove: (item) => dialogState.remove.onOpen({ item, location: 'collection' }),
       location: 'collection'
     }),
     [dialogState] // Add dependencies that the column config relies on

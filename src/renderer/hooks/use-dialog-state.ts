@@ -78,6 +78,14 @@ export function useDialogState() {
     isOpen: false
   })
 
+  const [removeDialog, setRemoveDialog] = useState<{ 
+    isOpen: boolean
+    item?: DemoItem 
+    location?: 'folder' | 'project' | 'collection'
+  }>({
+    isOpen: false
+  })
+
   return {
   editFile: {
       ...editFile,
@@ -156,6 +164,12 @@ export function useDialogState() {
       ...createCollection,
       onOpen: ({ projectId }: { projectId: string }) => setCreateCollection({ isOpen: true, projectId }),
       onClose: () => setCreateCollection({ isOpen: false })
+    },
+    remove: {
+      ...removeDialog,
+      onOpen: ({ item, location }: { item: DemoItem, location?: 'folder' | 'project' | 'collection' }) => 
+        setRemoveDialog({ isOpen: true, item, location }),
+      onClose: () => setRemoveDialog({ isOpen: false })
     }
   }
 } 

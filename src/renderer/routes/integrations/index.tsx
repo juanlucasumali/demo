@@ -17,20 +17,20 @@ export const Route = createFileRoute('/integrations/')({
 })
 
 const integrations = [
-  {
-    id: 'logic-pro',
-    name: 'Logic Pro',
-    icon: Music2,
-    connected: false,
-    available: false
-  },
-  {
-    id: 'ableton-live',
-    name: 'Ableton Live',
-    icon: Mic2,
-    connected: false,
-    available: false
-  },
+  // {
+  //   id: 'logic-pro',
+  //   name: 'Logic Pro',
+  //   icon: Music2,
+  //   connected: false,
+  //   available: false
+  // },
+  // {
+  //   id: 'ableton-live',
+  //   name: 'Ableton Live',
+  //   icon: Mic2,
+  //   connected: false,
+  //   available: false
+  // },
   {
     id: 'fl-studio',
     name: 'FL Studio',

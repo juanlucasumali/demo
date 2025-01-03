@@ -41,8 +41,6 @@ function IntegrationDetail() {
   const [syncProgress, setSyncProgress] = useState(0)
   const [isSyncing, setIsSyncing] = useState(false)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
-  const [isSelectingDemoLocation, setIsSelectingDemoLocation] = useState(false)
-  const [selectedDemoLocations, setSelectedDemoLocations] = useState<DemoItem[] | null>(null)
   const { toast } = useToast()
 
   // Function to handle folder selection
@@ -84,21 +82,7 @@ function IntegrationDetail() {
     }, 500)
   }
 
-  const handleDemoLocationSelect = (locations: DemoItem[]) => {
-    setSelectedDemoLocations(locations)
-    if (locations.length > 0 || locations.length === 0) { // Only set if explicitly chosen
-      toast({
-        title: "Location Selected",
-        description: locations.length > 0 
-          ? `Selected ${locations.length} location(s) in Demo`
-          : "Files will be synced to Home",
-        duration: 3000
-      })
-    }
-  }
-
   const canProceedToStep2 = selectedPath !== null
-  const canProceedToStep3 = selectedPath !== null && selectedDemoLocations !== null
   
   const handleStepChange = (step: number) => {
     if (step === 2 && !canProceedToStep2) {
@@ -109,29 +93,13 @@ function IntegrationDetail() {
       })
       return
     }
-    if (step === 3 && !canProceedToStep3) {
-      toast({
-        title: "Complete Step 2",
-        description: "Please select a Demo location first",
-        variant: "destructive"
-      })
-      return
-    }
     setCurrentStep(step)
   }
 
   const resetStep1 = () => {
     setSelectedPath(null)
-    setSelectedDemoLocations(null)
     if (currentStep > 1) {
       setCurrentStep(1)
-    }
-  }
-
-  const resetStep2 = () => {
-    setSelectedDemoLocations(null)
-    if (currentStep > 2) {
-      setCurrentStep(2)
     }
   }
 
@@ -191,63 +159,18 @@ function IntegrationDetail() {
               </Card>
             </Step>
 
-            <Step value={2} title="Choose Demo Location">
+            <Step value={2} title="Start Sync">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex justify-between items-center">
-                    <span>Step 2: Choose Demo Location</span>
-                    {selectedDemoLocations && selectedDemoLocations?.length > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={resetStep2}
-                      >
-                        Reset
-                      </Button>
-                    )}
-                  </CardTitle>
+                  <CardTitle>Step 2: Start Synchronization</CardTitle>
                   <CardDescription>
-                    Select where you want your FL Studio projects to appear in Demo
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button 
-                    onClick={() => setIsSelectingDemoLocation(true)}
-                    disabled={!canProceedToStep2}
-                  >
-                    <FolderSync className="mr-2 h-4 w-4" />
-                    Select Demo Location
-                  </Button>
-                  {selectedDemoLocations?.length ? (
-                    <div className="text-sm text-muted-foreground mt-2 p-2 bg-muted rounded-md">
-                      Selected {selectedDemoLocations.length} location(s):
-                      <ul className="list-disc list-inside mt-1">
-                        {selectedDemoLocations.map(location => (
-                          <li key={location.id}>{location.name}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : selectedDemoLocations?.length === 0 ? (
-                    <div className="text-sm text-muted-foreground mt-2 p-2 bg-muted rounded-md">
-                      Files will be synced to Home
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
-            </Step>
-
-            <Step value={3} title="Start Sync">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Step 3: Start Synchronization</CardTitle>
-                  <CardDescription>
-                    Begin the initial sync between FL Studio and Demo
+                    Begin the initial sync between FL Studio and Demo. Files will be synced to Home.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Button 
                     onClick={startSync} 
-                    disabled={!canProceedToStep3 || isSyncing}
+                    disabled={!canProceedToStep2 || isSyncing}
                   >
                     {isSyncing ? 'Syncing...' : 'Start Sync'}
                   </Button>
@@ -274,14 +197,6 @@ function IntegrationDetail() {
           </Card>
         </div>
       </PageContent>
-
-      <SelectFilesDialog
-        open={isSelectingDemoLocation}
-        onOpenChange={setIsSelectingDemoLocation}
-        onConfirm={handleDemoLocationSelect}
-        initialSelections={selectedDemoLocations ?? []}
-        location="save-items"
-      />
     </PageMain>
   )
 }

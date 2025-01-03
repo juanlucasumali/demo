@@ -38,26 +38,18 @@ export const useUserStore = create<UserStore>()(
       fetchProfile: async (userId) => {
         const profile = await userService.getProfile(userId)
         
-        // If profile has an avatar and we haven't cached its URL yet
         if (profile.avatar && !get().avatarUrls.has(profile.avatar)) {
           try {
-            const avatarData = await userService.getAvatar(profile.avatar)
-            const blob = new Blob([avatarData])
-            const avatarUrl = URL.createObjectURL(blob)
-            
-            // Store the URL in our map
+            const avatarUrl = await userService.getAvatarUrl(profile.avatar)
             set(state => ({
               avatarUrls: new Map(state.avatarUrls).set(profile.avatar!, avatarUrl)
             }))
-            
-            // Update the profile's avatar field to use the URL
             profile.avatar = avatarUrl
           } catch (error) {
             console.error('Failed to load avatar:', error)
             profile.avatar = null
           }
         } else if (profile.avatar) {
-          // Use cached URL
           profile.avatar = get().avatarUrls.get(profile.avatar)!
         }
         

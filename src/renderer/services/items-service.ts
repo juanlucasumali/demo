@@ -13,6 +13,34 @@ const getCurrentUserId = () => {
   return user.id
 }
 
+// Helper function to process user profiles with avatar URLs
+async function processUserProfile(profile: any, store = useUserStore.getState()): Promise<UserProfile> {
+  const camelProfile = toCamelCase(profile);
+  
+  // If profile has an avatar and we haven't cached its URL yet
+  if (camelProfile.avatar && !store.avatarUrls.has(camelProfile.avatar)) {
+    try {
+      const avatarData = await store.getAvatar(camelProfile.avatar);
+      const blob = new Blob([avatarData]);
+      const avatarUrl = URL.createObjectURL(blob);
+      
+      // Store the URL in our map
+      store.avatarUrls.set(camelProfile.avatar, avatarUrl);
+      
+      // Update the profile's avatar field to use the URL
+      camelProfile.avatar = avatarUrl;
+    } catch (error) {
+      console.error('Failed to load avatar:', error);
+      camelProfile.avatar = null;
+    }
+  } else if (camelProfile.avatar) {
+    // Use cached URL
+    camelProfile.avatar = store.avatarUrls.get(camelProfile.avatar)!;
+  }
+  
+  return camelProfile;
+}
+
 // Helper function to get sharing information for an item
 async function getItemSharing(itemId: string, itemType: 'file' | 'project'): Promise<UserProfile[]> {
   const { data, error } = await supabase
@@ -23,7 +51,11 @@ async function getItemSharing(itemId: string, itemType: 'file' | 'project'): Pro
     .eq(itemType === 'file' ? 'file_id' : 'project_id', itemId);
 
   if (error) throw error;
-  return data?.map(share => toCamelCase(share.shared_with)) || [];
+  
+  // Process each user to include avatar URLs
+  return Promise.all(
+    (data || []).map(share => processUserProfile(share.shared_with))
+  );
 }
 
 // Generic function to fetch items with sharing info
@@ -58,7 +90,7 @@ async function getProjectsWithSharing(userId: string): Promise<DemoItem[]> {
     return {
       ...toCamelCase(item),
       id: item.id,
-      owner: toCamelCase(item.owner),
+      owner: await processUserProfile(item.owner),
       sharedWith,
       type: ItemType.PROJECT,
       createdAt: new Date(item.created_at),
@@ -142,7 +174,7 @@ async function getFilesWithSharing(
     return {
       ...toCamelCase(item),
       id: item.id,
-      owner: toCamelCase(item.owner),
+      owner: await processUserProfile(item.owner),
       sharedWith,
       type: item.type as ItemType,
       createdAt: new Date(item.created_at),
@@ -623,10 +655,15 @@ export async function getFolder(folderId: string): Promise<DemoItem | null> {
   if (error) throw error;
   if (!data) return null;
 
+  const processedOwner = await processUserProfile(data.owner);
+  const processedSharedWith = await Promise.all(
+    data.shared_with?.map(share => processUserProfile(share.shared_with)) || []
+  );
+
   return {
     ...toCamelCase(data),
-    owner: toCamelCase(data.owner),
-    sharedWith: data.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
+    owner: processedOwner,
+    sharedWith: processedSharedWith,
     type: data.type as ItemType,
     createdAt: new Date(data.created_at),
     lastModified: new Date(data.last_modified),
@@ -664,10 +701,15 @@ export async function getProject(projectId: string): Promise<DemoItem | null> {
   if (error) throw error;
   if (!data) return null;
 
+  const processedOwner = await processUserProfile(data.owner);
+  const processedSharedWith = await Promise.all(
+    data.shared_with?.map(share => processUserProfile(share.shared_with)) || []
+  );
+
   return {
     ...toCamelCase(data),
-    owner: toCamelCase(data.owner),
-    sharedWith: data.shared_with?.map(share => toCamelCase(share.shared_with)) || [],
+    owner: processedOwner,
+    sharedWith: processedSharedWith,
     type: ItemType.PROJECT,
     createdAt: new Date(data.created_at),
     lastModified: new Date(data.last_modified),
@@ -758,7 +800,7 @@ export async function searchFriends(searchTerm?: string): Promise<UserProfile[]>
   let query = supabase
     .from('users')
     .select('*')
-    .neq('id', userId) // Exclude current user
+    .neq('id', userId)
     .limit(5);
 
   if (searchTerm) {
@@ -769,7 +811,7 @@ export async function searchFriends(searchTerm?: string): Promise<UserProfile[]>
   const { data, error } = await query;
   if (error) throw error;
 
-  return data
+  return Promise.all(data.map(user => processUserProfile(user)));
 }
 
 export async function shareItems(

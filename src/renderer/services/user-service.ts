@@ -75,4 +75,15 @@ export async function getAvatar(b2FileId: string): Promise<ArrayBuffer> {
     console.error('Failed to get avatar:', error)
     throw error
   }
-} 
+}
+
+export async function getAvatarUrl(b2FileId: string): Promise<string> {
+  try {
+    const avatarData = await b2Service.retrieveFile(b2FileId)
+    const blob = new Blob([avatarData])
+    return URL.createObjectURL(blob)
+  } catch (error) {
+    console.error('Failed to get avatar URL:', error)
+    throw error
+  }
+}

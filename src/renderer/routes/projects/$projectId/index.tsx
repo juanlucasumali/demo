@@ -19,6 +19,7 @@ import { useItems } from '@renderer/hooks/use-items'
 import { CollectionsSidebar } from '@renderer/components/collections/collections-sidebar'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
+import React from 'react'
 
 // Define route params interface
 export interface ProjectParams {
@@ -44,6 +45,17 @@ function ProjectPage() {
   const { currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ projectId })
   const dialogState = useDialogState();
   const navigate = useNavigate();
+
+  // Create columns with useMemo to prevent recreation on every render
+  const columns = React.useMemo(
+    () => createColumns({
+      enableTags: false,
+      onEditFile: (item) => dialogState.editFile.onOpen({ item }),
+      onShare: (item) => dialogState.share.onOpen({ item }),
+      onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
+    }),
+    [dialogState] // Add dependencies that the column config relies on
+  );
 
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {
@@ -137,12 +149,7 @@ function ProjectPage() {
 
           <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
             <DataTable
-              columns={createColumns({
-                enableTags: false,
-                onEditFile: (item) => dialogState.editFile.onOpen({ item }),
-                onShare: (item) => dialogState.share.onOpen({ item }),
-                onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
-              })}
+              columns={columns}
               data={filesAndFolders}
               enableSelection={false}
               viewMode="table"

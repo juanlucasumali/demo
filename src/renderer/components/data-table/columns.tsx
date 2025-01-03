@@ -12,7 +12,7 @@ import {
   DropdownMenuSubContent,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef, CellContext } from "@tanstack/react-table"
-import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download, Play, Pause, Loader2 } from "lucide-react"
+import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download, Play, Pause, Loader2, MinusCircle } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
 import { DemoItem, FileFormat } from "@renderer/types/items"
 import { formatDuration, isAudioFile, mimeTypes } from "@renderer/lib/utils"
@@ -40,6 +40,7 @@ interface CellContextWithAudio<TData> {
 type ExtendedCellContext<TData> = CellContext<TData, unknown> & CellContextWithAudio<TData>;
 
 interface ColumnOptions {
+  location?: 'folder' | 'project' | 'collection';
   enableStarToggle?: boolean;
   enableTags?: boolean;
   enableActions?: boolean;
@@ -48,11 +49,12 @@ interface ColumnOptions {
   showSelectAll?: boolean;
   onEditFile?: (item: DemoItem) => void
   onShare?: (item: DemoItem) => void
-  onDelete?: (itemId: string) => void
+  onDelete?: (item: DemoItem) => void
   onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
 export const createColumns = ({
+  location,
   enableStarToggle = true,
   enableTags = true,
   enableActions = true,
@@ -472,10 +474,28 @@ if (enableActions) {
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
+            {(row.original.parentFolderIds?.length > 0 || 
+              row.original.projectIds?.length > 0 || 
+              row.original.collectionIds?.length > 0) && (
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.(row.original)
+                }}
+                className="text-orange-500"
+              >
+                <MinusCircle className="mr-2 h-4 w-4" /> Remove from {
+                  location === 'folder' ? "folder" :
+                  location === 'project' ? "project" :
+                  location === 'collection' ? "collection" :
+                  ""
+                }
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem 
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete?.(row.getValue("id"))
+                onDelete?.(row.original)
               }}
               className="text-red-500"
             >

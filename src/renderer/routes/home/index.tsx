@@ -92,7 +92,7 @@ function Home() {
             enableStarToggle: true,
             onEditFile: (item) => dialogState.editFile.onOpen({ item }) ,
             onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (itemId) => dialogState.delete.onOpen({ itemId }),
+            onDelete: (item) => dialogState.delete.onOpen({ item }),
             onToggleStar: (id, isStarred) => toggleStar({ id, isStarred })
           })} 
           data={filesAndFolders}

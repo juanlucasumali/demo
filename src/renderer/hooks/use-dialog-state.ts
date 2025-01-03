@@ -27,7 +27,7 @@ export function useDialogState() {
 
   const [deleteDialog, setDeleteDialog] = useState<{ 
     isOpen: boolean
-    itemId?: string 
+    item?: DemoItem 
   }>({
     isOpen: false
   })
@@ -91,7 +91,7 @@ export function useDialogState() {
     },
     delete: {
       ...deleteDialog,
-      onOpen: ({ itemId }: { itemId: string }) => setDeleteDialog({ isOpen: true, itemId }),
+      onOpen: ({ item }: { item: DemoItem }) => setDeleteDialog({ isOpen: true, item }),
       onClose: () => setDeleteDialog({ isOpen: false })
     },
     createItem: {

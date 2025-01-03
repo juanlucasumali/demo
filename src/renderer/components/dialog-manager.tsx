@@ -25,7 +25,7 @@ interface DialogManagerProps {
   delete: {
     isOpen: boolean
     onClose: () => void
-    itemId?: string
+    item?: DemoItem
   }
   createItem: {
     isOpen: boolean
@@ -106,11 +106,11 @@ export function DialogManager({
         initialItem={share.item}
       />
 
-      {deleteDialog.itemId && removeItem && (
+      {deleteDialog.item && removeItem && (
         <DeleteDialog
           open={deleteDialog.isOpen}
           onOpenChange={() => deleteDialog.onClose()}
-          itemId={deleteDialog.itemId}
+          item={deleteDialog.item}
           removeItem={removeItem}
           handleDialogClose={() => deleteDialog.onClose()}
           isLoading={isLoading.removeItem}

@@ -52,7 +52,8 @@ function ProjectPage() {
       enableTags: false,
       onEditFile: (item) => dialogState.editFile.onOpen({ item }),
       onShare: (item) => dialogState.share.onOpen({ item }),
-      onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
+      onDelete: (item) => dialogState.delete.onOpen({ item }),
+      location: 'project'
     }),
     [dialogState] // Add dependencies that the column config relies on
   );

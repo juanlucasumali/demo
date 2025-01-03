@@ -48,7 +48,7 @@ export default function Projects() {
             enableActions: true,
             onEditFile: (item) => dialogState.editFile.onOpen({ item }),
             onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
+            onDelete: (item) => dialogState.delete.onOpen({ item })
           })}
           data={projects}
           enableSelection={false}

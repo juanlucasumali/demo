@@ -2,22 +2,23 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2 } from "lucide-react"
 import { useToast } from "@renderer/hooks/use-toast"
 import { UseMutateFunction } from "@tanstack/react-query"
+import { DemoItem } from "@renderer/types/items"
 
 interface DeleteDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  itemId: string
+  item: DemoItem
   handleDialogClose: (value: boolean) => void,
   removeItem: UseMutateFunction<void, Error, string, unknown>
   isLoading: boolean
 }
 
-export function DeleteDialog({ open, onOpenChange, itemId, handleDialogClose, removeItem, isLoading }: DeleteDialogProps) {
+export function DeleteDialog({ open, onOpenChange, item, handleDialogClose, removeItem, isLoading }: DeleteDialogProps) {
   const { toast } = useToast()
 
   const handleDelete = async () => {
     try {
-      await removeItem(itemId)
+      await removeItem(item.id)
       onOpenChange(false)
       handleDialogClose(false)
       toast({
@@ -44,7 +45,7 @@ export function DeleteDialog({ open, onOpenChange, itemId, handleDialogClose, re
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete
-            the selected item from our servers.
+            "{item.name}" from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

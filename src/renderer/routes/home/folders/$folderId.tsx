@@ -93,7 +93,8 @@ function FolderPage() {
           columns={createColumns({
             onEditFile: (item) => dialogState.editFile.onOpen({ item }),
             onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
+            onDelete: (item) => dialogState.delete.onOpen({ item }),
+            location: 'folder'
           })} 
           data={filesAndFolders}
           onRowClick={handleRowClick}

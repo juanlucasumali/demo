@@ -66,6 +66,7 @@ export function useDialogState() {
     onConfirm?: (items: DemoItem[]) => void
     initialSelections?: DemoItem[]
     location?: 'project' | 'home' | 'save-items' | 'collection'
+    projectItem?: DemoItem
   }>({ 
     isOpen: false 
   })
@@ -143,11 +144,12 @@ export function useDialogState() {
     },
     selectFiles: {
       ...selectFiles,
-      onOpen: ({ onConfirm, initialSelections, location }: {
+      onOpen: ({ onConfirm, initialSelections, location, projectItem }: {
         onConfirm?: (items: DemoItem[]) => void
         initialSelections?: DemoItem[]
         location?: 'project' | 'home' | 'save-items' | 'collection'
-      }) => setSelectFiles({ isOpen: true, onConfirm, initialSelections, location }),
+        projectItem?: DemoItem
+      }) => setSelectFiles({ isOpen: true, onConfirm, initialSelections, location, projectItem }),
       onClose: () => setSelectFiles({ isOpen: false })
     },
     createCollection: {

@@ -1,4 +1,4 @@
-import { Box, Folder, HomeIcon, Smile, UserCog } from 'lucide-react'
+import { Box, Folder, HomeIcon, UserCog } from 'lucide-react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
@@ -46,9 +46,9 @@ function Home() {
     <PageMain>
       {/* Page Header */}
       <PageHeader
-        title="HELLO!!!"
-        description="If you see this, that means that auto-updates are working!!!!"
-        icon={Smile}
+        title="Home"
+        description="Supercharge creativity, simplify your media."
+        icon={HomeIcon}
       >
         <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file' })}>
           Upload

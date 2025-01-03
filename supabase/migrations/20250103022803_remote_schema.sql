@@ -55,26 +55,54 @@ ALTER FUNCTION "public"."get_root_folder_id"() OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."user_has_access"("item_id" "uuid", "user_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $_$
+DECLARE
+    has_access boolean;
 BEGIN
-  RETURN EXISTS (
-    -- Direct share
-    SELECT 1 FROM shared_items 
-    WHERE item_id = $1 AND shared_with_id = $2
-    
-    UNION
-    
-    -- Parent folder share
-    SELECT 1 FROM files f
-    JOIN shared_items si ON si.item_id = f.parent_folder_id
-    WHERE f.id = $1 AND si.shared_with_id = $2
-    
-    UNION
-    
-    -- Project share
-    SELECT 1 FROM files f
-    JOIN shared_items si ON si.item_id = f.project_id
-    WHERE f.id = $1 AND si.shared_with_id = $2
-  );
+    -- Check direct share
+    SELECT EXISTS (
+        SELECT 1 FROM shared_items 
+        WHERE (file_id = $1 OR project_id = $1) AND shared_with_id = $2
+    ) INTO has_access;
+
+    IF has_access THEN
+        RETURN true;
+    END IF;
+
+    -- Check parent folder hierarchy
+    SELECT EXISTS (
+        WITH RECURSIVE folder_hierarchy AS (
+            -- Base case: start with the current file
+            SELECT id, parent_folder_id
+            FROM files
+            WHERE id = $1
+
+            UNION ALL
+
+            -- Recursive case: join with parent folders
+            SELECT f.id, f.parent_folder_id
+            FROM files f
+            INNER JOIN folder_hierarchy fh ON f.id = fh.parent_folder_id
+            WHERE f.parent_folder_id IS NOT NULL
+        )
+        SELECT 1 
+        FROM folder_hierarchy fh
+        JOIN shared_items si ON si.file_id = fh.parent_folder_id
+        WHERE si.shared_with_id = $2
+    ) INTO has_access;
+
+    IF has_access THEN
+        RETURN true;
+    END IF;
+
+    -- Check project share
+    SELECT EXISTS (
+        SELECT 1 
+        FROM files f
+        JOIN shared_items si ON si.project_id = f.project_id
+        WHERE f.id = $1 AND si.shared_with_id = $2
+    ) INTO has_access;
+
+    RETURN has_access;
 END;
 $_$;
 
@@ -112,11 +140,25 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "last_modified" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "last_opened" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    CONSTRAINT "files_format_check" CHECK (("format" = ANY (ARRAY['mp3'::"text", 'wav'::"text", 'mp4'::"text", 'flp'::"text", 'als'::"text", 'zip'::"text"]))),
     CONSTRAINT "files_type_check" CHECK (("type" = ANY (ARRAY['file'::"text", 'folder'::"text"])))
 );
 
 ALTER TABLE "public"."files" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."integrations" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "type" "text" NOT NULL,
+    "source_path" "text" NOT NULL,
+    "target_locations" "uuid"[] NOT NULL,
+    "is_enabled" boolean DEFAULT false NOT NULL,
+    "last_synced" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "integrations_type_check" CHECK (("type" = 'fl-studio'::"text"))
+);
+
+ALTER TABLE "public"."integrations" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."notifications" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
@@ -178,6 +220,9 @@ ALTER TABLE ONLY "public"."collections"
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."integrations"
+    ADD CONSTRAINT "integrations_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_pkey" PRIMARY KEY ("id");
 
@@ -225,6 +270,12 @@ ALTER TABLE ONLY "public"."files"
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
+ALTER TABLE ONLY "public"."integrations"
+    ADD CONSTRAINT "integrations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."integrations"
+    ADD CONSTRAINT "integrations_user_id_fkey1" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_from_user_id_fkey" FOREIGN KEY ("from_user_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
@@ -252,15 +303,15 @@ ALTER TABLE ONLY "public"."shared_items"
 ALTER TABLE ONLY "public"."shared_items"
     ADD CONSTRAINT "shared_items_shared_with_id_fkey" FOREIGN KEY ("shared_with_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
+CREATE POLICY "Enable insert for users based on user_id" ON "public"."users" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "id"));
+
 CREATE POLICY "No manual deletion" ON "public"."users" FOR DELETE TO "authenticated" USING (false);
 
-CREATE POLICY "Users can only be created on auth signup" ON "public"."users" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "id"));
+CREATE POLICY "Users can manage their own integrations" ON "public"."integrations" USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
 CREATE POLICY "Users can update own profile" ON "public"."users" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
 
 CREATE POLICY "Users can view all profiles" ON "public"."users" FOR SELECT TO "authenticated", "anon" USING (true);
-
-CREATE POLICY "Users can view files they have access to" ON "public"."files" FOR SELECT USING ((("owner_id" = "auth"."uid"()) OR "public"."user_has_access"("id", "auth"."uid"())));
 
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
 
@@ -290,6 +341,10 @@ GRANT ALL ON TABLE "public"."collections" TO "service_role";
 GRANT ALL ON TABLE "public"."files" TO "anon";
 GRANT ALL ON TABLE "public"."files" TO "authenticated";
 GRANT ALL ON TABLE "public"."files" TO "service_role";
+
+GRANT ALL ON TABLE "public"."integrations" TO "anon";
+GRANT ALL ON TABLE "public"."integrations" TO "authenticated";
+GRANT ALL ON TABLE "public"."integrations" TO "service_role";
 
 GRANT ALL ON TABLE "public"."notifications" TO "anon";
 GRANT ALL ON TABLE "public"."notifications" TO "authenticated";

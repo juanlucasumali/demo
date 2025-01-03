@@ -59,6 +59,7 @@ interface DialogManagerProps {
     onConfirm?: (items: DemoItem[]) => void
     initialSelections?: DemoItem[]
     location?: 'project' | 'home' | 'save-items' | 'collection'
+    projectItem?: DemoItem
   }
   updateItem?: UseMutateFunction<void, Error, { updatedItem: DemoItem, originalItem: DemoItem }, unknown>
   removeItem?: UseMutateFunction<void, Error, string, unknown>
@@ -158,6 +159,7 @@ export function DialogManager({
         onConfirm={selectFiles.onConfirm || (() => {})}
         initialSelections={selectFiles.initialSelections}
         location={selectFiles.location || 'home'}
+        projectItem={selectFiles.projectItem}
       />
 
       {createCollection.projectId && (

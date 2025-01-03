@@ -9,16 +9,16 @@ interface DeleteDialogProps {
   onOpenChange: (open: boolean) => void
   item: DemoItem
   handleDialogClose: (value: boolean) => void,
-  removeItem: UseMutateFunction<void, Error, string, unknown>
+  deleteItem: UseMutateFunction<void, Error, string, unknown>
   isLoading: boolean
 }
 
-export function DeleteDialog({ open, onOpenChange, item, handleDialogClose, removeItem, isLoading }: DeleteDialogProps) {
+export function DeleteDialog({ open, onOpenChange, item, handleDialogClose, deleteItem, isLoading }: DeleteDialogProps) {
   const { toast } = useToast()
 
   const handleDelete = async () => {
     try {
-      await removeItem(item.id)
+      await deleteItem(item.id)
       onOpenChange(false)
       handleDialogClose(false)
       toast({

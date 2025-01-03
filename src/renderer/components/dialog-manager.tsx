@@ -63,9 +63,9 @@ interface DialogManagerProps {
     projectItem?: DemoItem
   }
   updateItem?: UseMutateFunction<void, Error, { updatedItem: DemoItem, originalItem: DemoItem }, unknown>
-  removeItem?: UseMutateFunction<void, Error, string, unknown>
+  deleteItem?: UseMutateFunction<void, Error, string, unknown>
   isLoading: {
-    removeItem: boolean
+    deleteItem: boolean
     updateItem: boolean
   }
   createCollection: {
@@ -91,7 +91,7 @@ export function DialogManager({
   saveItems,
   selectFiles,
   updateItem,
-  removeItem,
+  deleteItem,
   isLoading,
   createCollection,
   remove
@@ -114,14 +114,14 @@ export function DialogManager({
         initialItem={share.item}
       />
 
-      {deleteDialog.item && removeItem && (
+      {deleteDialog.item && deleteItem && (
         <DeleteDialog
           open={deleteDialog.isOpen}
           onOpenChange={() => deleteDialog.onClose()}
           item={deleteDialog.item}
-          removeItem={removeItem}
+          deleteItem={deleteItem}
           handleDialogClose={() => deleteDialog.onClose()}
-          isLoading={isLoading.removeItem}
+          isLoading={isLoading.deleteItem}
         />
       )}
 
@@ -178,14 +178,14 @@ export function DialogManager({
         />
       )}
 
-      {remove.item && removeItem && (
+      {remove.item && deleteItem && (
         <RemoveDialog
           open={remove.isOpen}
           onOpenChange={() => remove.onClose()}
           item={remove.item}
-          removeItem={removeItem}
+          deleteItem={deleteItem}
           handleDialogClose={() => remove.onClose()}
-          isLoading={isLoading.removeItem}
+          isLoading={isLoading.deleteItem}
           location={remove.location}
         />
       )}

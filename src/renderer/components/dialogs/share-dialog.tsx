@@ -84,7 +84,7 @@ export function ShareDialog({
     }
   };
 
-  const handleRemoveItem = (itemId: string) => {
+  const handledeleteItem = (itemId: string) => {
     setSelectedItems(prev => prev.filter(item => item.id !== itemId));
   };
 
@@ -199,7 +199,7 @@ export function ShareDialog({
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => handleRemoveItem(item.id)}
+                                  onClick={() => handledeleteItem(item.id)}
                                 >
                                   <X className="h-4 w-4" />
                                   <span className="sr-only">Remove {item.name}</span>

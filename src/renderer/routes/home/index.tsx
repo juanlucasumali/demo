@@ -32,7 +32,7 @@ export const Route = createFileRoute('/home/')({
 })
 
 function Home() {
-  const { filesAndFolders, isLoading, updateItem, removeItem, toggleStar } = useItems();
+  const { filesAndFolders, isLoading, updateItem, deleteItem, toggleStar } = useItems();
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -104,7 +104,7 @@ function Home() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

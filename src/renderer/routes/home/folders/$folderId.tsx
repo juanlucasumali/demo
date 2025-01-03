@@ -35,7 +35,7 @@ export const Route = createFileRoute('/home/folders/$folderId')({
 
 function FolderPage() {
   const { folderId } = Route.useParams()
-  const { filesAndFolders, currentFolder, isLoading, updateItem, removeItem } = useItems({ parentFolderId: folderId });
+  const { filesAndFolders, currentFolder, isLoading, updateItem, deleteItem } = useItems({ parentFolderId: folderId });
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -106,7 +106,7 @@ function FolderPage() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

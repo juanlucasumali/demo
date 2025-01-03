@@ -9,7 +9,7 @@ interface RemoveDialogProps {
   onOpenChange: (open: boolean) => void
   item: DemoItem
   handleDialogClose: (value: boolean) => void
-  removeItem: UseMutateFunction<void, Error, string, unknown>
+  deleteItem: UseMutateFunction<void, Error, string, unknown>
   isLoading: boolean
   location?: 'folder' | 'project' | 'collection'
 }
@@ -19,7 +19,7 @@ export function RemoveDialog({
   onOpenChange, 
   item, 
   handleDialogClose, 
-  removeItem, 
+  deleteItem, 
   isLoading,
   location = 'folder'
 }: RemoveDialogProps) {
@@ -27,7 +27,7 @@ export function RemoveDialog({
 
   const handleRemove = async () => {
     try {
-      await removeItem(item.id)
+      await deleteItem(item.id)
       onOpenChange(false)
       handleDialogClose(false)
       toast({

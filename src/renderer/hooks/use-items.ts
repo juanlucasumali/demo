@@ -67,8 +67,8 @@ export function useItems(options?: UseItemsOptions) {
   })
 
   // Remove item mutation
-  const removeItem = useMutation({
-    mutationFn: itemsService.removeItem,
+  const deleteItem = useMutation({
+    mutationFn: itemsService.deleteItem,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files-and-folders'] })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
@@ -197,7 +197,7 @@ export function useItems(options?: UseItemsOptions) {
     collections,
     addFileOrFolder: addFileOrFolder.mutate,
     addProject: addProject.mutate,
-    removeItem: removeItem.mutate,
+    deleteItem: deleteItem.mutate,
     updateItem: updateItem.mutate,
     toggleStar: toggleStar.mutate,
     addCollection: addCollection.mutate,
@@ -208,7 +208,7 @@ export function useItems(options?: UseItemsOptions) {
     isLoading: {
       addFileOrFolder: addFileOrFolder.isPending,
       addProject: addProject.isPending,
-      removeItem: removeItem.isPending,
+      deleteItem: deleteItem.isPending,
       updateItem: updateItem.isPending,
       toggleStar: toggleStar.isPending,
       filesAndFolders: isLoading,

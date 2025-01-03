@@ -27,7 +27,7 @@ export const Route = createFileRoute('/projects/$projectId/$collectionId/')({
 
 function CollectionPage() {
   const { projectId, collectionId } = useParams({ from: '/projects/$projectId/$collectionId/' })
-  const { currentCollection, currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ collectionId, projectId })
+  const { currentCollection, currentProject, filesAndFolders, isLoading, deleteItem, updateItem } = useItems({ collectionId, projectId })
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -154,7 +154,7 @@ function CollectionPage() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

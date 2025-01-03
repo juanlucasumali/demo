@@ -412,7 +412,7 @@ export async function addProject(item: Omit<DemoItem, 'id'>, sharedWith?: UserPr
   };
 }
 
-export async function removeItem(id: string) {
+export async function deleteItem(id: string) {
   const userId = getCurrentUserId()
   
   try {

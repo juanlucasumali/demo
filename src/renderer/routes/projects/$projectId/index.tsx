@@ -42,7 +42,7 @@ export const Route = createFileRoute('/projects/$projectId/')({
 
 function ProjectPage() {
   const { projectId } = useParams({ from: '/projects/$projectId/' })
-  const { currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ projectId })
+  const { currentProject, filesAndFolders, isLoading, deleteItem, updateItem } = useItems({ projectId })
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -167,7 +167,7 @@ function ProjectPage() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

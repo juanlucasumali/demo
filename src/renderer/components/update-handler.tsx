@@ -1,6 +1,4 @@
 import { useEffect } from 'react'
-import { Progress } from '@renderer/components/ui/progress'
-import { Button } from '@renderer/components/ui/button'
 import { useToast } from '@renderer/hooks/use-toast'
 
 export function UpdateHandler() {
@@ -18,26 +16,15 @@ export function UpdateHandler() {
 
     // Handle download progress
     window.api.onUpdateProgress((_event, progress) => {
-      toast({
-        title: 'Downloading Update',
-        description: (
-          <Progress value={progress.percent} className="w-full mt-2" />
-        ),
-        duration: undefined
-      })
+      console.log('Downloading Update', progress)
     })
 
     // Handle update downloaded
     window.api.onUpdateDownloaded((_event, info) => {
       toast({
         title: 'Update Ready',
-        description: `Version ${info.version} will be installed on restart`,
+        description: `Please quit and restart Demo to update to Version ${info.version}`,
         duration: undefined,
-        action: (
-          <Button variant="default" size="sm" onClick={() => window.close()}>
-            Restart Now
-          </Button>
-        )
       })
     })
 

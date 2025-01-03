@@ -10,6 +10,7 @@ import { ThemeProvider } from './context/theme-context'
 import { AuthProvider, useAuth } from './context/auth-context'
 import { Toaster } from './components/ui/toaster'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { UpdateHandler } from './components/update-handler'
 
 const memoryHistory = createMemoryHistory({
   initialEntries: ['/home'] // Pass your initial url
@@ -48,6 +49,7 @@ function InnerApp() {
   const auth = useAuth()
   return (
     <>
+      <UpdateHandler />
       <RouterProvider router={router} context={{ auth }} />
       <Toaster />
     </>

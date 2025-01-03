@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { dialog } from '@electron/remote'
 
@@ -9,7 +9,12 @@ const api = {
       properties: ['openDirectory']
     })
     return result.filePaths[0]
-  }
+  },
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  onUpdateAvailable: (callback) => ipcRenderer.on('update-available', callback),
+  onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
+  onUpdateError: (callback) => ipcRenderer.on('update-error', callback),
+  onUpdateProgress: (callback) => ipcRenderer.on('download-progress', callback)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

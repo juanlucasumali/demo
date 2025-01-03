@@ -3,9 +3,66 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initialize, enable } from '@electron/remote/main'
+import { autoUpdater } from 'electron-updater'
+import log from 'electron-log/main'
 
 // Initialize remote module
 initialize()
+
+// Configure electron-log
+log.initialize({ preload: true })
+log.transports.file.resolvePathFn = () => join(app.getPath('userData'), 'logs/main.log')
+
+// Configure auto-updater
+autoUpdater.logger = log
+autoUpdater.autoDownload = true
+autoUpdater.autoInstallOnAppQuit = true
+
+// Add IPC handlers for updates
+ipcMain.handle('check-for-updates', () => {
+  if (is.dev) {
+    log.info('Skipping update check in development')
+    return
+  }
+  autoUpdater.checkForUpdates()
+})
+
+// Configure auto-updater events with proper logging
+autoUpdater.on('checking-for-update', () => {
+  log.info('Checking for update...')
+})
+
+autoUpdater.on('update-available', (info) => {
+  log.info('Update available:', info)
+  BrowserWindow.getAllWindows().forEach(window => {
+    window.webContents.send('update-available', info)
+  })
+})
+
+autoUpdater.on('update-not-available', (info) => {
+  log.info('Update not available:', info)
+})
+
+autoUpdater.on('error', (err) => {
+  log.error('Error in auto-updater:', err)
+  BrowserWindow.getAllWindows().forEach(window => {
+    window.webContents.send('update-error', err)
+  })
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  log.info('Download progress:', progressObj)
+  BrowserWindow.getAllWindows().forEach(window => {
+    window.webContents.send('download-progress', progressObj)
+  })
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  log.info('Update downloaded:', info)
+  BrowserWindow.getAllWindows().forEach(window => {
+    window.webContents.send('update-downloaded', info)
+  })
+})
 
 function createWindow(): void {
   // Create the browser window.
@@ -85,6 +142,11 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
+
+  // Check for updates
+  if (!is.dev) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

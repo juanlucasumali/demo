@@ -18,7 +18,12 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "release": "electron-builder --publish always",
+    "release:draft": "electron-builder --publish never",
+    "version:patch": "node scripts/version.js patch",
+    "version:minor": "node scripts/version.js minor", 
+    "version:major": "node scripts/version.js major"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -55,6 +60,7 @@
     "cmdk": "1.0.0",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
+    "electron-log": "^5.2.4",
     "electron-updater": "^6.1.7",
     "embla-carousel-react": "^8.5.1",
     "lamejs": "github:zhuker/lamejs",
@@ -91,6 +97,7 @@
     "prettier": "^3.3.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "semver": "^7.6.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.5.2",
     "vite": "^5.3.1"

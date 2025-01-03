@@ -22,7 +22,7 @@ export const Route = createFileRoute('/projects/')({
 })
 
 export default function Projects() {
-  const { projects, isLoading, updateItem, removeItem, toggleStar } = useItems();
+  const { projects, isLoading, updateItem, deleteItem, toggleStar } = useItems();
   const dialogState = useDialogState();
 
   return (
@@ -48,7 +48,7 @@ export default function Projects() {
             enableActions: true,
             onEditFile: (item) => dialogState.editFile.onOpen({ item }),
             onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
+            onDelete: (item) => dialogState.delete.onOpen({ item })
           })}
           data={projects}
           enableSelection={false}
@@ -63,7 +63,7 @@ export default function Projects() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

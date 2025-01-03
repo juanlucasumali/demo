@@ -18,9 +18,10 @@ export enum ItemType {
 
 export interface DemoItem {
     id: string;
-    projectId: string | null;
-    parentFolderId: string | null;
-    collectionId: string | null;
+
+    projectIds: string[];
+    parentFolderIds: string[];
+    collectionIds: string[];
 
     createdAt: Date;
     lastModified: Date;

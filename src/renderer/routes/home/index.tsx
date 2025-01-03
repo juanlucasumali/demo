@@ -1,4 +1,4 @@
-import { Box, Folder, HomeIcon, Smile, UserCog } from 'lucide-react'
+import { Box, Folder, HomeIcon, UserCog } from 'lucide-react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
@@ -32,7 +32,7 @@ export const Route = createFileRoute('/home/')({
 })
 
 function Home() {
-  const { filesAndFolders, isLoading, updateItem, removeItem, toggleStar } = useItems();
+  const { filesAndFolders, isLoading, updateItem, deleteItem, toggleStar } = useItems();
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -46,9 +46,9 @@ function Home() {
     <PageMain>
       {/* Page Header */}
       <PageHeader
-        title="HELLO!!!"
-        description="If you see this, that means that auto-updates are working!!!!"
-        icon={Smile}
+        title="Home"
+        description="Supercharge creativity, simplify your media."
+        icon={HomeIcon}
       >
         <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file' })}>
           Upload
@@ -83,8 +83,8 @@ function Home() {
       {/* Page Content */}
       <PageContent>
         <div className='lg:grid lg:grid-cols-5 gap-4 pt-8'>
-          <Recents />
-          <Activity />
+          {/* <Recents />
+          <Activity /> */}
         </div>
         <SubHeader subHeader="All files"/>
         <DataTable 
@@ -92,7 +92,7 @@ function Home() {
             enableStarToggle: true,
             onEditFile: (item) => dialogState.editFile.onOpen({ item }) ,
             onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (itemId) => dialogState.delete.onOpen({ itemId }),
+            onDelete: (item) => dialogState.delete.onOpen({ item }),
             onToggleStar: (id, isStarred) => toggleStar({ id, isStarred })
           })} 
           data={filesAndFolders}
@@ -104,7 +104,7 @@ function Home() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

@@ -10,6 +10,7 @@ import { SaveItemsDialog } from "./dialogs/save-items-dialog"
 import { SelectFilesDialog } from "./dialogs/select-files"
 import { UserProfile } from "@renderer/types/users"
 import { CreateCollection } from "./dialogs/create-collection"
+import { RemoveDialog } from "./dialogs/remove-dialog"
 
 interface DialogManagerProps {
   editFile: {
@@ -25,7 +26,7 @@ interface DialogManagerProps {
   delete: {
     isOpen: boolean
     onClose: () => void
-    itemId?: string
+    item?: DemoItem
   }
   createItem: {
     isOpen: boolean
@@ -59,17 +60,24 @@ interface DialogManagerProps {
     onConfirm?: (items: DemoItem[]) => void
     initialSelections?: DemoItem[]
     location?: 'project' | 'home' | 'save-items' | 'collection'
+    projectItem?: DemoItem
   }
   updateItem?: UseMutateFunction<void, Error, { updatedItem: DemoItem, originalItem: DemoItem }, unknown>
-  removeItem?: UseMutateFunction<void, Error, string, unknown>
+  deleteItem?: UseMutateFunction<void, Error, string, unknown>
   isLoading: {
-    removeItem: boolean
+    deleteItem: boolean
     updateItem: boolean
   }
   createCollection: {
     isOpen: boolean
     onClose: () => void
     projectId?: string
+  }
+  remove: {
+    isOpen: boolean
+    onClose: () => void
+    item?: DemoItem
+    location?: 'folder' | 'project' | 'collection'
   }
 }
 
@@ -83,9 +91,10 @@ export function DialogManager({
   saveItems,
   selectFiles,
   updateItem,
-  removeItem,
+  deleteItem,
   isLoading,
-  createCollection
+  createCollection,
+  remove
 }: DialogManagerProps) {
   return (
     <>
@@ -105,14 +114,14 @@ export function DialogManager({
         initialItem={share.item}
       />
 
-      {deleteDialog.itemId && removeItem && (
+      {deleteDialog.item && deleteItem && (
         <DeleteDialog
           open={deleteDialog.isOpen}
           onOpenChange={() => deleteDialog.onClose()}
-          itemId={deleteDialog.itemId}
-          removeItem={removeItem}
+          item={deleteDialog.item}
+          deleteItem={deleteItem}
           handleDialogClose={() => deleteDialog.onClose()}
-          isLoading={isLoading.removeItem}
+          isLoading={isLoading.deleteItem}
         />
       )}
 
@@ -158,6 +167,7 @@ export function DialogManager({
         onConfirm={selectFiles.onConfirm || (() => {})}
         initialSelections={selectFiles.initialSelections}
         location={selectFiles.location || 'home'}
+        projectItem={selectFiles.projectItem}
       />
 
       {createCollection.projectId && (
@@ -165,6 +175,18 @@ export function DialogManager({
           open={createCollection.isOpen}
           onOpenChange={() => createCollection.onClose()}
           projectId={createCollection.projectId}
+        />
+      )}
+
+      {remove.item && deleteItem && (
+        <RemoveDialog
+          open={remove.isOpen}
+          onOpenChange={() => remove.onClose()}
+          item={remove.item}
+          deleteItem={deleteItem}
+          handleDialogClose={() => remove.onClose()}
+          isLoading={isLoading.deleteItem}
+          location={remove.location}
         />
       )}
     </>

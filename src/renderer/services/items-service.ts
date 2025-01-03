@@ -4,6 +4,7 @@ import { useUserStore } from '@renderer/stores/user-store'
 import { UserProfile } from '@renderer/types/users'
 import { toCamelCase } from '@renderer/lib/utils'
 import { b2Service } from '@renderer/services/b2-service'
+import { shareNewItem } from './share-service'
 
 // Helper function to get current user ID
 const getCurrentUserId = () => {
@@ -26,6 +27,134 @@ async function getItemSharing(itemId: string, itemType: 'file' | 'project'): Pro
 }
 
 // Generic function to fetch items with sharing info
+async function getProjectsWithSharing(userId: string): Promise<DemoItem[]> {
+  const ownedQuery = supabase
+    .from('projects')
+    .select(`
+      *,
+      owner:owner_id(*)
+    `)
+    .eq('owner_id', userId);
+
+  const sharedQuery = supabase
+    .from('projects')
+    .select(`
+      *,
+      owner:owner_id(*),
+      my_share:shared_items!inner(shared_with:shared_with_id(*))
+    `)
+    .eq('shared_items.shared_with_id', userId)
+    .neq('owner_id', userId);
+
+  const [{ data: owned = [], error: ownedError }, { data: shared = [], error: sharedError }] = 
+    await Promise.all([ownedQuery, sharedQuery]);
+
+  if (ownedError) throw ownedError;
+  if (sharedError) throw sharedError;
+
+  const items = [...(owned || []), ...(shared || [])];
+  return Promise.all(items.map(async (item) => {
+    const sharedWith = await getItemSharing(item.id, 'project');
+    return {
+      ...toCamelCase(item),
+      id: item.id,
+      owner: toCamelCase(item.owner),
+      sharedWith,
+      type: ItemType.PROJECT,
+      createdAt: new Date(item.created_at),
+      lastModified: new Date(item.last_modified),
+      lastOpened: new Date(item.last_opened),
+      projectIds: [],
+      collectionIds: [],
+      parentFolderIds: [],
+    };
+  }));
+}
+
+async function getFilesWithSharing(
+  userId: string, 
+  filters?: {
+    parentFolderId?: string | null,
+    projectId?: string | null,
+    collectionId?: string | null,
+  }
+): Promise<DemoItem[]> {
+  console.log('📂 getFilesWithSharing called with filters:', filters);
+
+  // First, get all files (both owned and shared)
+  const ownedQuery = supabase
+    .from('files')
+    .select(`
+      *,
+      owner:owner_id(*),
+      file_projects!file_projects_file_id_fkey(project_id),
+      file_collections!file_collections_file_id_fkey(collection_id),
+      file_folders!file_folders_file_id_fkey(folder_id)
+    `)
+    .eq('owner_id', userId);
+
+  const sharedQuery = supabase
+    .from('files')
+    .select(`
+      *,
+      owner:owner_id(*),
+      my_share:shared_items!inner(shared_with:shared_with_id(*)),
+      file_projects!file_projects_file_id_fkey(project_id),
+      file_collections!file_collections_file_id_fkey(collection_id),
+      file_folders!file_folders_file_id_fkey(folder_id)
+    `)
+    .eq('shared_items.shared_with_id', userId)
+    .neq('owner_id', userId);
+
+  const [{ data: owned = [], error: ownedError }, { data: shared = [], error: sharedError }] = 
+    await Promise.all([ownedQuery, sharedQuery]);
+
+  if (ownedError) throw ownedError;
+  if (sharedError) throw sharedError;
+
+  // Combine all items
+  let items = [...(owned || []), ...(shared || [])];
+
+  // Apply filters after fetching
+  if (filters) {
+    if (filters.parentFolderId !== undefined) {
+      items = items.filter(item => 
+        item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId)
+      );
+    }
+    
+    if (filters.projectId) {
+      items = items.filter(item => 
+        item.file_projects?.some(fp => fp.project_id === filters.projectId)
+      );
+    }
+    
+    if (filters.collectionId) {
+      items = items.filter(item => 
+        item.file_collections?.some(fc => fc.collection_id === filters.collectionId)
+      );
+    }
+  }
+
+  // Process and return the filtered items
+  return Promise.all(items.map(async (item) => {
+    const sharedWith = await getItemSharing(item.id, 'file');
+    return {
+      ...toCamelCase(item),
+      id: item.id,
+      owner: toCamelCase(item.owner),
+      sharedWith,
+      type: item.type as ItemType,
+      createdAt: new Date(item.created_at),
+      lastModified: new Date(item.last_modified),
+      lastOpened: new Date(item.last_opened),
+      projectIds: (item.file_projects || []).map(fp => fp.project_id),
+      collectionIds: (item.file_collections || []).map(fc => fc.collection_id),
+      parentFolderIds: (item.file_folders || []).map(ff => ff.folder_id),
+    };
+  }));
+}
+
 async function getItemsWithSharing(
   tableName: 'files' | 'projects',
   userId: string,
@@ -35,67 +164,9 @@ async function getItemsWithSharing(
     collectionId?: string | null,
   }
 ): Promise<DemoItem[]> {
-  // Get owned items
-  const ownedQuery = supabase
-    .from(tableName)
-    .select(`
-      *,
-      owner:owner_id(*)
-    `)
-    .eq('owner_id', userId);
-
-  // Get shared items
-  const sharedQuery = supabase
-    .from(tableName)
-    .select(`
-      *,
-      owner:owner_id(*),
-      my_share:shared_items!inner(shared_with:shared_with_id(*))
-    `)
-    .eq('shared_items.shared_with_id', userId)
-    .neq('owner_id', userId);
-
-  // Apply filters if they exist
-  if (filters) {
-    if (filters.parentFolderId !== undefined) {
-      ownedQuery.eq('parent_folder_id', filters.parentFolderId);
-      sharedQuery.eq('parent_folder_id', filters.parentFolderId);
-    }
-    if (filters.projectId) {
-      ownedQuery.eq('project_id', filters.projectId);
-      sharedQuery.eq('project_id', filters.projectId);
-    }
-    if (filters.collectionId) {
-      ownedQuery.eq('collection_id', filters.collectionId);
-      sharedQuery.eq('collection_id', filters.collectionId);
-    }
-  }
-
-  // Execute queries
-  const [{ data: owned = [], error: ownedError }, { data: shared = [], error: sharedError }] = 
-    await Promise.all([ownedQuery, sharedQuery]);
-
-  if (ownedError) throw ownedError;
-  if (sharedError) throw sharedError;
-
-  // Get sharing information for each item
-  const items = [...(owned || []), ...(shared || [])];
-  const itemsWithSharing = await Promise.all(
-    items.map(async (item) => {
-      const sharedWith = await getItemSharing(item.id, tableName === 'files' ? 'file' : 'project');
-      return {
-        ...toCamelCase(item),
-        owner: toCamelCase(item.owner),
-        sharedWith,
-        type: tableName === 'files' ? item.type as ItemType : ItemType.PROJECT,
-        createdAt: new Date(item.created_at),
-        lastModified: new Date(item.last_modified),
-        lastOpened: new Date(item.last_opened),
-      };
-    })
-  );
-
-  return itemsWithSharing;
+  return tableName === 'projects' 
+    ? getProjectsWithSharing(userId)
+    : getFilesWithSharing(userId, filters);
 }
 
 export async function getFilesAndFolders(
@@ -144,29 +215,67 @@ async function createShareRecords(
   if (shareError) throw shareError;
 }
 
+// Helper functions for managing relationships
+async function addToProjects(fileId: string, projectIds: string[]) {
+  if (!projectIds.length) return;
+  
+  const { error } = await supabase
+    .from('file_projects')
+    .insert(
+      projectIds.map(projectId => ({
+        file_id: fileId,
+        project_id: projectId
+      }))
+    );
+  
+  if (error) throw error;
+}
+
+async function addToCollections(fileId: string, collectionIds: string[]) {
+  if (!collectionIds.length) return;
+  
+  const { error } = await supabase
+    .from('file_collections')
+    .insert(
+      collectionIds.map(collectionId => ({
+        file_id: fileId,
+        collection_id: collectionId
+      }))
+    );
+  
+  if (error) throw error;
+}
+
+async function addToFolders(fileId: string, folderIds: string[]) {
+  if (!folderIds.length) return;
+  
+  const { error } = await supabase
+    .from('file_folders')
+    .insert(
+      folderIds.map(folderId => ({
+        file_id: fileId,
+        folder_id: folderId
+      }))
+    );
+  
+  if (error) throw error;
+}
+
 export async function addFileOrFolder(
   item: Omit<DemoItem, 'id'>, 
   sharedWith?: UserProfile[],
   fileContent?: ArrayBuffer
 ): Promise<DemoItem> {
   const currentUserId = getCurrentUserId();
-  console.log('📝 Adding item:', {
-    name: item.name,
-    type: item.type,
-    size: fileContent?.byteLength,
-    hasContent: !!fileContent,
-    sharedWithCount: sharedWith?.length
-  });
+
 
   try {
+    // Create the base file/folder record
     const { data, error } = await supabase
       .from('files')
       .insert({
         name: item.name,
         type: item.type,
-        parent_folder_id: item.parentFolderId,
-        project_id: item.projectId,
-        collection_id: item.collectionId,
         owner_id: currentUserId,
         description: item.description,
         icon_url: item.icon,
@@ -187,6 +296,14 @@ export async function addFileOrFolder(
 
     console.log('✅ Database record created:', { id: data.id });
 
+    // Add relationships in parallel
+    const relationshipPromises = [
+      addToProjects(data.id, item.projectIds),
+      addToCollections(data.id, item.collectionIds),
+      addToFolders(data.id, item.parentFolderIds)
+    ];
+
+    // Handle B2 upload if it's a file with content
     if (item.type === ItemType.FILE && fileContent) {
       try {
         console.log('📤 Starting B2 upload process');
@@ -198,32 +315,41 @@ export async function addFileOrFolder(
         );
         console.log('✅ B2 upload complete:', { b2FileId });
 
-        const { error: updateError } = await supabase
-          .from('files')
-          .update({ file_path: b2FileId })
-          .eq('id', data.id);
-
-        if (updateError) {
-          console.error('❌ Failed to update storage_file_id:', updateError);
-          await b2Service.removeFile(b2FileId, item.name);
-          throw updateError;
-        }
-        
-        console.log('✅ Database updated with B2 file ID');
+        relationshipPromises.push(
+          Promise.resolve(
+            supabase
+              .from('files')
+              .update({ file_path: b2FileId })
+              .eq('id', data.id)
+              .then(async ({ error }) => {
+                if (error) {
+                  console.error('❌ Failed to update storage_file_id:', error);
+                  await b2Service.removeFile(b2FileId, item.name);
+                  throw error;
+                }
+              })
+          )
+        );
       } catch (error: any) {
         console.error('❌ B2 upload process failed:', {
           error,
           stack: error.stack
         });
+        // Clean up the file record
         await supabase.from('files').delete().eq('id', data.id);
         throw error;
       }
     }
 
-    // Handle sharing
+    // Handle sharing if needed
     if (sharedWith?.length) {
-      await createShareRecords(data.id, 'file', sharedWith, currentUserId);
+      relationshipPromises.push(
+        shareNewItem(data.id, 'file', sharedWith)
+      );
     }
+
+    // Wait for all operations to complete
+    await Promise.all(relationshipPromises);
 
     return {
       ...toCamelCase(data),
@@ -231,6 +357,9 @@ export async function addFileOrFolder(
       owner: item.owner,
       sharedWith: sharedWith || [],
       type: item.type,
+      projectIds: item.projectIds,
+      collectionIds: item.collectionIds,
+      parentFolderIds: item.parentFolderIds,
       createdAt: new Date(data.created_at),
       lastModified: new Date(data.last_modified),
       lastOpened: new Date(data.last_opened),
@@ -283,22 +412,101 @@ export async function addProject(item: Omit<DemoItem, 'id'>, sharedWith?: UserPr
   };
 }
 
-export async function removeItem(id: string) {
+export async function deleteItem(id: string) {
   const userId = getCurrentUserId()
   
-  // Try to delete from both tables - one will succeed based on where the item exists
-  await Promise.all([
-    supabase
+  try {
+    // First check if this is a folder
+    const { data: folder } = await supabase
       .from('files')
-      .delete()
-      .eq('id', id)
-      .eq('owner_id', userId),
-    supabase
-      .from('projects')
-      .delete()
+      .select('type')
       .eq('id', id)
       .eq('owner_id', userId)
-  ])
+      .single();
+
+    console.log('📂 Folder data:', folder);
+
+    if (folder?.type === 'folder') {
+      console.log('📂 Deleting folder:', id);
+      // Get all files and folders in this folder recursively
+      const itemsToDelete = await getItemsToDeleteRecursively(id);
+
+      console.log('📂 Items to delete:', itemsToDelete);
+      
+      if (itemsToDelete.length > 0) {
+        // Delete all items in batches to avoid timeout
+        const batchSize = 50;
+        for (let i = 0; i < itemsToDelete.length; i += batchSize) {
+          const batch = itemsToDelete.slice(i, i + batchSize);
+          const { error: deleteError } = await supabase
+            .from('files')
+            .delete()
+            .in('id', batch)
+            .eq('owner_id', userId);
+            
+          if (deleteError) throw deleteError;
+        }
+      }
+    }
+
+    // Finally delete the original item itself
+    await Promise.all([
+      supabase
+        .from('files')
+        .delete()
+        .eq('id', id)
+        .eq('owner_id', userId),
+      supabase
+        .from('projects')
+        .delete()
+        .eq('id', id)
+        .eq('owner_id', userId)
+    ]);
+
+    console.log('✅ Item deleted:', id);
+
+  } catch (error) {
+    console.error('Failed to delete item:', error);
+    throw error;
+  }
+}
+
+async function getItemsToDeleteRecursively(folderId: string): Promise<string[]> {
+  const itemsToDelete: string[] = [];
+  
+  type FileResponse = {
+    file: {
+      id: string;
+      type: string;
+    }
+  }
+  
+  // Get immediate children with proper typing
+  const { data: children } = await supabase
+    .from('file_folders')
+    .select(`
+      file:file_id (
+        id,
+        type
+      )
+    `)
+    .eq('folder_id', folderId) as { data: FileResponse[] | null };
+
+  if (!children) return itemsToDelete;
+
+  // Process each child
+  for (const child of children) {
+    if (!child.file) continue;
+    
+    itemsToDelete.push(child.file.id);
+    
+    if (child.file.type === 'folder') {
+      const nestedItems = await getItemsToDeleteRecursively(child.file.id);
+      itemsToDelete.push(...nestedItems);
+    }
+  }
+
+  return itemsToDelete;
 }
 
 export async function updateItem(item: DemoItem, originalItem: DemoItem) {

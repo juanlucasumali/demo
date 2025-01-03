@@ -27,7 +27,7 @@ export function useDialogState() {
 
   const [deleteDialog, setDeleteDialog] = useState<{ 
     isOpen: boolean
-    itemId?: string 
+    item?: DemoItem 
   }>({
     isOpen: false
   })
@@ -66,6 +66,7 @@ export function useDialogState() {
     onConfirm?: (items: DemoItem[]) => void
     initialSelections?: DemoItem[]
     location?: 'project' | 'home' | 'save-items' | 'collection'
+    projectItem?: DemoItem
   }>({ 
     isOpen: false 
   })
@@ -73,6 +74,14 @@ export function useDialogState() {
   const [createCollection, setCreateCollection] = useState<{ 
     isOpen: boolean
     projectId?: string
+  }>({
+    isOpen: false
+  })
+
+  const [removeDialog, setRemoveDialog] = useState<{ 
+    isOpen: boolean
+    item?: DemoItem 
+    location?: 'folder' | 'project' | 'collection'
   }>({
     isOpen: false
   })
@@ -90,7 +99,7 @@ export function useDialogState() {
     },
     delete: {
       ...deleteDialog,
-      onOpen: ({ itemId }: { itemId: string }) => setDeleteDialog({ isOpen: true, itemId }),
+      onOpen: ({ item }: { item: DemoItem }) => setDeleteDialog({ isOpen: true, item }),
       onClose: () => setDeleteDialog({ isOpen: false })
     },
     createItem: {
@@ -143,17 +152,24 @@ export function useDialogState() {
     },
     selectFiles: {
       ...selectFiles,
-      onOpen: ({ onConfirm, initialSelections, location }: {
+      onOpen: ({ onConfirm, initialSelections, location, projectItem }: {
         onConfirm?: (items: DemoItem[]) => void
         initialSelections?: DemoItem[]
         location?: 'project' | 'home' | 'save-items' | 'collection'
-      }) => setSelectFiles({ isOpen: true, onConfirm, initialSelections, location }),
+        projectItem?: DemoItem
+      }) => setSelectFiles({ isOpen: true, onConfirm, initialSelections, location, projectItem }),
       onClose: () => setSelectFiles({ isOpen: false })
     },
     createCollection: {
       ...createCollection,
       onOpen: ({ projectId }: { projectId: string }) => setCreateCollection({ isOpen: true, projectId }),
       onClose: () => setCreateCollection({ isOpen: false })
+    },
+    remove: {
+      ...removeDialog,
+      onOpen: ({ item, location }: { item: DemoItem, location?: 'folder' | 'project' | 'collection' }) => 
+        setRemoveDialog({ isOpen: true, item, location }),
+      onClose: () => setRemoveDialog({ isOpen: false })
     }
   }
 } 

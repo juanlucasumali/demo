@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
+import { DemoItem } from '@renderer/types/items'
 
 interface CollectionsSidebarProps {
   projectId: string
@@ -21,7 +22,7 @@ export function CollectionsSidebar({ projectId, onCreateCollection }: Collection
   const { collections, isLoading, removeCollection } = useItems({ projectId })
   const routerState = useRouterState()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
+  const [selectedCollection, setSelectedCollection] = useState<DemoItem | null>(null)
 
   if (isLoading.collections) {
     return (
@@ -93,7 +94,7 @@ export function CollectionsSidebar({ projectId, onCreateCollection }: Collection
                     <DropdownMenuItem 
                       className="text-red-600"
                       onClick={() => {
-                        setSelectedCollectionId(collection.id ?? null)
+                        setSelectedCollection(collection)
                         setDeleteDialogOpen(true)
                       }}
                     >
@@ -122,13 +123,13 @@ export function CollectionsSidebar({ projectId, onCreateCollection }: Collection
         </nav>
 
         {/* Delete Dialog */}
-        {selectedCollectionId && (
+        {selectedCollection && (
           <DeleteDialog
             open={deleteDialogOpen}
             onOpenChange={setDeleteDialogOpen}
-            itemId={selectedCollectionId}
-            handleDialogClose={() => setSelectedCollectionId(null)}
-            removeItem={removeCollection.mutate}
+            item={selectedCollection}
+            handleDialogClose={() => setSelectedCollection(null)}
+            deleteItem={removeCollection.mutate}
             isLoading={removeCollection.isPending}
           />
         )}

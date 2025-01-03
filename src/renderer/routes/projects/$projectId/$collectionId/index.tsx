@@ -19,6 +19,7 @@ import { useItems } from '@renderer/hooks/use-items'
 import { CollectionsSidebar } from '@renderer/components/collections/collections-sidebar'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
+import React from 'react'
 
 export const Route = createFileRoute('/projects/$projectId/$collectionId/')({
   component: CollectionPage,
@@ -26,9 +27,21 @@ export const Route = createFileRoute('/projects/$projectId/$collectionId/')({
 
 function CollectionPage() {
   const { projectId, collectionId } = useParams({ from: '/projects/$projectId/$collectionId/' })
-  const { currentCollection, currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ collectionId, projectId })
+  const { currentCollection, currentProject, filesAndFolders, isLoading, deleteItem, updateItem } = useItems({ collectionId, projectId })
   const dialogState = useDialogState();
   const navigate = useNavigate();
+
+  const columns = React.useMemo(
+    () => createColumns({
+      enableTags: false,
+      onEditFile: (item) => dialogState.editFile.onOpen({ item }),
+      onShare: (item) => dialogState.share.onOpen({ item }),
+      onDelete: (item) => dialogState.delete.onOpen({ item }),
+      onRemove: (item) => dialogState.remove.onOpen({ item, location: 'collection' }),
+      location: 'collection'
+    }),
+    [dialogState] // Add dependencies that the column config relies on
+  );
 
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {
@@ -126,12 +139,7 @@ function CollectionPage() {
 
           <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
             <DataTable
-              columns={createColumns({
-                enableTags: false,
-                onEditFile: (item) => dialogState.editFile.onOpen({ item }),
-                onShare: (item) => dialogState.share.onOpen({ item }),
-                onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
-              })}
+              columns={columns}
               data={filesAndFolders}
               enableSelection={false}
               viewMode="table"
@@ -146,7 +154,7 @@ function CollectionPage() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

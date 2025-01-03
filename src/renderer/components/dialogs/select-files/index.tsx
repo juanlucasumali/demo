@@ -17,6 +17,7 @@ interface SelectFilesDialogProps {
   onConfirm: (selectedItems: DemoItem[]) => void
   initialSelections?: DemoItem[]
   location: "home" | "project" | "save-items" | "collection"
+  projectItem?: DemoItem
 }
 
 export function SelectFilesDialog({
@@ -24,7 +25,8 @@ export function SelectFilesDialog({
   onOpenChange,
   onConfirm,
   initialSelections = [],
-  location
+  location,
+  projectItem
 }: SelectFilesDialogProps) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const { filesAndFolders, projects, currentFolder, isLoading } = useItems({ parentFolderId: currentFolderId || undefined })
@@ -72,6 +74,13 @@ export function SelectFilesDialog({
   };
 
   const handleConfirm = () => {
+    if (location === "project" && projectItem) {
+      console.log('selectedItems', selectedItems)
+      console.log('projectItem', projectItem)
+      // Now you have access to both the selected items and the project
+      // Add to the project
+      // Share to the project's sharedWith list
+    }
     onConfirm(selectedItems);
     onOpenChange(false);
   };
@@ -99,6 +108,12 @@ export function SelectFilesDialog({
         return "Save to Home"
       }
       return `Save to selected location(s)`
+    }
+    if (location === "project") {
+      return "Add to Project"
+    }
+    if (location === "collection") {
+      return "Add to Collection"
     }
     return "Select"
   }

@@ -42,7 +42,7 @@ export const Route = createFileRoute('/projects/$projectId/')({
 
 function ProjectPage() {
   const { projectId } = useParams({ from: '/projects/$projectId/' })
-  const { currentProject, filesAndFolders, isLoading, removeItem, updateItem } = useItems({ projectId })
+  const { currentProject, filesAndFolders, isLoading, deleteItem, updateItem } = useItems({ projectId })
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -52,7 +52,9 @@ function ProjectPage() {
       enableTags: false,
       onEditFile: (item) => dialogState.editFile.onOpen({ item }),
       onShare: (item) => dialogState.share.onOpen({ item }),
-      onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
+      onDelete: (item) => dialogState.delete.onOpen({ item }),
+      onRemove: (item) => dialogState.remove.onOpen({ item, location: 'project' }),
+      location: 'project'
     }),
     [dialogState] // Add dependencies that the column config relies on
   );
@@ -108,7 +110,8 @@ function ProjectPage() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => dialogState.selectFiles.onOpen({
                 location: 'project',
-                initialSelections: []
+                initialSelections: [],
+                projectItem: currentProject
               })}>
                 <FileSearch className="h-4 w-4 mr-2" />
                 Choose files
@@ -164,7 +167,7 @@ function ProjectPage() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

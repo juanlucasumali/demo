@@ -35,7 +35,7 @@ export const Route = createFileRoute('/home/folders/$folderId')({
 
 function FolderPage() {
   const { folderId } = Route.useParams()
-  const { filesAndFolders, currentFolder, isLoading, updateItem, removeItem } = useItems({ parentFolderId: folderId });
+  const { filesAndFolders, currentFolder, isLoading, updateItem, deleteItem } = useItems({ parentFolderId: folderId });
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -93,7 +93,9 @@ function FolderPage() {
           columns={createColumns({
             onEditFile: (item) => dialogState.editFile.onOpen({ item }),
             onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (itemId) => dialogState.delete.onOpen({ itemId })
+            onDelete: (item) => dialogState.delete.onOpen({ item }),
+            onRemove: (item) => dialogState.remove.onOpen({ item, location: 'folder' }),
+            location: 'folder'
           })} 
           data={filesAndFolders}
           onRowClick={handleRowClick}
@@ -104,7 +106,7 @@ function FolderPage() {
       <DialogManager
         {...dialogState}
         updateItem={updateItem}
-        removeItem={removeItem}
+        deleteItem={deleteItem}
         isLoading={isLoading}
       />
     </PageMain>

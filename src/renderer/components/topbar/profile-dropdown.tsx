@@ -57,11 +57,6 @@ export function ProfileDropdown() {
     )
   }
 
-  const initials = profile.email
-    ?.split('@')[0]
-    ?.slice(0, 2)
-    ?.toUpperCase() || 'U'
-
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild disabled={isLoading}>
@@ -69,7 +64,7 @@ export function ProfileDropdown() {
           <Avatar className='h-8 w-8'>
             <AvatarImage src={profile.avatar || undefined} />
             <AvatarFallback>
-              {initials || <UserIcon className="h-4 w-4" />}
+              {profile.username.slice(0, 1).toUpperCase() || <UserIcon className="h-4 w-4" />}
             </AvatarFallback>
           </Avatar>
         </Button>

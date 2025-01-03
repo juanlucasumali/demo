@@ -1,6 +1,6 @@
 {
   "name": "demo",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Supercharge creativity, simplify your media.",
   "main": "./out/main/index.js",
   "author": "Juan Lucas Umali",
@@ -22,7 +22,7 @@
     "release": "electron-builder --publish always",
     "release:draft": "electron-builder --publish never",
     "version:patch": "node scripts/version.js patch",
-    "version:minor": "node scripts/version.js minor", 
+    "version:minor": "node scripts/version.js minor",
     "version:major": "node scripts/version.js major"
   },
   "dependencies": {

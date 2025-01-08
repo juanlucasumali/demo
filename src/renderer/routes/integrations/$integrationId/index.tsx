@@ -9,6 +9,7 @@ import { Progress } from '@renderer/components/ui/progress'
 import { useState } from 'react'
 import { useToast } from '@renderer/hooks/use-toast'
 import { Steps, Step } from '@renderer/components/ui/steps'
+import { initializeSync } from '@renderer/services/sync-service'
 
 // Define route params interface
 export interface IntegrationParams {
@@ -38,6 +39,7 @@ function IntegrationDetail() {
   const [syncProgress, setSyncProgress] = useState(0)
   const [isSyncing, setIsSyncing] = useState(false)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const [syncId, setSyncId] = useState<number | null>(null)
   const { toast } = useToast()
 
   // Function to handle folder selection
@@ -64,19 +66,39 @@ function IntegrationDetail() {
     }
   }
 
-  // Mock function to simulate sync
-  const startSync = () => {
+  const startSync = async () => {
+    if (!selectedPath) return
+
     setIsSyncing(true)
-    const interval = setInterval(() => {
-      setSyncProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setIsSyncing(false)
-          return 100
-        }
-        return prev + 10
+    setSyncProgress(0)
+
+    try {
+      // Initialize sync and create remote folder
+      const { syncId, remoteFolderId } = await initializeSync(selectedPath)
+      setSyncId(syncId)
+      
+      // Update progress for folder creation
+      setSyncProgress(100)
+      
+      toast({
+        title: "Sync Initialized",
+        description: "Remote folder created and sync configured",
+        duration: 3000
       })
-    }, 500)
+
+      // Move to next step or show success state
+      setCurrentStep(3)
+    } catch (error) {
+      console.error('Sync initialization failed:', error)
+      toast({
+        title: "Sync Failed",
+        description: "Failed to initialize sync configuration",
+        variant: "destructive",
+        duration: 3000
+      })
+    } finally {
+      setIsSyncing(false)
+    }
   }
 
   const canProceedToStep2 = selectedPath !== null
@@ -157,10 +179,15 @@ function IntegrationDetail() {
                     onClick={startSync} 
                     disabled={!canProceedToStep2 || isSyncing}
                   >
-                    {isSyncing ? 'Syncing...' : 'Start Sync'}
+                    {isSyncing ? 'Initializing Sync...' : 'Start Sync'}
                   </Button>
                   {isSyncing && (
                     <Progress value={syncProgress} className="w-full" />
+                  )}
+                  {syncId && (
+                    <div className="text-sm text-green-600 dark:text-green-400">
+                      ✓ Sync configured successfully
+                    </div>
                   )}
                 </CardContent>
               </Card>

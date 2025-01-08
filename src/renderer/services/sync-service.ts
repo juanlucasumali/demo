@@ -253,7 +253,7 @@ async function cleanupRemoteFolder(folderId: string): Promise<void> {
     for (const itemId of itemsToDelete) {
       const { data } = await supabase
         .from('files')
-        .select('file_path, local_path, name')
+        .select('file_path, local_path, name, type')
         .eq('id', itemId)
         .single()
       
@@ -261,10 +261,11 @@ async function cleanupRemoteFolder(folderId: string): Promise<void> {
         itemId,
         name: data?.name,
         filePath: data?.file_path,
-        localPath: data?.local_path
+        localPath: data?.local_path,
+        type: data?.type
       })
 
-      if (data?.file_path) {
+      if (data?.file_path && data.type === ItemType.FILE) {
         try {
           await b2Service.removeFile(data.file_path, data.name)
           console.log('✅ Successfully removed file from B2:', data.name)
@@ -404,136 +405,235 @@ export async function compareLocalWithRemote(
   return { added, modified, removed }
 } 
 
+// Add new interface for folder mapping
+interface FolderMapping {
+  localPath: string;
+  remoteFolderId: string;
+  parentPath: string | null;
+}
+
+// New helper function to build folder mapping
+async function buildFolderMapping(
+  items: LocalItemWithFullPath[],
+  basePath: string,
+  rootFolderId: string
+): Promise<Map<string, string>> {
+  const folderMap = new Map<string, string>();
+  folderMap.set(basePath, rootFolderId);
+
+  // First, get all existing remote folders
+  const remoteItems = await getFilesWithSharing(useUserStore.getState().profile!.id, {
+    parentFolderId: rootFolderId,
+    includeNested: true
+  });
+
+  // Map existing remote folders
+  const remoteFolders = remoteItems.filter(item => item.type === ItemType.FOLDER);
+  for (const folder of remoteFolders) {
+    if (folder.localPath) {
+      folderMap.set(folder.localPath, folder.id);
+      console.log('📂 Mapped existing remote folder:', {
+        localPath: folder.localPath,
+        remoteFolderId: folder.id
+      });
+    }
+  }
+
+  // Then process any new folders
+  const folders = items
+    .filter(item => item.type === 'folder')
+    .sort((a, b) => a.path.split('/').length - b.path.split('/').length);
+
+  for (const folder of folders) {
+    const fullPath = `${basePath}/${folder.path}`;
+    
+    // Skip if folder already exists in remote
+    if (folderMap.has(fullPath)) {
+      console.log('📂 Folder already exists in remote:', fullPath);
+      continue;
+    }
+
+    // Get parent folder path by removing the last segment from the full path
+    const parentPath = fullPath.split('/').slice(0, -1).join('/');
+    const parentId = parentPath === basePath ? rootFolderId : folderMap.get(parentPath);
+
+    console.log('📂 Processing folder:', {
+      fullPath,
+      parentPath,
+      parentId
+    });
+
+    if (!parentId) {
+      console.error('Parent folder not found:', {
+        folderPath: folder.path,
+        parentPath,
+        availablePaths: Array.from(folderMap.keys())
+      });
+      throw new Error(`Parent folder not found for: ${folder.path}`);
+    }
+
+    // Create new folder
+    const remoteFolder = await addFileOrFolder({
+      name: folder.name,
+      type: ItemType.FOLDER,
+      owner: useUserStore.getState().profile!,
+      description: null,
+      isStarred: false,
+      projectIds: [],
+      collectionIds: [],
+      parentFolderIds: [parentId],
+      tags: null,
+      format: null,
+      size: null,
+      duration: null,
+      icon: null,
+      filePath: null,
+      localPath: fullPath,
+      createdAt: new Date(),
+      lastModified: folder.lastModified || new Date(),
+      lastOpened: new Date(),
+      sharedWith: [],
+    });
+
+    folderMap.set(fullPath, remoteFolder.id);
+    console.log('📂 Created and mapped new folder:', {
+      fullPath,
+      parentPath,
+      remoteFolderId: remoteFolder.id
+    });
+  }
+
+  return folderMap;
+}
+
+// Update the updateExistingSync function
 export async function updateExistingSync(
-    items: LocalItemWithFullPath[],
-    remoteFolderId: string,
-    diff: DiffResult,
-    onProgress?: (progress: UploadProgress) => void
-  ): Promise<void> {
-    console.log('🔄 Starting sync update with:', {
-      itemsCount: items.length,
-      remoteFolderId,
-      diff: {
-        added: diff.added.length,
-        modified: diff.modified.length,
-        removed: diff.removed.length
-      }
-    })
-  
-    const profile = useUserStore.getState().profile
-    if (!profile) throw new Error('User not authenticated')
-  
-    try {
-      // Handle deletions first
-      console.log('🗑️ Processing deletions:', diff.removed)
-      for (const removedPath of diff.removed) {
-        console.log(`📄 Processing removal for: ${removedPath}`)
-        const { data } = await supabase
-          .from('files')
-          .select('id, file_path')
-          .eq('local_path', removedPath)
-          .single()
-        
-        if (data) {
-          if (data.file_path) {
-            console.log(`🗑️ Removing from B2: ${data.file_path}`)
-            await b2Service.removeFile(data.file_path, removedPath)
-          }
-          console.log(`🗑️ Cleaning up folder: ${data.id}`)
-          await cleanupRemoteFolder(data.id)
+  items: LocalItemWithFullPath[],
+  remoteFolderId: string,
+  diff: DiffResult,
+  onProgress?: (progress: UploadProgress) => void
+): Promise<void> {
+  console.log('🔄 Starting sync update with:', {
+    itemsCount: items.length,
+    remoteFolderId,
+    diff: {
+      added: diff.added.length,
+      modified: diff.modified.length,
+      removed: diff.removed.length
+    }
+  });
+
+  const profile = useUserStore.getState().profile;
+  if (!profile) throw new Error('User not authenticated');
+
+  try {
+    // Handle deletions first
+    console.log('🗑️ Processing deletions:', diff.removed)
+    for (const removedPath of diff.removed) {
+      console.log(`📄 Processing removal for: ${removedPath}`)
+      const { data } = await supabase
+        .from('files')
+        .select('id, file_path, type')
+        .eq('local_path', removedPath)
+        .single()
+      
+      if (data) {
+        if (data.file_path && data.type === ItemType.FILE) {
+          console.log(`🗑️ Removing from B2: ${data.file_path}`)
+          await b2Service.removeFile(data.file_path, removedPath)
         }
+        console.log(`🗑️ Cleaning up folder: ${data.id}`)
+        await cleanupRemoteFolder(data.id)
       }
-  
-      const totalChanges = diff.added.length + diff.modified.length + diff.removed.length
-      let processedChanges = 0
-      const folderIdMap = new Map<string, string>()
-      folderIdMap.set('', remoteFolderId)
-  
-      // 2. Handle additions and modifications
-      const itemsToProcess = items.filter(item => 
+    }
+
+    const totalChanges = diff.added.length + diff.modified.length + diff.removed.length;
+    let processedChanges = 0;
+
+    // Build complete folder mapping first
+    console.log("items:", items)
+    const getBasePath = (item: LocalItemWithFullPath) => {
+      const relativePath = item.path;
+      const fullPath = item.fullPath;
+      // Remove the relative path from the full path to get the base
+      return fullPath.slice(0, fullPath.length - relativePath.length - 1); // -1 for the trailing slash
+    };
+
+    const basePath = items[0] ? getBasePath(items[0]) : '';
+    console.log("basePath:", basePath)
+    const folderMap = await buildFolderMapping(items, basePath, remoteFolderId);
+
+    // Process files with correct folder hierarchy
+    const files = items.filter(item => 
+      item.type === 'file' && (
         diff.added.some(a => a.path === item.path) || 
         diff.modified.some(m => m.path === item.path)
       )
-  
-      const sortedItems = [...itemsToProcess].sort((a, b) => {
-        if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
-        return a.path.split('/').length - b.path.split('/').length
-      })
-  
-      for (const item of sortedItems) {
-        const parentPath = item.path.split('/').slice(0, -1).join('/')
-        const parentId = folderIdMap.get(parentPath || '') || remoteFolderId
-  
-        if (item.type === 'folder') {
-          const folder = await addFileOrFolder({
-            name: item.name,
-            type: ItemType.FOLDER,
-            owner: profile,
-            description: null,
-            isStarred: false,
-            projectIds: [],
-            collectionIds: [],
-            parentFolderIds: [parentId],
-            tags: null,
-            format: null,
-            size: null,
-            duration: null,
-            icon: null,
-            filePath: null,
-            localPath: item.path,
-            createdAt: new Date(),
-            lastModified: item.lastModified || new Date(),
-            lastOpened: new Date(),
-            sharedWith: [],
-          })
-          folderIdMap.set(item.path, folder.id)
-        } else {
-          const fileContent = await window.api.readFile(item.fullPath)
-          const format = item.name.includes('.') 
-            ? item.name.split('.').pop()?.toLowerCase() as FileFormat 
-            : null
-  
-          // Upload to B2 first
-          const b2FileId = await b2Service.storeFile(
-            profile.id,
-            crypto.randomUUID(),
-            item.name,
-            fileContent
-          )
-  
-          // Then create database record
-          await addFileOrFolder({
-            name: item.name,
-            type: ItemType.FILE,
-            owner: profile,
-            description: null,
-            isStarred: false,
-            projectIds: [],
-            collectionIds: [],
-            parentFolderIds: [parentId],
-            tags: null,
-            format,
-            size: item.size || null,
-            duration: null,
-            icon: null,
-            filePath: b2FileId,
-            localPath: item.path,
-            sharedWith: [],
-            createdAt: new Date(),
-            lastModified: item.lastModified || new Date(),
-            lastOpened: new Date(),
-          }, [], fileContent)
-        }
-  
-        processedChanges++
-        onProgress?.({
-          uploadedFiles: processedChanges,
-          totalFiles: totalChanges,
-          currentFile: item.name
-        })
-      }
-    } catch (error) {
-      console.error('Failed to update sync:', error)
-      throw error
+    );
+
+    // In updateExistingSync
+    for (const file of files) {
+        const parentPath = file.path.split('/').slice(0, -1).join('/');
+        const fullParentPath = `${basePath}/${parentPath}`;
+        const parentId = folderMap.get(fullParentPath) || remoteFolderId;
+    
+        console.log("file:", file)
+        console.log("parentPath:", parentPath)
+        console.log("basePath:", basePath)
+        console.log("fullParentPath:", fullParentPath)
+        console.log("parentId:", parentId)
+
+      console.log('📄 Processing file:', {
+        name: file.name,
+        parentPath: fullParentPath,
+        parentId
+      });
+
+      const fileContent = await window.api.readFile(file.fullPath);
+      const format = file.name.includes('.') 
+        ? file.name.split('.').pop()?.toLowerCase() as FileFormat 
+        : null;
+
+      // Upload to B2 first
+      const b2FileId = await b2Service.storeFile(
+        profile.id,
+        crypto.randomUUID(),
+        file.name,
+        fileContent
+      );
+
+      // Create database record with correct parent folder
+      await addFileOrFolder({
+        name: file.name,
+        type: ItemType.FILE,
+        owner: profile,
+        description: null,
+        isStarred: false,
+        projectIds: [],
+        collectionIds: [],
+        parentFolderIds: [parentId], // Use correct parent folder ID
+        tags: null,
+        format,
+        size: file.size || null,
+        duration: null,
+        icon: null,
+        filePath: b2FileId,
+        localPath: file.fullPath,
+        sharedWith: [],
+        createdAt: new Date(),
+        lastModified: file.lastModified || new Date(),
+        lastOpened: new Date(),
+      }, [], fileContent);
+
+      processedChanges++;
+      onProgress?.({
+        uploadedFiles: processedChanges,
+        totalFiles: totalChanges,
+        currentFile: file.name
+      });
+    }
+  } catch (error) {
+    console.error('Failed to update sync:', error);
+    throw error;
   }
 }

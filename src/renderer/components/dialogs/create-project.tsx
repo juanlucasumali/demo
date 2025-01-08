@@ -88,14 +88,15 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
         icon: data.icon?.name || "default-folder",
         owner: currentUser,
         sharedWith: selectedUsers,
-        projectId: null,
-        parentFolderId: null,
+        projectIds: [],
+        parentFolderIds: [],
         filePath: "",
         type: ItemType.PROJECT,
         format: null,
         size: null,
         duration: null,
-        collectionId: null,
+        collectionIds: [],
+        localPath: null
       };
 
       await addProject({ item: newProject, sharedWith: selectedUsers });

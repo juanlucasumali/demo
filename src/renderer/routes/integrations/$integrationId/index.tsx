@@ -2,15 +2,17 @@ import { createFileRoute, useParams } from '@tanstack/react-router'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
-import { Radio, Folder } from 'lucide-react'
+import { Radio } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { Progress } from '@renderer/components/ui/progress'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useToast } from '@renderer/hooks/use-toast'
 import { Steps, Step } from '@renderer/components/ui/steps'
-import { beginUpload, createRemoteFolder, createSyncConfiguration, scanLocalDirectory } from '@renderer/services/sync-service'
+import { beginUpload, createRemoteFolder, createSyncConfiguration, scanLocalDirectory, compareLocalWithRemote } from '@renderer/services/sync-service'
 import { LocalItem, SyncType } from '@renderer/types/sync'
+import { useUserStore } from '@renderer/stores/user-store'
+import { getSyncConfiguration } from '@renderer/services/sync-service'
 
 // Define route params interface
 export interface IntegrationParams {
@@ -44,7 +46,39 @@ function IntegrationDetail() {
   const [uploadedFiles, setUploadedFiles] = useState(0)
   const [scannedItems, setScannedItems] = useState<LocalItem[]>([])
   const [currentStep, setCurrentStep] = useState(1)
+  const [existingRemoteFolderId, setExistingRemoteFolderId] = useState<string | null>(null)
   const { toast } = useToast()
+
+  // Check for existing configuration on component mount
+  useEffect(() => {
+    async function checkExistingConfig() {
+      try {
+        const profile = useUserStore.getState().profile
+        if (!profile) return
+
+        const existingConfig = await getSyncConfiguration(profile.id)
+        
+        if (existingConfig && existingConfig.type === SyncType.FL_STUDIO) {
+          if (existingConfig.localPath) {
+            setSelectedPath(existingConfig.localPath)
+            setCurrentStep(2)
+          }
+          if (existingConfig.remoteFolderId) {
+            setExistingRemoteFolderId(existingConfig.remoteFolderId)
+          }
+          toast({
+            title: "Existing Configuration Found",
+            description: "Found an existing FL Studio sync configuration",
+            duration: 3000
+          })
+        }
+      } catch (error) {
+        console.error('Failed to check existing configuration:', error)
+      }
+    }
+
+    checkExistingConfig()
+  }, [])
 
   // Step 1: Select Local Folder
   const selectFolder = async () => {
@@ -71,26 +105,62 @@ function IntegrationDetail() {
 
     setIsScanning(true)
     try {
-      const items = await scanLocalDirectory(selectedPath)
-      setScannedItems(items)
-      console.log('📂 Scanned directory structure:', {
-        totalItems: items.length,
-        files: items.filter(i => i.type === 'file').length,
-        folders: items.filter(i => i.type === 'folder').length,
-        items: items.map(item => ({
-          name: item.name,
-          path: item.path,
-          type: item.type,
-          size: item.size,
-          lastModified: item.lastModified
-        }))
-      })
-      setCurrentStep(3)
-      toast({
-        title: "Scan Complete",
-        description: `Found ${items.length} items in directory`,
-        duration: 3000
-      })
+      const profile = useUserStore.getState().profile
+      if (!profile) throw new Error('User not authenticated')
+
+      const existingConfig = await getSyncConfiguration(profile.id)
+      
+      if (existingConfig?.type === SyncType.FL_STUDIO && existingConfig.remoteFolderId) {
+        // Compare local with remote
+        const diff = await compareLocalWithRemote(selectedPath, existingConfig.remoteFolderId)
+        
+        const hasDifferences = diff.added.length > 0 || diff.modified.length > 0 || diff.removed.length > 0
+
+        console.log('📊 Sync differences found:', {
+          added: diff.added.length,
+          modified: diff.modified.length,
+          removed: diff.removed.length,
+          details: {
+            added: diff.added.map(i => i.path),
+            modified: diff.modified.map(i => i.path),
+            removed: diff.removed
+          }
+        })
+
+        toast({
+          title: hasDifferences ? "Changes Detected" : "No Changes",
+          description: hasDifferences 
+            ? `Found ${diff.added.length} new, ${diff.modified.length} modified, and ${diff.removed.length} removed files`
+            : "Your files are up to date",
+          duration: 5000
+        })
+
+        setScannedItems(hasDifferences ? [...diff.added, ...diff.modified] : [])
+        setCurrentStep(hasDifferences ? 3 : 2)
+      } else {
+        // Regular scan for new configuration
+        const items = await scanLocalDirectory(selectedPath)
+        setScannedItems(items)
+        console.log('📂 Scanned directory structure:', {
+          totalItems: items.length,
+          files: items.filter(i => i.type === 'file').length,
+          folders: items.filter(i => i.type === 'folder').length,
+          items: items.map(item => ({
+            name: item.name,
+            path: item.path,
+            type: item.type,
+            size: item.size,
+            lastModified: item.lastModified
+          }))
+        })
+        
+        setCurrentStep(3)
+        toast({
+          title: "Scan Complete",
+          description: `Found ${items.length} items in directory`,
+          duration: 3000
+        })
+      }
     } catch (error) {
       console.error('Directory scan failed:', error)
       toast({
@@ -207,18 +277,27 @@ function IntegrationDetail() {
               </Card>
             </Step>
 
-            <Step value={3} title="Initialize Sync" canProceedToNext={scannedItems.length > 0} currentStep={currentStep}>
+            <Step value={3} title={existingRemoteFolderId ? "Update Sync" : "Initialize Sync"} canProceedToNext={scannedItems.length > 0} currentStep={currentStep}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Initialize Sync</CardTitle>
-                  <CardDescription>Start syncing your files with Demo</CardDescription>
+                  <CardTitle>{existingRemoteFolderId ? "Update Sync" : "Initialize Sync"}</CardTitle>
+                  <CardDescription>
+                    {existingRemoteFolderId 
+                      ? "Update your synced files with Demo" 
+                      : "Start syncing your files with Demo"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button
                     onClick={initializeSync}
                     disabled={!scannedItems.length || isInitializing}
                   >
-                    {isInitializing ? 'Initializing...' : 'Initialize Sync'}
+                    {isInitializing 
+                      ? 'Processing...' 
+                      : existingRemoteFolderId 
+                        ? 'Update Files'
+                        : 'Initialize Sync'
+                    }
                   </Button>
 
                   {isInitializing && (

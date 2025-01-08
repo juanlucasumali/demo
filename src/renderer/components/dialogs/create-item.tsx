@@ -117,6 +117,7 @@ export function CreateItem({
         description: data.description || "",
         icon: null,
         collectionIds: location === 'collection' ? [collectionId!] : [],
+        localPath: null
       };
 
       if (type === 'file' && selectedFile) {

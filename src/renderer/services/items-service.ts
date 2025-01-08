@@ -103,15 +103,15 @@ async function getProjectsWithSharing(userId: string): Promise<DemoItem[]> {
   }));
 }
 
-async function getFilesWithSharing(
+export async function getFilesWithSharing(
   userId: string, 
   filters?: {
     parentFolderId?: string | null,
     projectId?: string | null,
     collectionId?: string | null,
+    includeNested?: boolean
   }
 ): Promise<DemoItem[]> {
-
   // First, get all files (both owned and shared)
   const ownedQuery = supabase
     .from('files')
@@ -154,8 +154,16 @@ async function getFilesWithSharing(
         items = items.filter(item => 
           !item.file_folders || item.file_folders.length === 0
         );
+      } else if (filters.includeNested) {
+        // Get all nested item IDs
+        const nestedIds = await getAllNestedItems(filters.parentFolderId);
+        // Include both direct children and nested items
+        items = items.filter(item => 
+          item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId) ||
+          nestedIds.includes(item.id)
+        );
       } else {
-        // For items in a specific folder
+        // For items in a specific folder (direct children only)
         items = items.filter(item => 
           item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId)
         );
@@ -332,6 +340,7 @@ export async function addFileOrFolder(
         size: fileContent ? fileContent.byteLength : item.size,
         duration: item.duration,
         file_path: item.filePath,
+        local_path: item.localPath,
       })
       .select()
       .single();
@@ -880,4 +889,36 @@ export async function shareItems(
 
     if (projectError) throw projectError;
   }
+}
+
+async function getAllNestedItems(folderId: string): Promise<string[]> {
+  const itemIds: string[] = [];
+  
+  // Get immediate children
+  const { data: children } = await supabase
+    .from('file_folders')
+    .select(`
+      file:file_id (
+        id,
+        type
+      )
+    `)
+    .eq('folder_id', folderId);
+
+  if (!children) return itemIds;
+
+  // Process each child
+  for (const child of children as any[]) {
+    if (!child.file) continue;
+    
+    itemIds.push(child.file.id);
+    
+    // If it's a folder, recursively get its children
+    if (child.file.type === 'folder') {
+      const nestedItems = await getAllNestedItems(child.file.id);
+      itemIds.push(...nestedItems);
+    }
+  }
+
+  return itemIds;
 } 

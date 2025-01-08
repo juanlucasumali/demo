@@ -1,7 +1,7 @@
 import { supabase } from '@renderer/lib/supabase'
 import { useUserStore } from '@renderer/stores/user-store'
 import { FileFormat, ItemType } from '@renderer/types/items'
-import { addFileOrFolder, getItemsToDeleteRecursively } from './items-service'
+import { addFileOrFolder, getFilesWithSharing, getItemsToDeleteRecursively } from './items-service'
 import { LocalItem, LocalItemWithFullPath, UploadProgress, SyncConfiguration, SyncType } from '@renderer/types/sync'
 
 // Configuration Management Functions
@@ -121,6 +121,7 @@ export async function initializeSync(localPath: string, type: SyncType): Promise
       createdAt: new Date(),
       lastModified: new Date(),
       lastOpened: new Date(),
+      localPath: null,
     })
 
     // 2. Create sync configuration
@@ -186,6 +187,7 @@ export async function beginUpload(
             lastModified: item.lastModified || new Date(),
             lastOpened: new Date(),
             sharedWith: [],
+            localPath: item.path,
           })
           folderIdMap.set(item.path, folder.id)
         } else {
@@ -208,7 +210,8 @@ export async function beginUpload(
             size: item.size || null,
             duration: null,
             icon: null,
-            filePath: item.path,
+            filePath: null,
+            localPath: item.path,
             sharedWith: [],
             createdAt: new Date(),
             lastModified: item.lastModified || new Date(),
@@ -282,7 +285,8 @@ export async function createRemoteFolder(localPath: string): Promise<string> {
     size: null,
     duration: null,
     icon: null,
-    filePath: localPath,
+    filePath: null,
+    localPath: localPath,
     createdAt: new Date(),
     lastModified: new Date(),
     lastOpened: new Date(),
@@ -290,4 +294,64 @@ export async function createRemoteFolder(localPath: string): Promise<string> {
   })
 
   return folder.id
+} 
+
+interface DiffResult {
+  added: LocalItem[]
+  modified: LocalItem[]
+  removed: string[]  // paths of removed files
+}
+
+export async function compareLocalWithRemote(
+  localPath: string, 
+  remoteFolderId: string
+): Promise<DiffResult> {
+  // Get local items
+  const localItems = await scanLocalDirectory(localPath)
+  
+  // Get remote items
+  const remoteItems = await getFilesWithSharing(useUserStore.getState().profile!.id, {
+    parentFolderId: remoteFolderId,
+    includeNested: true
+  })
+
+  console.log('🔍 Comparing local and remote items:', {
+    localItems: localItems.map(i => ({ path: i.path, type: i.type })),
+    remoteItems: remoteItems.map(i => ({ localPath: i.localPath, type: i.type }))
+  })
+
+  // Create maps for easier comparison
+  const localMap = new Map(localItems.map(item => [item.path, item]))
+  const remoteMap = new Map(remoteItems.map(item => [item.localPath || '', item]))
+
+  const added: LocalItem[] = []
+  const modified: LocalItem[] = []
+  const removed: string[] = []
+
+  // Find added and modified files
+  localMap.forEach((localItem, path) => {
+    const remoteItem = remoteMap.get(path)
+    if (!remoteItem) {
+      console.log('➕ New item found:', path) 
+      added.push(localItem)
+    } else if (
+      localItem.type === 'file' && 
+      localItem.lastModified && 
+      remoteItem.lastModified && 
+      new Date(localItem.lastModified).getTime() > new Date(remoteItem.lastModified).getTime()
+    ) {
+      console.log('📝 Modified item found:', path)
+      modified.push(localItem)
+    }
+  })
+
+  // Find removed files
+  remoteMap.forEach((remoteItem, path) => {
+    if (path && !localMap.has(path)) {
+      console.log('❌ Removed item found:', path)
+      removed.push(path)
+    }
+  })
+
+  return { added, modified, removed }
 } 

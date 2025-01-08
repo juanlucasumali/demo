@@ -9,7 +9,7 @@ import { Progress } from '@renderer/components/ui/progress'
 import { useState, useEffect } from 'react'
 import { useToast } from '@renderer/hooks/use-toast'
 import { Steps, Step } from '@renderer/components/ui/steps'
-import { beginUpload, createRemoteFolder, createSyncConfiguration, scanLocalDirectory, compareLocalWithRemote } from '@renderer/services/sync-service'
+import { beginUpload, createRemoteFolder, createSyncConfiguration, scanLocalDirectory, compareLocalWithRemote, updateExistingSync } from '@renderer/services/sync-service'
 import { LocalItem, SyncType } from '@renderer/types/sync'
 import { useUserStore } from '@renderer/stores/user-store'
 import { getSyncConfiguration } from '@renderer/services/sync-service'
@@ -182,32 +182,56 @@ function IntegrationDetail() {
     setUploadProgress(0)
 
     try {
-      const remoteFolderId = await createRemoteFolder(selectedPath)
-      const itemsWithFullPath = scannedItems.map(item => ({
-        ...item,
-        fullPath: `${selectedPath}/${item.path}`,
-        path: item.path
-      }))
-      
-      setTotalFiles(itemsWithFullPath.filter(item => item.type === 'file').length)
+      if (existingRemoteFolderId) {
+        // Get the diff result again
+        const diff = await compareLocalWithRemote(selectedPath, existingRemoteFolderId)
+        const itemsWithFullPath = scannedItems.map(item => ({
+          ...item,
+          fullPath: `${selectedPath}/${item.path}`,
+          path: item.path
+        }))
 
-      await beginUpload(itemsWithFullPath, remoteFolderId, (progress) => {
-        setUploadedFiles(progress.uploadedFiles)
-        setUploadProgress((progress.uploadedFiles / progress.totalFiles) * 100)
-      })
+        setTotalFiles(diff.added.length + diff.modified.length + diff.removed.length)
 
-      const syncConfig = await createSyncConfiguration(selectedPath, remoteFolderId, SyncType.FL_STUDIO)
+        await updateExistingSync(itemsWithFullPath, existingRemoteFolderId, diff, (progress) => {
+          setUploadedFiles(progress.uploadedFiles)
+          setUploadProgress((progress.uploadedFiles / progress.totalFiles) * 100)
+        })
 
-      toast({
-        title: "Sync Initialized",
-        description: "Your folder has been synced successfully",
-        duration: 3000
-      })
+        toast({
+          title: "Sync Updated",
+          description: "Your changes have been synced successfully",
+          duration: 3000
+        })
+      } else {
+        // Original initialization logic
+        const remoteFolderId = await createRemoteFolder(selectedPath)
+        const itemsWithFullPath = scannedItems.map(item => ({
+          ...item,
+          fullPath: `${selectedPath}/${item.path}`,
+          path: item.path
+        }))
+        
+        setTotalFiles(itemsWithFullPath.filter(item => item.type === 'file').length)
+
+        await beginUpload(itemsWithFullPath, remoteFolderId, (progress) => {
+          setUploadedFiles(progress.uploadedFiles)
+          setUploadProgress((progress.uploadedFiles / progress.totalFiles) * 100)
+        })
+
+        await createSyncConfiguration(selectedPath, remoteFolderId, SyncType.FL_STUDIO)
+
+        toast({
+          title: "Sync Initialized",
+          description: "Your folder has been synced successfully",
+          duration: 3000
+        })
+      }
     } catch (error: any) {
-      console.error('Sync initialization failed:', error)
+      console.error('Sync failed:', error)
       toast({
         title: "Sync Failed",
-        description: error.message || "Failed to initialize sync",
+        description: error.message || "Failed to sync changes",
         variant: "destructive",
         duration: 3000
       })

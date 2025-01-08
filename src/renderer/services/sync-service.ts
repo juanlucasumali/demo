@@ -3,6 +3,7 @@ import { useUserStore } from '@renderer/stores/user-store'
 import { FileFormat, ItemType } from '@renderer/types/items'
 import { addFileOrFolder, getFilesWithSharing, getItemsToDeleteRecursively } from './items-service'
 import { LocalItem, LocalItemWithFullPath, UploadProgress, SyncConfiguration, SyncType } from '@renderer/types/sync'
+import { b2Service } from '@renderer/services/b2-service'
 
 // Configuration Management Functions
 export async function createSyncConfiguration(
@@ -248,20 +249,66 @@ export async function beginUpload(
 async function cleanupRemoteFolder(folderId: string): Promise<void> {
   try {
     const itemsToDelete = await getItemsToDeleteRecursively(folderId)
+    console.log('🗑️ Cleaning up remote folder:', { folderId, itemsCount: itemsToDelete.length })
     
+    // Delete files from B2 first
+    for (const itemId of itemsToDelete) {
+      const { data } = await supabase
+        .from('files')
+        .select('file_path, local_path, name')
+        .eq('id', itemId)
+        .single()
+      
+      console.log('📄 Processing item for deletion:', {
+        itemId,
+        name: data?.name,
+        filePath: data?.file_path,
+        localPath: data?.local_path
+      })
+
+      if (data?.file_path) {
+        try {
+          await b2Service.removeFile(data.file_path, data.name)
+          console.log('✅ Successfully removed file from B2:', data.name)
+        } catch (error) {
+          console.error('❌ Failed to remove file from B2:', {
+            filePath: data.file_path,
+            localPath: data.local_path,
+            error
+          })
+          throw error
+        }
+      }
+    }
+
+    // Then delete database records for contents
     for (const itemId of itemsToDelete.reverse()) {
+      try {
+        await supabase
+          .from('files')
+          .delete()
+          .eq('id', itemId)
+        console.log('✅ Successfully deleted database record:', itemId)
+      } catch (error) {
+        console.error('❌ Failed to delete database record:', { itemId, error })
+        throw error
+      }
+    }
+
+    // Finally delete the folder itself
+    try {
       await supabase
         .from('files')
         .delete()
-        .eq('id', itemId)
+        .eq('id', folderId)
+      console.log('✅ Successfully deleted folder:', folderId)
+    } catch (error) {
+      console.error('❌ Failed to delete folder:', { folderId, error })
+      throw error
     }
-
-    await supabase
-      .from('files')
-      .delete()
-      .eq('id', folderId)
   } catch (error) {
-    console.error('Failed to cleanup remote folder:', error)
+    console.error('❌ Failed to cleanup remote folder:', { folderId, error })
+    throw error
   }
 }
 
@@ -354,4 +401,138 @@ export async function compareLocalWithRemote(
   })
 
   return { added, modified, removed }
+} 
+
+export async function updateExistingSync(
+  items: LocalItemWithFullPath[],
+  remoteFolderId: string,
+  diff: DiffResult,
+  onProgress?: (progress: UploadProgress) => void
+): Promise<void> {
+  console.log('🔄 Starting sync update with:', {
+    itemsCount: items.length,
+    remoteFolderId,
+    diff: {
+      added: diff.added.length,
+      modified: diff.modified.length,
+      removed: diff.removed.length
+    }
+  })
+
+  const profile = useUserStore.getState().profile
+  if (!profile) throw new Error('User not authenticated')
+
+  try {
+    // Handle deletions first
+    console.log('🗑️ Processing deletions:', diff.removed)
+    for (const removedPath of diff.removed) {
+      console.log(`📄 Processing removal for: ${removedPath}`)
+      const { data } = await supabase
+        .from('files')
+        .select('id, file_path')
+        .eq('local_path', removedPath)
+        .single()
+      
+      if (data) {
+        if (data.file_path) {
+          console.log(`🗑️ Removing from B2: ${data.file_path}`)
+          await b2Service.removeFile(data.file_path, removedPath)
+        }
+        console.log(`🗑️ Cleaning up folder: ${data.id}`)
+        await cleanupRemoteFolder(data.id)
+      }
+    }
+
+    const totalChanges = diff.added.length + diff.modified.length + diff.removed.length
+    let processedChanges = 0
+    const folderIdMap = new Map<string, string>()
+    folderIdMap.set('', remoteFolderId)
+
+    // 2. Handle additions and modifications
+    const itemsToProcess = items.filter(item => 
+      diff.added.some(a => a.path === item.path) || 
+      diff.modified.some(m => m.path === item.path)
+    )
+
+    const sortedItems = [...itemsToProcess].sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
+      return a.path.split('/').length - b.path.split('/').length
+    })
+
+    for (const item of sortedItems) {
+      const parentPath = item.path.split('/').slice(0, -1).join('/')
+      const parentId = folderIdMap.get(parentPath || '') || remoteFolderId
+
+      if (item.type === 'folder') {
+        const folder = await addFileOrFolder({
+          name: item.name,
+          type: ItemType.FOLDER,
+          owner: profile,
+          description: null,
+          isStarred: false,
+          projectIds: [],
+          collectionIds: [],
+          parentFolderIds: [parentId],
+          tags: null,
+          format: null,
+          size: null,
+          duration: null,
+          icon: null,
+          filePath: null,
+          localPath: item.path,
+          createdAt: new Date(),
+          lastModified: item.lastModified || new Date(),
+          lastOpened: new Date(),
+          sharedWith: [],
+        })
+        folderIdMap.set(item.path, folder.id)
+      } else {
+        const fileContent = await window.api.readFile(item.fullPath)
+        const format = item.name.includes('.') 
+          ? item.name.split('.').pop()?.toLowerCase() as FileFormat 
+          : null
+
+        // Upload to B2 first
+        const b2FileId = await b2Service.storeFile(
+          profile.id,
+          crypto.randomUUID(),
+          item.name,
+          fileContent
+        )
+
+        // Then create database record
+        await addFileOrFolder({
+          name: item.name,
+          type: ItemType.FILE,
+          owner: profile,
+          description: null,
+          isStarred: false,
+          projectIds: [],
+          collectionIds: [],
+          parentFolderIds: [parentId],
+          tags: null,
+          format,
+          size: item.size || null,
+          duration: null,
+          icon: null,
+          filePath: b2FileId,
+          localPath: item.path,
+          sharedWith: [],
+          createdAt: new Date(),
+          lastModified: item.lastModified || new Date(),
+          lastOpened: new Date(),
+        }, [], fileContent)
+      }
+
+      processedChanges++
+      onProgress?.({
+        uploadedFiles: processedChanges,
+        totalFiles: totalChanges,
+        currentFile: item.name
+      })
+    }
+  } catch (error) {
+    console.error('Failed to update sync:', error)
+    throw error
+  }
 } 

@@ -472,17 +472,17 @@ export async function deleteItem(id: string) {
   const userId = getCurrentUserId()
   
   try {
-    // First check if this is a folder
-    const { data: folder } = await supabase
+    // First check if this is a folder and get file_path
+    const { data: item } = await supabase
       .from('files')
-      .select('type')
+      .select('type, file_path, name')
       .eq('id', id)
       .eq('owner_id', userId)
       .single();
 
-    console.log('📂 Folder data:', folder);
+    console.log('📂 Item data:', item);
 
-    if (folder?.type === 'folder') {
+    if (item?.type === 'folder') {
       console.log('📂 Deleting folder:', id);
       // Get all files and folders in this folder recursively
       const itemsToDelete = await getItemsToDeleteRecursively(id);
@@ -490,7 +490,32 @@ export async function deleteItem(id: string) {
       console.log('📂 Items to delete:', itemsToDelete);
       
       if (itemsToDelete.length > 0) {
-        // Delete all items in batches to avoid timeout
+        // First get all file paths that need to be deleted from B2
+        const { data: files } = await supabase
+          .from('files')
+          .select('file_path, name')
+          .in('id', itemsToDelete)
+          .eq('owner_id', userId)
+          .not('file_path', 'is', null);
+
+        // Delete from B2 first
+        if (files && files.length > 0) {
+          for (const file of files) {
+            try {
+              await b2Service.removeFile(file.file_path, file.name);
+              console.log('✅ Removed file from B2:', file.name);
+            } catch (error) {
+              console.error('❌ Failed to remove file from B2:', {
+                filePath: file.file_path,
+                name: file.name,
+                error
+              });
+              // Continue with other deletions even if one fails
+            }
+          }
+        }
+
+        // Then delete database records in batches
         const batchSize = 50;
         for (let i = 0; i < itemsToDelete.length; i += batchSize) {
           const batch = itemsToDelete.slice(i, i + batchSize);
@@ -502,6 +527,19 @@ export async function deleteItem(id: string) {
             
           if (deleteError) throw deleteError;
         }
+      }
+    } else if (item?.file_path) {
+      // If it's a single file with B2 storage, delete from B2 first
+      try {
+        await b2Service.removeFile(item.file_path, item.name);
+        console.log('✅ Removed single file from B2:', item.name);
+      } catch (error) {
+        console.error('❌ Failed to remove single file from B2:', {
+          filePath: item.file_path,
+          name: item.name,
+          error
+        });
+        // Continue with database deletion even if B2 deletion fails
       }
     }
 

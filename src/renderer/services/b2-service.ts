@@ -192,11 +192,14 @@ class B2Service {
     try {
       await this.b2.deleteFileVersion({
         fileId,
-        fileName
+        fileName: encodeURIComponent(fileName)
       });
       console.log('File deleted successfully');
     } catch (error) {
-      console.error('Delete failed:', error);
+      console.error('Delete failed:', error, {
+        fileId,
+        fileName: encodeURIComponent(fileName)
+      });
       throw error;
     }
   }
@@ -237,13 +240,45 @@ class B2Service {
   }
 
   async removeFile(b2FileId: string, fileName: string): Promise<void> {
-    console.log(`Removing file: ${fileName} (${b2FileId})`);
+    console.log('🗑️ B2 removeFile called with:', {
+      b2FileId,
+      fileName,
+      authToken: this.uploadAuthToken ? 'present' : 'missing',
+      apiUrl: this.uploadUrl ? 'present' : 'missing'
+    })
+
+    // Ensure we're authorized
+    if (!this.authorized) {
+      console.log('🔑 Reauthorizing B2 service before delete...')
+      await this.ensureAuthorized()
+    }
+
     try {
-      await this.deleteFile(b2FileId, fileName);
-      console.log('File removed successfully');
-    } catch (error) {
-      console.error('Failed to remove file:', error);
-      throw error;
+      // Get file info first to get the full path
+      const fileInfo = await this.b2.getFileInfo({
+        fileId: b2FileId
+      })
+      
+      console.log('📄 File info:', fileInfo.data)
+
+      // Use the actual B2 fileName from the file info
+      await this.b2.deleteFileVersion({
+        fileId: b2FileId,
+        fileName: fileInfo.data.fileName
+      })
+      
+      console.log('✅ B2 delete successful for:', fileInfo.data.fileName)
+    } catch (error: any) {
+      console.error('❌ B2 delete error details:', {
+        error,
+        response: error.response?.data,
+        status: error.response?.status,
+        request: {
+          fileName,
+          fileId: b2FileId
+        }
+      })
+      throw error
     }
   }
 }

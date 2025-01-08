@@ -12,6 +12,9 @@ import { Toaster } from './components/ui/toaster'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UpdateHandler } from './components/update-handler'
 import { MediaPlayer } from './components/media-player/media-player'
+import { SyncCheck } from './components/sync-check'
+import { Toaster as Sonner } from "./components/ui/sonner"
+
 
 const memoryHistory = createMemoryHistory({
   initialEntries: ['/home'] // Pass your initial url
@@ -51,9 +54,11 @@ function InnerApp() {
   return (
     <>
       <UpdateHandler />
+      <SyncCheck/>
       <RouterProvider router={router} context={{ auth }} />
       <MediaPlayer />
       <Toaster />
+      <Sonner />
     </>
   )
 }

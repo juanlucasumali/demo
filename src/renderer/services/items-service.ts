@@ -111,7 +111,6 @@ async function getFilesWithSharing(
     collectionId?: string | null,
   }
 ): Promise<DemoItem[]> {
-  console.log('📂 getFilesWithSharing called with filters:', filters);
 
   // First, get all files (both owned and shared)
   const ownedQuery = supabase

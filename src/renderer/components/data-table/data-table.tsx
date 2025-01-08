@@ -174,7 +174,6 @@ export function DataTable<DemoItem>({
     
     // If this row is current AND playing, pause it
     if (audioState.currentRow === rowId && mediaPlayerStore.isPlaying) {
-      console.log('⏸️ Pausing current track');
       mediaPlayerStore.pauseTrack();
       setAudioState(prev => ({ ...prev, playingRow: null }));
       return;
@@ -183,7 +182,6 @@ export function DataTable<DemoItem>({
     try {
       // If we're switching to a different track
       if (mediaPlayerStore.currentTrackId !== (currentTrack as any).id) {
-        console.log('🔄 Loading new track:', (currentTrack as any).name);
         setAudioState(prev => ({ 
           ...prev, 
           loadingRow: rowId,
@@ -192,7 +190,6 @@ export function DataTable<DemoItem>({
         }));
         
         mediaPlayerStore.onPause = () => {
-          console.log('📢 onPause callback triggered');
           setAudioState(prev => ({ ...prev, playingRow: null })); // Keep currentRow unchanged
         };
 
@@ -204,7 +201,6 @@ export function DataTable<DemoItem>({
           currentRow: rowId 
         }));
       } else {
-        console.log('▶️ Resuming existing track');
         mediaPlayerStore.resumeTrack();
         setAudioState(prev => ({ ...prev, playingRow: rowId }));
       }

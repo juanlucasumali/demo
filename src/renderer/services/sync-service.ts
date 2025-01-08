@@ -163,9 +163,6 @@ export async function beginUpload(
   remoteFolderId: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<void> {
-  console.log('📂 Beginning upload process with items:', items)
-  console.log('📁 Remote folder ID:', remoteFolderId)
-
   const profile = useUserStore.getState().profile
   if (!profile) throw new Error('User not authenticated')
 
@@ -174,37 +171,23 @@ export async function beginUpload(
   const folderIdMap = new Map<string, string>()
   folderIdMap.set('', remoteFolderId)
 
-  console.log('📊 Total files to upload:', totalFiles)
-
   try {
     const sortedItems = [...items].sort((a, b) => {
       if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
       return a.path.split('/').length - b.path.split('/').length
     })
 
-    console.log('📋 Sorted items:', sortedItems)
-
     for (const item of sortedItems) {
-      console.log(`\n🔄 Processing item: ${item.path} (Full path: ${item.fullPath})`)
       
       const parentPath = item.path.split('/').slice(0, -1).join('/')
       const parentId = folderIdMap.get(parentPath || '')
-      
-      console.log('👆 Parent path:', parentPath)
-      console.log('🔑 Parent ID:', parentId)
 
       if (!parentId) {
-        console.error('❌ Parent folder ID not found:', {
-          itemPath: item.path,
-          parentPath,
-          availablePaths: Array.from(folderIdMap.keys())
-        })
         throw new Error(`Parent folder ID not found for path: ${item.path}`)
       }
 
       try {
         if (item.type === 'folder') {
-          console.log('📁 Creating folder:', item.name)
           const folder = await addFileOrFolder({
             name: item.name,
             type: ItemType.FOLDER,
@@ -225,21 +208,13 @@ export async function beginUpload(
             lastOpened: new Date(),
             sharedWith: [],
           })
-          console.log('✅ Folder created:', { id: folder.id, path: item.path })
           folderIdMap.set(item.path, folder.id)
         } else {
-          console.log('📄 Reading file:', item.fullPath)
           const fileContent = await window.api.readFile(item.fullPath)
-          console.log('✅ File read successfully:', {
-            name: item.name,
-            size: fileContent.byteLength
-          })
-          
           const format = item.name.includes('.') 
             ? item.name.split('.').pop()?.toLowerCase() as FileFormat 
             : null
           
-          console.log('📤 Uploading file:', item.name)
           await addFileOrFolder({
             name: item.name,
             type: ItemType.FILE,
@@ -262,10 +237,6 @@ export async function beginUpload(
           }, [], fileContent)
 
           uploadedFiles++
-          console.log('✅ File uploaded successfully:', {
-            name: item.name,
-            progress: `${uploadedFiles}/${totalFiles}`
-          })
 
           onProgress?.({
             uploadedFiles,
@@ -310,4 +281,34 @@ async function cleanupRemoteFolder(folderId: string): Promise<void> {
   } catch (error) {
     console.error('Failed to cleanup remote folder:', error)
   }
+}
+
+export async function createRemoteFolder(localPath: string): Promise<string> {
+  const profile = useUserStore.getState().profile
+  if (!profile) throw new Error('User not authenticated')
+
+  const folderName = localPath.split('/').pop() || 'Synced Folder'
+  
+  const folder = await addFileOrFolder({
+    name: folderName,
+    type: ItemType.FOLDER,
+    owner: profile,
+    description: null,
+    isStarred: false,
+    projectIds: [],
+    collectionIds: [],
+    parentFolderIds: [],
+    tags: null,
+    format: null,
+    size: null,
+    duration: null,
+    icon: null,
+    filePath: localPath,
+    createdAt: new Date(),
+    lastModified: new Date(),
+    lastOpened: new Date(),
+    sharedWith: [],
+  })
+
+  return folder.id
 } 

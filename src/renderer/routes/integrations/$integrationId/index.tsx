@@ -9,7 +9,7 @@ import { Progress } from '@renderer/components/ui/progress'
 import { useState } from 'react'
 import { useToast } from '@renderer/hooks/use-toast'
 import { Steps, Step } from '@renderer/components/ui/steps'
-import { beginUpload, initializeSync, scanLocalDirectory, updateLastSyncedAt } from '@renderer/services/sync-service'
+import { beginUpload, createRemoteFolder, createSyncConfiguration, initializeSync, scanLocalDirectory, updateLastSyncedAt } from '@renderer/services/sync-service'
 
 // Define route params interface
 export interface IntegrationParams {
@@ -35,161 +35,82 @@ export const Route = createFileRoute('/integrations/$integrationId/')({
 
 function IntegrationDetail() {
   const { integrationId } = useParams({ from: '/integrations/$integrationId/' })
-  const [currentStep, setCurrentStep] = useState(1)
-  const [syncProgress, setSyncProgress] = useState(0)
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
-  const [syncId, setSyncId] = useState<number | null>(null)
-  const [remoteFolderId, setRemoteFolderId] = useState<string | null>(null)
-  const { toast } = useToast()
+  const [isInitializing, setIsInitializing] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState(0)
   const [totalFiles, setTotalFiles] = useState(0)
+  const [uploadedFiles, setUploadedFiles] = useState(0)
+  const { toast } = useToast()
 
-  // Function to handle folder selection
-  const handleSelectFolder = async () => {
+  // Step 1: Select Local Folder
+  const selectFolder = async () => {
     try {
       const path = await window.api.selectFolder()
       if (path) {
         setSelectedPath(path)
-        setCurrentStep(2) // Automatically move to next step
-        toast({
-          title: "Folder Selected",
-          description: `Selected path: ${path}`,
-          duration: 3000
-        })
       }
     } catch (error) {
-      console.error('Error selecting folder:', error)
+      console.error('Failed to select folder:', error)
       toast({
-        title: "Error",
-        description: "Failed to select folder",
+        title: "Folder Selection Failed",
+        description: "Unable to select folder",
         variant: "destructive",
         duration: 3000
       })
     }
   }
 
-  const beginSync = async () => {
+  // Step 2: Initialize Sync
+  const initializeSync = async () => {
     if (!selectedPath) return
 
-    setIsSyncing(true)
-    setSyncProgress(0)
-
-    try {
-      const result = await initializeSync(selectedPath)
-      setSyncId(result.syncId)
-      setRemoteFolderId(result.remoteFolderId)
-      
-      setSyncProgress(100)
-      setCurrentStep(3)
-      
-      toast({
-        title: "Sync Initialized",
-        description: "Remote folder created and sync configured",
-        duration: 3000
-      })
-    } catch (error) {
-      console.error('Sync initialization failed:', error)
-      toast({
-        title: "Sync Failed",
-        description: "Failed to initialize sync configuration",
-        variant: "destructive",
-        duration: 3000
-      })
-    } finally {
-      setIsSyncing(false)
-    }
-  }
-
-  const scanDirectory = async () => {
-    if (!selectedPath || !syncId) return
-
-    setIsScanning(true)
-    try {
-      const items = await scanLocalDirectory(selectedPath)
-      
-      // Add base path to all items
-      const itemsWithFullPath = items.map(item => ({
-        ...item,
-        path: `${selectedPath}/${item.path}`
-      }))
-      
-      console.log('Scanned directory structure:', itemsWithFullPath)
-      setCurrentStep(4)
-      
-      toast({
-        title: "Scan Complete",
-        description: `Found ${items.length} items in directory`,
-        duration: 3000
-      })
-    } catch (error) {
-      console.error('Directory scan failed:', error)
-      toast({
-        title: "Scan Failed",
-        description: "Failed to scan directory structure",
-        variant: "destructive",
-        duration: 3000
-      })
-    } finally {
-      setIsScanning(false)
-    }
-  }
-
-  const uploadScannedItems = async () => {
-    if (!selectedPath || !syncId || !remoteFolderId) return
-
-    setIsUploading(true)
+    setIsInitializing(true)
     setUploadProgress(0)
 
     try {
-      // Get scanned items
+      // 1. Scan directory
+      console.log('📂 Scanning directory:', selectedPath)
       const items = await scanLocalDirectory(selectedPath)
       
-      // Add base path to all items
+      // 2. Create remote folder
+      console.log('📁 Creating remote folder')
+      const remoteFolderId = await createRemoteFolder(selectedPath)
+      
+      // 3. Add base path to all items
       const itemsWithFullPath = items.map(item => ({
         ...item,
-        // Ensure we use the full path for file operations
         fullPath: `${selectedPath}/${item.path}`,
-        // Keep the relative path for folder structure
         path: item.path
       }))
       
       setTotalFiles(itemsWithFullPath.filter(item => item.type === 'file').length)
 
-      // Begin upload process with progress tracking
+      // 4. Begin upload process
+      console.log('📤 Starting upload process')
       await beginUpload(itemsWithFullPath, remoteFolderId, (progress) => {
         setUploadedFiles(progress.uploadedFiles)
         setUploadProgress((progress.uploadedFiles / progress.totalFiles) * 100)
       })
 
-      await updateLastSyncedAt(syncId)
+      // 5. Create sync configuration
+      console.log('⚙️ Creating sync configuration')
+      await createSyncConfiguration(selectedPath, remoteFolderId)
+
       toast({
-        title: "Upload Complete",
-        description: "All files have been uploaded successfully",
+        title: "Sync Initialized",
+        description: "Your folder has been synced successfully",
         duration: 3000
       })
     } catch (error: any) {
-      console.error('File upload failed:', error)
+      console.error('Sync initialization failed:', error)
       toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload files",
+        title: "Sync Failed",
+        description: error.message || "Failed to initialize sync",
         variant: "destructive",
         duration: 3000
       })
     } finally {
-      setIsUploading(false)
-    }
-  }
-
-  const canProceedToStep2 = selectedPath !== null
-
-  const resetStep1 = () => {
-    setSelectedPath(null)
-    if (currentStep > 1) {
-      setCurrentStep(1)
+      setIsInitializing(false)
     }
   }
 
@@ -215,12 +136,12 @@ function IntegrationDetail() {
 
       <PageContent>
         <div className="max-w-3xl mx-auto space-y-8">
-          <Steps currentStep={currentStep}>
+          <Steps currentStep={1}>
             <Step 
               value={1} 
               title="Choose FL Studio Folder" 
               canProceedToNext={selectedPath !== null}
-              currentStep={currentStep}
+              currentStep={1}
             >
               <Card>
                 <CardHeader>
@@ -230,7 +151,7 @@ function IntegrationDetail() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={resetStep1}
+                        onClick={() => setSelectedPath(null)}
                       >
                         Reset
                       </Button>
@@ -241,7 +162,7 @@ function IntegrationDetail() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button onClick={handleSelectFolder}>
+                  <Button onClick={selectFolder}>
                     <Folder className="mr-2 h-4 w-4" />
                     Choose Folder
                   </Button>
@@ -257,8 +178,8 @@ function IntegrationDetail() {
             <Step 
               value={2} 
               title="Initialize Sync" 
-              canProceedToNext={syncId !== null}
-              currentStep={currentStep}
+              canProceedToNext={selectedPath !== null}
+              currentStep={1}
             >
               <Card>
                 <CardHeader>
@@ -269,83 +190,17 @@ function IntegrationDetail() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Button 
-                    onClick={beginSync} 
-                    disabled={!selectedPath || isSyncing}
+                    onClick={initializeSync} 
+                    disabled={!selectedPath || isInitializing}
                   >
-                    {isSyncing ? 'Initializing...' : 'Initialize Sync'}
+                    {isInitializing ? 'Initializing...' : 'Initialize Sync'}
                   </Button>
-                  {isSyncing && (
-                    <Progress value={syncProgress} className="w-full" />
-                  )}
-                  {syncId && (
-                    <div className="text-sm text-green-600 dark:text-green-400">
-                      ✓ Sync configuration created successfully
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </Step>
-
-            <Step 
-              value={3} 
-              title="Scan Directory" 
-              canProceedToNext={false}
-              currentStep={currentStep}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Step 3: Scan Local Directory</CardTitle>
-                  <CardDescription>
-                    Scan the selected directory to prepare for sync
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button 
-                    onClick={scanDirectory} 
-                    disabled={!syncId || isScanning}
-                  >
-                    {isScanning ? 'Scanning...' : 'Start Scan'}
-                  </Button>
-                  {isScanning && (
-                    <div className="text-sm text-muted-foreground">
-                      Scanning directory structure...
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </Step>
-
-            <Step 
-              value={4} 
-              title="Upload Files" 
-              canProceedToNext={false}
-              currentStep={currentStep}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Step 4: Upload Files</CardTitle>
-                  <CardDescription>
-                    Upload scanned files to Demo
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button 
-                    onClick={uploadScannedItems} 
-                    disabled={!syncId || isUploading}
-                  >
-                    {isUploading ? 'Uploading...' : 'Start Upload'}
-                  </Button>
-                  {isUploading && (
-                    <>
-                      <Progress value={uploadProgress} className="w-full" />
-                      <div className="text-sm text-muted-foreground">
-                        Uploaded {uploadedFiles} of {totalFiles} files ({uploadProgress}%)
-                      </div>
-                    </>
-                  )}
-                  {uploadProgress === 100 && !isUploading && (
-                    <div className="text-sm text-green-600 dark:text-green-400">
-                      ✓ All files uploaded successfully
+                  {selectedPath && (
+                    <div className="space-y-2">
+                      <Progress value={uploadProgress} />
+                      <p className="text-sm text-muted-foreground">
+                        Uploading: {uploadedFiles} / {totalFiles} files
+                      </p>
                     </div>
                   )}
                 </CardContent>

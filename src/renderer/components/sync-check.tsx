@@ -56,7 +56,9 @@ export function SyncCheck() {
                   )
                 }
               },
-              duration: 999999
+              dismissible: true,
+              duration: 999999,
+              closeButton: true
             })
           } else {
             console.log('No differences found between local and remote folders')

@@ -493,24 +493,30 @@ export async function deleteItem(id: string) {
         // First get all file paths that need to be deleted from B2
         const { data: files } = await supabase
           .from('files')
-          .select('file_path, name')
+          .select('file_path, name, type')
           .in('id', itemsToDelete)
           .eq('owner_id', userId)
           .not('file_path', 'is', null);
 
-        // Delete from B2 first
+        // Delete from B2 first - only for actual files, not folders
         if (files && files.length > 0) {
           for (const file of files) {
-            try {
-              await b2Service.removeFile(file.file_path, file.name);
-              console.log('✅ Removed file from B2:', file.name);
-            } catch (error) {
-              console.error('❌ Failed to remove file from B2:', {
-                filePath: file.file_path,
-                name: file.name,
-                error
-              });
-              // Continue with other deletions even if one fails
+            // Skip if it's a folder
+            if (file.type === 'folder') continue;
+            
+            // Only attempt B2 deletion if we have a valid file_path
+            if (file.file_path && file.file_path.startsWith('4_')) {
+              try {
+                await b2Service.removeFile(file.file_path, file.name);
+                console.log('✅ Removed file from B2:', file.name);
+              } catch (error) {
+                console.error('❌ Failed to remove file from B2:', {
+                  filePath: file.file_path,
+                  name: file.name,
+                  error
+                });
+                // Continue with other deletions even if one fails
+              }
             }
           }
         }
@@ -528,18 +534,20 @@ export async function deleteItem(id: string) {
           if (deleteError) throw deleteError;
         }
       }
-    } else if (item?.file_path) {
-      // If it's a single file with B2 storage, delete from B2 first
-      try {
-        await b2Service.removeFile(item.file_path, item.name);
-        console.log('✅ Removed single file from B2:', item.name);
-      } catch (error) {
-        console.error('❌ Failed to remove single file from B2:', {
-          filePath: item.file_path,
-          name: item.name,
-          error
-        });
-        // Continue with database deletion even if B2 deletion fails
+    } else if (item?.file_path && item.type !== 'folder') {
+      // If it's a single file (not a folder) with B2 storage, delete from B2 first
+      if (item.file_path.startsWith('4_')) {
+        try {
+          await b2Service.removeFile(item.file_path, item.name);
+          console.log('✅ Removed single file from B2:', item.name);
+        } catch (error) {
+          console.error('❌ Failed to remove single file from B2:', {
+            filePath: item.file_path,
+            name: item.name,
+            error
+          });
+          // Continue with database deletion even if B2 deletion fails
+        }
       }
     }
 

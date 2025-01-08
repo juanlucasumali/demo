@@ -43,6 +43,10 @@ function IntegrationDetail() {
   const [syncId, setSyncId] = useState<number | null>(null)
   const [remoteFolderId, setRemoteFolderId] = useState<string | null>(null)
   const { toast } = useToast()
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState(0)
+  const [totalFiles, setTotalFiles] = useState(0)
 
   // Function to handle folder selection
   const handleSelectFolder = async () => {
@@ -108,6 +112,8 @@ function IntegrationDetail() {
       const items = await scanLocalDirectory(selectedPath)
       console.log('Scanned directory structure:', items)
       
+      setCurrentStep(4)
+      
       toast({
         title: "Scan Complete",
         description: `Found ${items.length} items in directory`,
@@ -123,6 +129,41 @@ function IntegrationDetail() {
       })
     } finally {
       setIsScanning(false)
+    }
+  }
+
+  const beginUpload = async () => {
+    if (!selectedPath || !syncId) return
+
+    setIsUploading(true)
+    setUploadProgress(0)
+
+    try {
+      // Simulated upload progress for now
+      setTotalFiles(5) // This will come from the scan results later
+      
+      // Simulate file upload progress
+      for (let i = 0; i < 5; i++) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        setUploadedFiles(prev => prev + 1)
+        setUploadProgress((i + 1) * 20)
+      }
+
+      toast({
+        title: "Upload Complete",
+        description: "All files have been uploaded successfully",
+        duration: 3000
+      })
+    } catch (error) {
+      console.error('File upload failed:', error)
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload files",
+        variant: "destructive",
+        duration: 3000
+      })
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -251,6 +292,43 @@ function IntegrationDetail() {
                   {isScanning && (
                     <div className="text-sm text-muted-foreground">
                       Scanning directory structure...
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </Step>
+
+            <Step 
+              value={4} 
+              title="Upload Files" 
+              canProceedToNext={false}
+              currentStep={currentStep}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 4: Upload Files</CardTitle>
+                  <CardDescription>
+                    Upload scanned files to Demo
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button 
+                    onClick={beginUpload} 
+                    disabled={!syncId || isUploading}
+                  >
+                    {isUploading ? 'Uploading...' : 'Start Upload'}
+                  </Button>
+                  {isUploading && (
+                    <>
+                      <Progress value={uploadProgress} className="w-full" />
+                      <div className="text-sm text-muted-foreground">
+                        Uploaded {uploadedFiles} of {totalFiles} files ({uploadProgress}%)
+                      </div>
+                    </>
+                  )}
+                  {uploadProgress === 100 && !isUploading && (
+                    <div className="text-sm text-green-600 dark:text-green-400">
+                      ✓ All files uploaded successfully
                     </div>
                   )}
                 </CardContent>

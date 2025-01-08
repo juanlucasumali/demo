@@ -64,7 +64,7 @@ export function SyncCheck() {
     
     // Only set up interval if dialog is not shown
     if (!showDetails) {
-      intervalId = setInterval(checkSync, 5000)
+      intervalId = setInterval(checkSync, 10000) // 10 seconds
     }
 
     return () => {

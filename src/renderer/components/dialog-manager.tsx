@@ -37,6 +37,7 @@ interface DialogManagerProps {
     projectId?: string | null
     collectionId?: string | null
     sharedWith: UserProfile[] | null
+    localPath?: string | null
   }
   createProject: {
     isOpen: boolean
@@ -135,6 +136,7 @@ export function DialogManager({
           projectId={createItem.projectId}
           collectionId={createItem.collectionId}
           sharedWith={createItem.sharedWith}
+          localPath={createItem.localPath || null}
         />
       )}
 

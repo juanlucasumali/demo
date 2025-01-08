@@ -18,6 +18,9 @@ declare global {
         lastModified?: Date
       }>>
       readFile: (path: string) => Promise<Buffer>
+      createLocalDirectory: (dirPath: string) => Promise<boolean>
+      writeLocalFile: (filePath: string, content: Buffer) => Promise<boolean>
+      joinPath: (...paths: string[]) => Promise<string>
     }
   }
 }

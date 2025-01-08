@@ -40,9 +40,11 @@ export function useDialogState() {
     projectId?: string | null
     collectionId?: string | null
     sharedWith: UserProfile[] | null
+    localPath?: string | null
   }>({ 
     isOpen: false,
-    sharedWith: null 
+    sharedWith: null,
+    localPath: null
   })
 
   const [createProject, setCreateProject] = useState<{
@@ -110,7 +112,8 @@ export function useDialogState() {
         location,
         projectId,
         collectionId,
-        sharedWith 
+        sharedWith,
+        localPath
       }: {
         type: 'file' | 'folder'
         parentFolderId?: string | null
@@ -118,6 +121,7 @@ export function useDialogState() {
         projectId?: string | null
         collectionId?: string | null
         sharedWith?: UserProfile[] | null
+        localPath?: string | null
       }) =>
         setCreateItem({ 
           isOpen: true, 
@@ -126,9 +130,10 @@ export function useDialogState() {
           location, 
           projectId, 
           collectionId,
-          sharedWith: sharedWith || null
+          sharedWith: sharedWith || null,
+          localPath
         }),
-      onClose: () => setCreateItem({ isOpen: false, sharedWith: null })
+      onClose: () => setCreateItem({ isOpen: false, sharedWith: null, localPath: null })
     },
     createProject: {
       ...createProject,

@@ -54,7 +54,7 @@ function FolderPage() {
         owner={currentFolder?.owner || undefined}
         sharedWith={currentFolder?.sharedWith}
       >
-        <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file', parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
+        <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file', parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith, localPath: currentFolder?.localPath })}>
           Upload
         </Button>
 
@@ -64,7 +64,7 @@ function FolderPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen({ type: 'folder', parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
+              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen({ type: 'folder', parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith, localPath: currentFolder?.localPath })}>
                 <User/> Create folder
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
               </DropdownMenuItem>

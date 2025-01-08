@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { dialog } from '@electron/remote'
 import fs from 'fs'
+import path from 'path'
 
 // Custom APIs for renderer
 const api = {
@@ -19,6 +20,29 @@ const api = {
   scanDirectory: (path: string) => ipcRenderer.invoke('scan-directory', path),
   readFile: async (filePath: string) => {
     return await fs.promises.readFile(filePath)
+  },
+  joinPath: async (...paths: string[]) => {
+    return path.join(...paths)
+  },
+  createLocalDirectory: async (dirPath: string) => {
+    try {
+      await fs.promises.mkdir(dirPath, { recursive: true })
+      return true
+    } catch (error) {
+      console.error('Failed to create local directory:', error)
+      throw error
+    }
+  },
+  writeLocalFile: async (filePath: string, content: Buffer) => {
+    try {
+      // Ensure the directory exists
+      await fs.promises.mkdir(path.dirname(filePath), { recursive: true })
+      await fs.promises.writeFile(filePath, content)
+      return true
+    } catch (error) {
+      console.error('Failed to write local file:', error)
+      throw error
+    }
   }
 }
 

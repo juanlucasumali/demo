@@ -9,7 +9,7 @@ import { Progress } from '@renderer/components/ui/progress'
 import { useState } from 'react'
 import { useToast } from '@renderer/hooks/use-toast'
 import { Steps, Step } from '@renderer/components/ui/steps'
-import { initializeSync } from '@renderer/services/sync-service'
+import { initializeSync, scanLocalDirectory } from '@renderer/services/sync-service'
 
 // Define route params interface
 export interface IntegrationParams {
@@ -38,8 +38,10 @@ function IntegrationDetail() {
   const [currentStep, setCurrentStep] = useState(1)
   const [syncProgress, setSyncProgress] = useState(0)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [syncId, setSyncId] = useState<number | null>(null)
+  const [remoteFolderId, setRemoteFolderId] = useState<string | null>(null)
   const { toast } = useToast()
 
   // Function to handle folder selection
@@ -66,28 +68,25 @@ function IntegrationDetail() {
     }
   }
 
-  const startSync = async () => {
+  const beginSync = async () => {
     if (!selectedPath) return
 
     setIsSyncing(true)
     setSyncProgress(0)
 
     try {
-      // Initialize sync and create remote folder
-      const { syncId, remoteFolderId } = await initializeSync(selectedPath)
-      setSyncId(syncId)
+      const result = await initializeSync(selectedPath)
+      setSyncId(result.syncId)
+      setRemoteFolderId(result.remoteFolderId)
       
-      // Update progress for folder creation
       setSyncProgress(100)
+      setCurrentStep(3)
       
       toast({
         title: "Sync Initialized",
         description: "Remote folder created and sync configured",
         duration: 3000
       })
-
-      // Move to next step or show success state
-      setCurrentStep(3)
     } catch (error) {
       console.error('Sync initialization failed:', error)
       toast({
@@ -98,6 +97,32 @@ function IntegrationDetail() {
       })
     } finally {
       setIsSyncing(false)
+    }
+  }
+
+  const scanDirectory = async () => {
+    if (!selectedPath || !syncId) return
+
+    setIsScanning(true)
+    try {
+      const items = await scanLocalDirectory(selectedPath)
+      console.log('Scanned directory structure:', items)
+      
+      toast({
+        title: "Scan Complete",
+        description: `Found ${items.length} items in directory`,
+        duration: 3000
+      })
+    } catch (error) {
+      console.error('Directory scan failed:', error)
+      toast({
+        title: "Scan Failed",
+        description: "Failed to scan directory structure",
+        variant: "destructive",
+        duration: 3000
+      })
+    } finally {
+      setIsScanning(false)
     }
   }
 
@@ -132,8 +157,13 @@ function IntegrationDetail() {
 
       <PageContent>
         <div className="max-w-3xl mx-auto space-y-8">
-          <Steps>
-            <Step value={1} title="Choose FL Studio Folder" canProceedToStep2={canProceedToStep2}>
+          <Steps currentStep={currentStep}>
+            <Step 
+              value={1} 
+              title="Choose FL Studio Folder" 
+              canProceedToNext={selectedPath !== null}
+              currentStep={currentStep}
+            >
               <Card>
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
@@ -166,27 +196,61 @@ function IntegrationDetail() {
               </Card>
             </Step>
 
-            <Step value={2} title="Start Sync" canProceedToStep2={canProceedToStep2}>
+            <Step 
+              value={2} 
+              title="Initialize Sync" 
+              canProceedToNext={syncId !== null}
+              currentStep={currentStep}
+            >
               <Card>
                 <CardHeader>
-                  <CardTitle>Step 2: Start Synchronization</CardTitle>
+                  <CardTitle>Step 2: Initialize Sync Configuration</CardTitle>
                   <CardDescription>
-                    Begin the initial sync between FL Studio and Demo. Files will be synced to Home.
+                    Create remote folder and set up sync configuration
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Button 
-                    onClick={startSync} 
-                    disabled={!canProceedToStep2 || isSyncing}
+                    onClick={beginSync} 
+                    disabled={!selectedPath || isSyncing}
                   >
-                    {isSyncing ? 'Initializing Sync...' : 'Start Sync'}
+                    {isSyncing ? 'Initializing...' : 'Initialize Sync'}
                   </Button>
                   {isSyncing && (
                     <Progress value={syncProgress} className="w-full" />
                   )}
                   {syncId && (
                     <div className="text-sm text-green-600 dark:text-green-400">
-                      ✓ Sync configured successfully
+                      ✓ Sync configuration created successfully
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </Step>
+
+            <Step 
+              value={3} 
+              title="Scan Directory" 
+              canProceedToNext={false}
+              currentStep={currentStep}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 3: Scan Local Directory</CardTitle>
+                  <CardDescription>
+                    Scan the selected directory to prepare for sync
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button 
+                    onClick={scanDirectory} 
+                    disabled={!syncId || isScanning}
+                  >
+                    {isScanning ? 'Scanning...' : 'Start Scan'}
+                  </Button>
+                  {isScanning && (
+                    <div className="text-sm text-muted-foreground">
+                      Scanning directory structure...
                     </div>
                   )}
                 </CardContent>

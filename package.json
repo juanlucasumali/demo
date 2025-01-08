@@ -53,8 +53,10 @@
     "@tanstack/react-table": "^8.20.6",
     "@types/crypto-js": "^4.2.2",
     "@wavesurfer/react": "^1.0.8",
+    "axios": ">=0.28.0",
     "backblaze-b2": "^1.7.0",
     "buffer": "^6.0.3",
+    "chokidar": "^4.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.0",
@@ -73,8 +75,7 @@
     "update-electron-app": "^3.1.0",
     "wavesurfer.js": "^7.8.14",
     "zod": "^3.24.1",
-    "zustand": "^5.0.2",
-    "axios": ">=0.28.0"
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^2.0.0",

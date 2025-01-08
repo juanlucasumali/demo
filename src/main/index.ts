@@ -1,10 +1,11 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import path, { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initialize, enable } from '@electron/remote/main'
 import { autoUpdater } from 'electron-updater'
 import log from 'electron-log/main'
+import chokidar from 'chokidar'
 
 // Initialize remote module
 initialize()
@@ -61,6 +62,64 @@ autoUpdater.on('update-downloaded', (info) => {
   log.info('Update downloaded:', info)
   BrowserWindow.getAllWindows().forEach(window => {
     window.webContents.send('update-downloaded', info)
+  })
+})
+
+ipcMain.handle('scan-directory', async (_, directoryPath: string) => {
+  const items: Array<{
+    name: string
+    path: string
+    type: 'file' | 'folder'
+    size?: number
+    lastModified?: Date
+  }> = []
+
+  return new Promise((resolve, reject) => {
+    try {
+      const watcher = chokidar.watch(directoryPath, {
+        persistent: false,
+        ignoreInitial: false,
+        ignored: /(^|[\/\\])\../,
+        depth: 99,
+        followSymlinks: false,
+        awaitWriteFinish: true
+      })
+
+      watcher
+        .on('add', (filePath, stats) => {
+          const relativePath = path.relative(directoryPath, filePath)
+          items.push({
+            name: path.basename(filePath),
+            path: relativePath,
+            type: 'file',
+            size: stats?.size,
+            lastModified: stats?.mtime
+          })
+        })
+        .on('addDir', (dirPath) => {
+          if (dirPath === directoryPath) return
+          
+          const relativePath = path.relative(directoryPath, dirPath)
+          items.push({
+            name: path.basename(dirPath),
+            path: relativePath,
+            type: 'folder'
+          })
+        })
+        .on('error', (error) => {
+          console.error('Error while scanning directory:', error)
+          watcher.close()
+          reject(error)
+        })
+        .on('ready', () => {
+          watcher.close()
+          resolve(items)
+        })
+
+    } catch (error) {
+      console.error('Failed to initialize directory scan:', error)
+      reject(error)
+    }
   })
 })
 

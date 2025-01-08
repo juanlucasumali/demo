@@ -31,7 +31,6 @@ export function PageMain({ children, className }: PageContentProps) {
             {children}
         </div>
 </div>
-<MediaPlayer />
 </SidebarProvider>
     )
 }

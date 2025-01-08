@@ -132,21 +132,6 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
 
 ALTER TABLE "public"."files" OWNER TO "postgres";
 
-CREATE TABLE IF NOT EXISTS "public"."integrations" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "type" "text" NOT NULL,
-    "source_path" "text" NOT NULL,
-    "target_locations" "uuid"[] NOT NULL,
-    "is_enabled" boolean DEFAULT false NOT NULL,
-    "last_synced" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "integrations_type_check" CHECK (("type" = 'fl-studio'::"text"))
-);
-
-ALTER TABLE "public"."integrations" OWNER TO "postgres";
-
 CREATE TABLE IF NOT EXISTS "public"."notifications" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "from_user_id" "uuid" NOT NULL,
@@ -225,9 +210,6 @@ ALTER TABLE ONLY "public"."file_projects"
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
 
-ALTER TABLE ONLY "public"."integrations"
-    ADD CONSTRAINT "integrations_pkey" PRIMARY KEY ("id");
-
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_pkey" PRIMARY KEY ("id");
 
@@ -270,31 +252,25 @@ ALTER TABLE ONLY "public"."collections"
     ADD CONSTRAINT "collections_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."file_collections"
-    ADD CONSTRAINT "file_collections_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "public"."collections"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "file_collections_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "public"."collections"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."file_collections"
-    ADD CONSTRAINT "file_collections_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "file_collections_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."file_folders"
-    ADD CONSTRAINT "file_folders_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "file_folders_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."file_folders"
-    ADD CONSTRAINT "file_folders_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "public"."files"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "file_folders_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."file_projects"
-    ADD CONSTRAINT "file_projects_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "file_projects_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."file_projects"
-    ADD CONSTRAINT "file_projects_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "file_projects_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."integrations"
-    ADD CONSTRAINT "integrations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-ALTER TABLE ONLY "public"."integrations"
-    ADD CONSTRAINT "integrations_user_id_fkey1" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_from_user_id_fkey" FOREIGN KEY ("from_user_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
@@ -326,8 +302,6 @@ ALTER TABLE ONLY "public"."shared_items"
 CREATE POLICY "Enable insert for users based on user_id" ON "public"."users" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "id"));
 
 CREATE POLICY "No manual deletion" ON "public"."users" FOR DELETE TO "authenticated" USING (false);
-
-CREATE POLICY "Users can manage their own integrations" ON "public"."integrations" USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
 CREATE POLICY "Users can update own profile" ON "public"."users" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
 
@@ -369,10 +343,6 @@ GRANT ALL ON TABLE "public"."file_projects" TO "service_role";
 GRANT ALL ON TABLE "public"."files" TO "anon";
 GRANT ALL ON TABLE "public"."files" TO "authenticated";
 GRANT ALL ON TABLE "public"."files" TO "service_role";
-
-GRANT ALL ON TABLE "public"."integrations" TO "anon";
-GRANT ALL ON TABLE "public"."integrations" TO "authenticated";
-GRANT ALL ON TABLE "public"."integrations" TO "service_role";
 
 GRANT ALL ON TABLE "public"."notifications" TO "anon";
 GRANT ALL ON TABLE "public"."notifications" TO "authenticated";

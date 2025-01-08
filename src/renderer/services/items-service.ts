@@ -150,9 +150,17 @@ async function getFilesWithSharing(
   // Apply filters after fetching
   if (filters) {
     if (filters.parentFolderId !== undefined) {
-      items = items.filter(item => 
-        item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId)
-      );
+      if (filters.parentFolderId === null) {
+        // For root items, only include items with no folder associations
+        items = items.filter(item => 
+          !item.file_folders || item.file_folders.length === 0
+        );
+      } else {
+        // For items in a specific folder
+        items = items.filter(item => 
+          item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId)
+        );
+      }
     }
     
     if (filters.projectId) {
@@ -207,7 +215,15 @@ export async function getFilesAndFolders(
   collectionId?: string | null
 ): Promise<DemoItem[]> {
   const userId = getCurrentUserId();
-  return getItemsWithSharing('files', userId, { parentFolderId, projectId, collectionId });
+  
+  // If no parentFolderId is provided, we want root items
+  const filters = {
+    parentFolderId: parentFolderId === undefined ? null : parentFolderId,
+    projectId,
+    collectionId
+  };
+  
+  return getItemsWithSharing('files', userId, filters);
 }
 
 export async function getProjects(): Promise<DemoItem[]> {

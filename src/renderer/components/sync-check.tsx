@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { useUserStore } from '@renderer/stores/user-store'
 import { 
@@ -8,10 +8,23 @@ import {
   updateLocalFromRemote
 } from '@renderer/services/sync-service'
 import { SyncType } from '@renderer/types/sync'
+import { SyncDetailsDialog } from './dialogs/sync-details-dialog'
 
 export function SyncCheck() {
+  const [showDetails, setShowDetails] = useState(false)
+  const [currentDiff, setCurrentDiff] = useState<any>(null)
+  const [currentConfig, setCurrentConfig] = useState<any>(null)
+  const hasPendingDiffRef = useRef(false)
+
   useEffect(() => {
+    let intervalId: NodeJS.Timeout
+
     async function checkSync() {
+      if (hasPendingDiffRef.current || showDetails) {
+        console.log('Skipping sync check due to pending differences or open dialog')
+        return
+      }
+
       try {
         const profile = useUserStore.getState().profile
         if (!profile) {
@@ -19,89 +32,93 @@ export function SyncCheck() {
           return
         }
 
-        console.log('Checking sync configuration...')
         const existingConfig = await getSyncConfiguration(profile.id)
         
         if (existingConfig?.type === SyncType.FL_STUDIO && existingConfig.localPath && existingConfig.remoteFolderId) {
-          console.log('Found existing sync configuration:', {
-            localPath: existingConfig.localPath,
-            remoteFolderId: existingConfig.remoteFolderId
-          })
-
           const diff = await compareLocalWithRemote(existingConfig.localPath, existingConfig.remoteFolderId)
           const hasDifferences = diff.added.length > 0 || diff.modified.length > 0 || diff.removed.length > 0
           
           if (hasDifferences) {
+            hasPendingDiffRef.current = true
+            setCurrentDiff(diff)
+            setCurrentConfig(existingConfig)
+            
             toast('Files Out of Sync', {
-              description: `Local folder "${existingConfig.localPath}" has differences:\n${diff.added.length} new, ${diff.modified.length} modified, and ${diff.removed.length} removed files`,
+              description: 'Local and remote files have differences',
               action: {
-                label: 'Choose Source',
-                onClick: () => {
-                  toast.dismiss()
-                  toast('Choose Sync Direction', {
-                    description: 'Which version should be the source of truth?',
-                    action: {
-                      label: 'Use Remote',
-                      onClick: async () => {
-                        toast.promise(
-                          updateLocalFromRemote(
-                            existingConfig.localPath,
-                            existingConfig.remoteFolderId,
-                            diff
-                          ),
-                          {
-                            loading: 'Updating local folder...',
-                            success: 'Local folder synchronized with remote',
-                            error: 'Failed to update local folder'
-                          }
-                        )
-                      }
-                    },
-                    cancel: {
-                      label: 'Use Local',
-                      onClick: async () => {
-                        const itemsWithFullPath = [...diff.added, ...diff.modified].map(item => ({
-                          ...item,
-                          fullPath: `${existingConfig.localPath}/${item.path}`,
-                          path: item.path
-                        }))
-
-                        toast.promise(
-                          updateExistingSync(
-                            itemsWithFullPath,
-                            existingConfig.remoteFolderId,
-                            diff
-                          ),
-                          {
-                            loading: 'Updating remote folder...',
-                            success: 'Remote folder synchronized successfully',
-                            error: 'Failed to update remote folder'
-                          }
-                        )
-                      }
-                    },
-                    duration: 999999,
-                    dismissible: true
-                  })
-                }
+                label: 'View Details',
+                onClick: () => setShowDetails(true)
               },
-              dismissible: true,
-              duration: 999999,
-              closeButton: true
+              dismissible: false,
+              duration: Infinity,
             })
-          } else {
-            console.log('No differences found between local and remote folders')
           }
-        } else {
-          console.log('No valid sync configuration found')
         }
       } catch (error) {
         console.error('Failed to check sync status:', error)
       }
     }
 
+    // Start initial check
     checkSync()
-  }, [])
+    
+    // Only set up interval if dialog is not shown
+    if (!showDetails) {
+      intervalId = setInterval(checkSync, 5000)
+    }
 
-  return null
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
+  }, [showDetails]) // Add showDetails as dependency
+
+  const handleSyncDirectionChosen = async (useRemote: boolean) => {
+    if (!currentConfig || !currentDiff) return
+
+    try {
+      if (useRemote) {
+        await updateLocalFromRemote(
+          currentConfig.localPath,
+          currentConfig.remoteFolderId,
+          currentDiff
+        )
+      } else {
+        const itemsWithFullPath = [...currentDiff.added, ...currentDiff.modified].map(item => ({
+          ...item,
+          fullPath: `${currentConfig.localPath}/${item.path}`,
+          path: item.path
+        }))
+        await updateExistingSync(
+          itemsWithFullPath,
+          currentConfig.remoteFolderId,
+          currentDiff
+        )
+      }
+      
+      // Reset state after successful sync
+      hasPendingDiffRef.current = false
+      setShowDetails(false)
+      setCurrentDiff(null)
+      toast.dismiss()
+      toast.success('Sync completed successfully')
+    } catch (error) {
+      console.error('Sync failed:', error)
+      toast.error('Failed to sync files. Please try again.')
+    }
+  }
+
+  return (
+    <>
+      <SyncDetailsDialog 
+        open={showDetails} 
+        onOpenChange={setShowDetails}
+        diff={currentDiff || { added: [], modified: [], removed: [] }}
+        localPath={currentConfig?.localPath || ''}
+        remoteFolderId={currentConfig?.remoteFolderId || ''}
+        onSyncDirectionChosen={handleSyncDirectionChosen}
+      />
+    </>
+  )
 } 

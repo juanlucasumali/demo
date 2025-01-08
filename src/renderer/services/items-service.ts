@@ -625,6 +625,7 @@ export async function updateItem(item: DemoItem, originalItem: DemoItem) {
     size: item.size,
     duration: item.duration,
     file_path: item.filePath,
+    local_path: item.localPath,
   }
 
   // Handle basic item update

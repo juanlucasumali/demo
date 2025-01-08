@@ -342,68 +342,81 @@ export async function createRemoteFolder(localPath: string): Promise<string> {
   return folder.id
 } 
 
-interface DiffResult {
-  added: LocalItem[]
-  modified: LocalItem[]
-  removed: string[]  // paths of removed files
+interface RemoteItem {
+  id: string;
+  name: string;
+  type: ItemType;
+  filePath: string | null;
+  localPath: string | null;
+}
+
+interface EnhancedDiffResult {
+  added: LocalItem[];      // exists in local but not in remote
+  modified: LocalItem[];   // exists in both but different
+  removed: RemoteItem[];   // exists in remote but not in local
 }
 
 export async function compareLocalWithRemote(
-  localPath: string, 
+  localPath: string,
   remoteFolderId: string
-): Promise<DiffResult> {
+): Promise<EnhancedDiffResult> {
   // Get local items
-  const localItems = await scanLocalDirectory(localPath)
-  
-  // Get remote items
+  const localItems = await scanLocalDirectory(localPath);
+  const localMap = new Map(localItems.map(item => [item.path, item]));
+
+  // Get remote items with full details
   const remoteItems = await getFilesWithSharing(useUserStore.getState().profile!.id, {
     parentFolderId: remoteFolderId,
     includeNested: true
-  })
+  });
 
-  console.log('🔍 Comparing local and remote items:', {
-    localItems: localItems.map(i => ({ path: i.path, type: i.type })),
-    remoteItems: remoteItems.map(i => ({ localPath: i.localPath, type: i.type }))
-  })
+  const remoteMap = new Map(await Promise.all(remoteItems.map(async item => {
+    const relativePath = item.localPath 
+      ? await window.api.joinPath(item.localPath.replace(localPath, ''))
+      : '';
+    return [relativePath.replace(/^[/\\]/, ''), item] as [string, typeof item]; // Type assertion to fix Map constructor
+  })));
 
-  // Create maps for easier comparison
-  const localMap = new Map(localItems.map(item => [
-    `${localPath}/${item.path}`, // Use full path for comparison
-    item
-  ]))
-  const remoteMap = new Map(remoteItems.map(item => [item.localPath || '', item]))
+  const added: LocalItem[] = [];
+  const modified: LocalItem[] = [];
+  const removed: RemoteItem[] = [];
 
-  const added: LocalItem[] = []
-  const modified: LocalItem[] = []
-  const removed: string[] = []
+  console.log("remoteMap:", remoteMap)
+  console.log("localMap:", localMap)
 
-  // Find added and modified files
-  localMap.forEach((localItem, fullPath) => {
-    const remoteItem = remoteMap.get(fullPath)
+  // Check for added/modified files
+  localMap.forEach((localItem, path) => {
+    const remoteItem = remoteMap.get(path);
     if (!remoteItem) {
-      console.log('➕ New item found:', fullPath)
-      added.push(localItem)
-    } else if (
-      localItem.type === 'file' && 
-      localItem.lastModified && 
-      remoteItem.lastModified && 
-      new Date(localItem.lastModified).getTime() > new Date(remoteItem.lastModified).getTime()
-    ) {
-      console.log('📝 Modified item found:', fullPath)
-      modified.push(localItem)
-    }
-  })
+      added.push(localItem);
+    } 
+    // else if (localItem.type === 'file') {
+    //   if (localItem.lastModified !== remoteItem.lastModified) {
+    //     modified.push(localItem);
+    //   }
+    // }
+  });
 
-  // Find removed files
+  // Check for removed files (exist in remote but not local)
   remoteMap.forEach((remoteItem, path) => {
     if (path && !localMap.has(path)) {
-      console.log('❌ Removed item found:', path)
-      removed.push(path)
+      removed.push({
+        id: remoteItem.id,
+        name: remoteItem.name,
+        type: remoteItem.type,
+        filePath: remoteItem.filePath,
+        localPath: remoteItem.localPath
+      });
     }
-  })
+  });
 
-  return { added, modified, removed }
-} 
+  console.log("remoteItems:", remoteItems)
+  console.log("localItems:", localItems)
+
+  console.log('🔄 Comparison result:', { added, modified, removed });
+
+  return { added, modified, removed };
+}
 
 // Add new interface for folder mapping
 interface FolderMapping {
@@ -510,7 +523,7 @@ async function buildFolderMapping(
 export async function updateExistingSync(
   items: LocalItemWithFullPath[],
   remoteFolderId: string,
-  diff: DiffResult,
+  diff: EnhancedDiffResult,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<void> {
   console.log('🔄 Starting sync update with:', {
@@ -530,17 +543,21 @@ export async function updateExistingSync(
     // Handle deletions first
     console.log('🗑️ Processing deletions:', diff.removed)
     for (const removedPath of diff.removed) {
+      console.log("removedPath:", removedPath)
       console.log(`📄 Processing removal for: ${removedPath}`)
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('files')
         .select('id, file_path, type')
-        .eq('local_path', removedPath)
+        .eq('local_path', removedPath.localPath)
         .single()
+
+      console.log("data:", data)
+      console.log("error:", error)
       
       if (data) {
         if (data.file_path && data.type === ItemType.FILE) {
           console.log(`🗑️ Removing from B2: ${data.file_path}`)
-          await b2Service.removeFile(data.file_path, removedPath)
+          await b2Service.removeFile(data.file_path, removedPath.name)
         }
         console.log(`🗑️ Cleaning up folder: ${data.id}`)
         await cleanupRemoteFolder(data.id)
@@ -641,85 +658,82 @@ export async function updateExistingSync(
 export async function updateLocalFromRemote(
   localPath: string,
   remoteFolderId: string,
-  diff: DiffResult
+  diff: EnhancedDiffResult,
+  onProgress?: (progress: UploadProgress) => void
 ): Promise<void> {
-  const profile = useUserStore.getState().profile
-  if (!profile) throw new Error('User not authenticated')
+  const profile = useUserStore.getState().profile;
+  if (!profile) throw new Error('User not authenticated');
+
+  const totalChanges = diff.added.length + diff.modified.length + diff.removed.length;
+  let processedChanges = 0;
 
   try {
-    // 1. Handle local files/folders that don't exist in remote (delete them)
-    console.log('🗑️ Processing local deletions:', diff.added)
+    // 1. Handle local files that don't exist in remote (delete them)
     for (const localItem of diff.added) {
-      const fullPath = `${localPath}/${localItem.path}`
-      console.log(`🗑️ Deleting local item: ${fullPath}`)
+      const fullPath = await window.api.joinPath(localPath, localItem.path);
+      await (localItem.type === 'folder' 
+        ? window.api.deleteDirectory(fullPath)
+        : window.api.deleteFile(fullPath));
       
-      try {
-        if (localItem.type === 'folder') {
-          await window.api.deleteDirectory(fullPath)
-        } else {
-          await window.api.deleteFile(fullPath)
-        }
-      } catch (error) {
-        console.error(`Failed to delete local item: ${fullPath}`, error)
-        throw error
-      }
+      processedChanges++;
+      onProgress?.({
+        uploadedFiles: processedChanges,
+        totalFiles: totalChanges,
+        currentFile: localItem.name
+      });
     }
 
-    // 2. Get all remote files that need to be synced locally
-    const remoteItems = await getFilesWithSharing(profile.id, {
-      parentFolderId: remoteFolderId,
-      includeNested: true
-    })
+    // 2. Process remote-only items (create them locally)
+    for (const remoteItem of diff.removed) {
+      console.log("remoteItem:", remoteItem)
+      const fullPath = remoteItem.localPath || await window.api.joinPath(localPath, remoteItem.name);
+      console.log("fullPath:", fullPath)
+      
+      if (remoteItem.type === ItemType.FOLDER) {
+        await window.api.createLocalDirectory(fullPath);
+      } else if (remoteItem.filePath) {
+        // Download file from B2
+        console.log("downloading file from B2 to local")
+        console.log("remoteItem.filePath:", remoteItem.filePath)
+        const fileContent = await b2Service.downloadFile(remoteItem.filePath);
+        console.log("fileContent:", fileContent)
+        await window.api.writeLocalFile(fullPath, Buffer.from(fileContent));
+        console.log("file written to local")
+      }
 
-    // Create a map of local paths to remote items for easier lookup
-    const remoteMap = new Map(remoteItems.map(item => [item.localPath || '', item]))
+      processedChanges++;
+      onProgress?.({
+        uploadedFiles: processedChanges,
+        totalFiles: totalChanges,
+        currentFile: remoteItem.name
+      });
+    }
 
-    // 3. Process modified files (download from remote)
-    console.log('📥 Processing modified files:', diff.modified)
+    // 3. Process modified files
     for (const modifiedItem of diff.modified) {
-      const fullPath = `${localPath}/${modifiedItem.path}`
-      const remoteItem = remoteMap.get(fullPath)
-
+      const fullPath = await window.api.joinPath(localPath, modifiedItem.path);
+      const remoteItems = await getFilesWithSharing(profile.id, {
+        parentFolderId: remoteFolderId,
+        includeNested: true
+      });
+      
+      const remoteItem = remoteItems.find(item => item.localPath === fullPath);
+      
       if (remoteItem?.filePath) {
-        console.log(`📥 Downloading modified file: ${fullPath}`)
-        try {
-          const fileContent = await b2Service.downloadFile(remoteItem.filePath)
-          await window.api.writeLocalFile(fullPath, Buffer.from(fileContent))
-        } catch (error) {
-          console.error(`Failed to download/write modified file: ${fullPath}`, error)
-          throw error
-        }
+        const fileContent = await b2Service.downloadFile(remoteItem.filePath);
+        await window.api.writeLocalFile(fullPath, Buffer.from(fileContent));
       }
+
+      processedChanges++;
+      onProgress?.({
+        uploadedFiles: processedChanges,
+        totalFiles: totalChanges,
+        currentFile: modifiedItem.name
+      });
     }
 
-    // 4. Process files that exist in remote but not local (download them)
-    console.log('📥 Processing remote-only files:', diff.removed)
-    for (const removedPath of diff.removed) {
-      const remoteItem = remoteMap.get(removedPath)
-
-      if (remoteItem?.filePath && remoteItem.type === ItemType.FILE) {
-        console.log(`📥 Downloading new file: ${removedPath}`)
-        try {
-          const fileContent = await b2Service.downloadFile(remoteItem.filePath)
-          await window.api.writeLocalFile(removedPath, Buffer.from(fileContent))
-        } catch (error) {
-          console.error(`Failed to download/write new file: ${removedPath}`, error)
-          throw error
-        }
-      } else if (remoteItem?.type === ItemType.FOLDER) {
-        console.log(`📁 Creating local folder: ${removedPath}`)
-        try {
-          await window.api.createLocalDirectory(removedPath)
-        } catch (error) {
-          console.error(`Failed to create local folder: ${removedPath}`, error)
-          throw error
-        }
-      }
-    }
-
-    console.log('✅ Local directory successfully synchronized with remote')
   } catch (error) {
-    console.error('Failed to update local from remote:', error)
-    throw error
+    console.error('Failed to update local from remote:', error);
+    throw error;
   }
 }

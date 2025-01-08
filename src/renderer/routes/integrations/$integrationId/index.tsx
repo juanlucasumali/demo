@@ -9,7 +9,7 @@ import { Progress } from '@renderer/components/ui/progress'
 import { useState } from 'react'
 import { useToast } from '@renderer/hooks/use-toast'
 import { Steps, Step } from '@renderer/components/ui/steps'
-import { initializeSync, scanLocalDirectory } from '@renderer/services/sync-service'
+import { beginUpload, initializeSync, scanLocalDirectory, updateLastSyncedAt } from '@renderer/services/sync-service'
 
 // Define route params interface
 export interface IntegrationParams {
@@ -110,8 +110,14 @@ function IntegrationDetail() {
     setIsScanning(true)
     try {
       const items = await scanLocalDirectory(selectedPath)
-      console.log('Scanned directory structure:', items)
       
+      // Add base path to all items
+      const itemsWithFullPath = items.map(item => ({
+        ...item,
+        path: `${selectedPath}/${item.path}`
+      }))
+      
+      console.log('Scanned directory structure:', itemsWithFullPath)
       setCurrentStep(4)
       
       toast({
@@ -132,33 +138,44 @@ function IntegrationDetail() {
     }
   }
 
-  const beginUpload = async () => {
-    if (!selectedPath || !syncId) return
+  const uploadScannedItems = async () => {
+    if (!selectedPath || !syncId || !remoteFolderId) return
 
     setIsUploading(true)
     setUploadProgress(0)
 
     try {
-      // Simulated upload progress for now
-      setTotalFiles(5) // This will come from the scan results later
+      // Get scanned items
+      const items = await scanLocalDirectory(selectedPath)
       
-      // Simulate file upload progress
-      for (let i = 0; i < 5; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setUploadedFiles(prev => prev + 1)
-        setUploadProgress((i + 1) * 20)
-      }
+      // Add base path to all items
+      const itemsWithFullPath = items.map(item => ({
+        ...item,
+        // Ensure we use the full path for file operations
+        fullPath: `${selectedPath}/${item.path}`,
+        // Keep the relative path for folder structure
+        path: item.path
+      }))
+      
+      setTotalFiles(itemsWithFullPath.filter(item => item.type === 'file').length)
 
+      // Begin upload process with progress tracking
+      await beginUpload(itemsWithFullPath, remoteFolderId, (progress) => {
+        setUploadedFiles(progress.uploadedFiles)
+        setUploadProgress((progress.uploadedFiles / progress.totalFiles) * 100)
+      })
+
+      await updateLastSyncedAt(syncId)
       toast({
         title: "Upload Complete",
         description: "All files have been uploaded successfully",
         duration: 3000
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('File upload failed:', error)
       toast({
         title: "Upload Failed",
-        description: "Failed to upload files",
+        description: error.message || "Failed to upload files",
         variant: "destructive",
         duration: 3000
       })
@@ -313,7 +330,7 @@ function IntegrationDetail() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Button 
-                    onClick={beginUpload} 
+                    onClick={uploadScannedItems} 
                     disabled={!syncId || isUploading}
                   >
                     {isUploading ? 'Uploading...' : 'Start Upload'}

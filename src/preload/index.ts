@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { dialog } from '@electron/remote'
+import fs from 'fs'
 
 // Custom APIs for renderer
 const api = {
@@ -15,7 +16,10 @@ const api = {
   onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
   onUpdateError: (callback) => ipcRenderer.on('update-error', callback),
   onUpdateProgress: (callback) => ipcRenderer.on('download-progress', callback),
-  scanDirectory: (path: string) => ipcRenderer.invoke('scan-directory', path)
+  scanDirectory: (path: string) => ipcRenderer.invoke('scan-directory', path),
+  readFile: async (filePath: string) => {
+    return await fs.promises.readFile(filePath)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

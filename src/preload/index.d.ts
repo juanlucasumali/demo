@@ -17,6 +17,7 @@ declare global {
         size?: number
         lastModified?: Date
       }>>
+      readFile: (path: string) => Promise<Buffer>
     }
   }
 }

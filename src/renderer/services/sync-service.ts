@@ -1,8 +1,8 @@
 import { supabase } from '@renderer/lib/supabase'
 import path from 'path'
 import { useUserStore } from '@renderer/stores/user-store'
-import { ItemType } from '@renderer/types/items'
-import { addFileOrFolder } from './items-service'
+import { FileFormat, ItemType } from '@renderer/types/items'
+import { addFileOrFolder, getItemsToDeleteRecursively } from './items-service'
 import chokidar from 'chokidar'
 
 interface LocalItem {
@@ -19,6 +19,16 @@ interface SyncConfiguration {
   localPath: string
   remoteFolderId: string
   lastSyncedAt: Date | null
+}
+
+interface UploadProgress {
+  uploadedFiles: number
+  totalFiles: number
+  currentFile: string
+}
+
+interface LocalItemWithFullPath extends LocalItem {
+  fullPath: string
 }
 
 // Configuration Management Functions
@@ -145,5 +155,159 @@ export async function initializeSync(localPath: string): Promise<{
   } catch (error) {
     console.error('Sync initialization failed:', error)
     throw error
+  }
+}
+
+export async function beginUpload(
+  items: LocalItemWithFullPath[], 
+  remoteFolderId: string,
+  onProgress?: (progress: UploadProgress) => void
+): Promise<void> {
+  console.log('📂 Beginning upload process with items:', items)
+  console.log('📁 Remote folder ID:', remoteFolderId)
+
+  const profile = useUserStore.getState().profile
+  if (!profile) throw new Error('User not authenticated')
+
+  const totalFiles = items.filter(item => item.type === 'file').length
+  let uploadedFiles = 0
+  const folderIdMap = new Map<string, string>()
+  folderIdMap.set('', remoteFolderId)
+
+  console.log('📊 Total files to upload:', totalFiles)
+
+  try {
+    const sortedItems = [...items].sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
+      return a.path.split('/').length - b.path.split('/').length
+    })
+
+    console.log('📋 Sorted items:', sortedItems)
+
+    for (const item of sortedItems) {
+      console.log(`\n🔄 Processing item: ${item.path} (Full path: ${item.fullPath})`)
+      
+      const parentPath = item.path.split('/').slice(0, -1).join('/')
+      const parentId = folderIdMap.get(parentPath || '')
+      
+      console.log('👆 Parent path:', parentPath)
+      console.log('🔑 Parent ID:', parentId)
+
+      if (!parentId) {
+        console.error('❌ Parent folder ID not found:', {
+          itemPath: item.path,
+          parentPath,
+          availablePaths: Array.from(folderIdMap.keys())
+        })
+        throw new Error(`Parent folder ID not found for path: ${item.path}`)
+      }
+
+      try {
+        if (item.type === 'folder') {
+          console.log('📁 Creating folder:', item.name)
+          const folder = await addFileOrFolder({
+            name: item.name,
+            type: ItemType.FOLDER,
+            owner: profile,
+            description: null,
+            isStarred: false,
+            projectIds: [],
+            collectionIds: [],
+            parentFolderIds: [parentId],
+            tags: null,
+            format: null,
+            size: null,
+            duration: null,
+            icon: null,
+            filePath: item.path,
+            createdAt: new Date(),
+            lastModified: item.lastModified || new Date(),
+            lastOpened: new Date(),
+            sharedWith: [],
+          })
+          console.log('✅ Folder created:', { id: folder.id, path: item.path })
+          folderIdMap.set(item.path, folder.id)
+        } else {
+          console.log('📄 Reading file:', item.fullPath)
+          const fileContent = await window.api.readFile(item.fullPath)
+          console.log('✅ File read successfully:', {
+            name: item.name,
+            size: fileContent.byteLength
+          })
+          
+          const format = item.name.includes('.') 
+            ? item.name.split('.').pop()?.toLowerCase() as FileFormat 
+            : null
+          
+          console.log('📤 Uploading file:', item.name)
+          await addFileOrFolder({
+            name: item.name,
+            type: ItemType.FILE,
+            owner: profile,
+            description: null,
+            isStarred: false,
+            projectIds: [],
+            collectionIds: [],
+            parentFolderIds: [parentId],
+            tags: null,
+            format,
+            size: item.size || null,
+            duration: null,
+            icon: null,
+            filePath: item.path,
+            sharedWith: [],
+            createdAt: new Date(),
+            lastModified: item.lastModified || new Date(),
+            lastOpened: new Date(),
+          }, [], fileContent)
+
+          uploadedFiles++
+          console.log('✅ File uploaded successfully:', {
+            name: item.name,
+            progress: `${uploadedFiles}/${totalFiles}`
+          })
+
+          onProgress?.({
+            uploadedFiles,
+            totalFiles,
+            currentFile: item.name
+          })
+        }
+      } catch (error: any) {
+        console.error('❌ Failed to process item:', {
+          path: item.path,
+          error,
+          stack: error.stack
+        })
+        throw new Error(`Failed to process ${item.type}: ${item.path}`)
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ Upload process failed:', {
+      error,
+      stack: error.stack
+    })
+    await cleanupRemoteFolder(remoteFolderId)
+    throw error
+  }
+}
+
+async function cleanupRemoteFolder(folderId: string): Promise<void> {
+  try {
+    const itemsToDelete = await getItemsToDeleteRecursively(folderId)
+    
+    for (const itemId of itemsToDelete.reverse()) {
+      await supabase
+        .from('files')
+        .delete()
+        .eq('id', itemId)
+    }
+
+    await supabase
+      .from('files')
+      .delete()
+      .eq('id', folderId)
+  } catch (error) {
+    console.error('Failed to cleanup remote folder:', error)
   }
 } 

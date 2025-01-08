@@ -519,7 +519,7 @@ export async function deleteItem(id: string) {
   }
 }
 
-async function getItemsToDeleteRecursively(folderId: string): Promise<string[]> {
+export async function getItemsToDeleteRecursively(folderId: string): Promise<string[]> {
   const itemsToDelete: string[] = [];
   
   type FileResponse = {

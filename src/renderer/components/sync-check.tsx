@@ -4,7 +4,8 @@ import { useUserStore } from '@renderer/stores/user-store'
 import { 
   getSyncConfiguration, 
   compareLocalWithRemote,
-  updateExistingSync 
+  updateExistingSync, 
+  updateLocalFromRemote
 } from '@renderer/services/sync-service'
 import { SyncType } from '@renderer/types/sync'
 
@@ -32,28 +33,56 @@ export function SyncCheck() {
           
           if (hasDifferences) {
             toast('Files Out of Sync', {
-              description: `Local folder "${existingConfig.localPath}" has changes:\n${diff.added.length} new, ${diff.modified.length} modified, and ${diff.removed.length} removed files`,
+              description: `Local folder "${existingConfig.localPath}" has differences:\n${diff.added.length} new, ${diff.modified.length} modified, and ${diff.removed.length} removed files`,
               action: {
-                label: 'Update Remote',
-                onClick: async () => {
-                  const itemsWithFullPath = [...diff.added, ...diff.modified].map(item => ({
-                    ...item,
-                    fullPath: `${existingConfig.localPath}/${item.path}`,
-                    path: item.path
-                  }))
+                label: 'Choose Source',
+                onClick: () => {
+                  toast.dismiss()
+                  toast('Choose Sync Direction', {
+                    description: 'Which version should be the source of truth?',
+                    action: {
+                      label: 'Use Remote',
+                      onClick: async () => {
+                        toast.promise(
+                          updateLocalFromRemote(
+                            existingConfig.localPath,
+                            existingConfig.remoteFolderId,
+                            diff
+                          ),
+                          {
+                            loading: 'Updating local folder...',
+                            success: 'Local folder synchronized with remote',
+                            error: 'Failed to update local folder'
+                          }
+                        )
+                      }
+                    },
+                    cancel: {
+                      label: 'Use Local',
+                      onClick: async () => {
+                        const itemsWithFullPath = [...diff.added, ...diff.modified].map(item => ({
+                          ...item,
+                          fullPath: `${existingConfig.localPath}/${item.path}`,
+                          path: item.path
+                        }))
 
-                  toast.promise(
-                    updateExistingSync(
-                      itemsWithFullPath, 
-                      existingConfig.remoteFolderId, 
-                      diff
-                    ),
-                    {
-                      loading: `Updating remote folder...`,
-                      success: 'Remote folder synchronized successfully',
-                      error: 'Failed to update remote folder'
-                    }
-                  )
+                        toast.promise(
+                          updateExistingSync(
+                            itemsWithFullPath,
+                            existingConfig.remoteFolderId,
+                            diff
+                          ),
+                          {
+                            loading: 'Updating remote folder...',
+                            success: 'Remote folder synchronized successfully',
+                            error: 'Failed to update remote folder'
+                          }
+                        )
+                      }
+                    },
+                    duration: 999999,
+                    dismissible: true
+                  })
                 }
               },
               dismissible: true,

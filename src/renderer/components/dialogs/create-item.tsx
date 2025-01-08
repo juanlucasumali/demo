@@ -93,27 +93,27 @@ export function CreateItem({
     }
   };
 
-  const handleLocalFileSystemOperation = async (
-    itemName: string,
-    fileContent?: Buffer
-  ) => {
-    if (!localPath) return;
+  // const handleLocalFileSystemOperation = async (
+  //   itemName: string,
+  //   fileContent?: Buffer
+  // ) => {
+  //   if (!localPath) return;
 
-    try {
-      const fullLocalPath = await window.api.joinPath(localPath, itemName);
+  //   try {
+  //     const fullLocalPath = await window.api.joinPath(localPath, itemName);
       
-      if (type === 'folder') {
-        await window.api.createLocalDirectory(fullLocalPath);
-        console.log('✅ Local directory created:', fullLocalPath);
-      } else if (type === 'file' && fileContent) {
-        await window.api.writeLocalFile(fullLocalPath, fileContent);
-        console.log('✅ Local file written:', fullLocalPath);
-      }
-    } catch (error) {
-      console.error('❌ Local filesystem operation failed:', error);
-      throw new Error('Failed to create item in local filesystem');
-    }
-  };
+  //     if (type === 'folder') {
+  //       await window.api.createLocalDirectory(fullLocalPath);
+  //       console.log('✅ Local directory created:', fullLocalPath);
+  //     } else if (type === 'file' && fileContent) {
+  //       await window.api.writeLocalFile(fullLocalPath, fileContent);
+  //       console.log('✅ Local file written:', fullLocalPath);
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Local filesystem operation failed:', error);
+  //     throw new Error('Failed to create item in local filesystem');
+  //   }
+  // };
 
   const onSubmit: SubmitHandler<CreateItemFormValues> = async (data) => {
     try {
@@ -135,13 +135,13 @@ export function CreateItem({
         variant: "default",
       });
 
-      if (localPath) {
-        const fileContent = selectedFile ? await selectedFile.arrayBuffer() : undefined;
-        await handleLocalFileSystemOperation(
-          finalFileName,
-          fileContent ? Buffer.from(fileContent) : undefined
-        );
-      }
+      // if (localPath) {
+      //   const fileContent = selectedFile ? await selectedFile.arrayBuffer() : undefined;
+      //   await handleLocalFileSystemOperation(
+      //     finalFileName,
+      //     fileContent ? Buffer.from(fileContent) : undefined
+      //   );
+      // }
 
       const newItem = {
         createdAt: new Date(),

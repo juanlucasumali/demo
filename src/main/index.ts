@@ -6,6 +6,8 @@ import { initialize, enable } from '@electron/remote/main'
 import { autoUpdater } from 'electron-updater'
 import log from 'electron-log/main'
 import chokidar from 'chokidar'
+import fs from 'fs/promises'
+import { rm } from 'fs/promises'
 
 // Initialize remote module
 initialize()
@@ -121,6 +123,25 @@ ipcMain.handle('scan-directory', async (_, directoryPath: string) => {
       reject(error)
     }
   })
+})
+
+// Add these IPC handlers
+ipcMain.handle('delete-directory', async (_, dirPath: string) => {
+  try {
+    await rm(dirPath, { recursive: true, force: true })
+  } catch (error) {
+    console.error('Failed to delete directory:', error)
+    throw error
+  }
+})
+
+ipcMain.handle('delete-file', async (_, filePath: string) => {
+  try {
+    await rm(filePath, { force: true })
+  } catch (error) {
+    console.error('Failed to delete file:', error)
+    throw error
+  }
 })
 
 function createWindow(): void {

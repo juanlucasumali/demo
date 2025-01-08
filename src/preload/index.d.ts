@@ -21,6 +21,8 @@ declare global {
       createLocalDirectory: (dirPath: string) => Promise<boolean>
       writeLocalFile: (filePath: string, content: Buffer) => Promise<boolean>
       joinPath: (...paths: string[]) => Promise<string>
+      deleteDirectory: (path: string) => Promise<void>
+      deleteFile: (path: string) => Promise<void>
     }
   }
 }

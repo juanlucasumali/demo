@@ -43,7 +43,9 @@ const api = {
       console.error('Failed to write local file:', error)
       throw error
     }
-  }
+  },
+  deleteDirectory: (path: string) => ipcRenderer.invoke('delete-directory', path),
+  deleteFile: (path: string) => ipcRenderer.invoke('delete-file', path),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

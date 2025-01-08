@@ -1,40 +1,14 @@
 import { supabase } from '@renderer/lib/supabase'
-import path from 'path'
 import { useUserStore } from '@renderer/stores/user-store'
 import { FileFormat, ItemType } from '@renderer/types/items'
 import { addFileOrFolder, getItemsToDeleteRecursively } from './items-service'
-import chokidar from 'chokidar'
-
-interface LocalItem {
-  name: string
-  path: string
-  type: 'file' | 'folder'
-  size?: number
-  lastModified?: Date
-}
-
-interface SyncConfiguration {
-  id: number
-  userId: string
-  localPath: string
-  remoteFolderId: string
-  lastSyncedAt: Date | null
-}
-
-interface UploadProgress {
-  uploadedFiles: number
-  totalFiles: number
-  currentFile: string
-}
-
-interface LocalItemWithFullPath extends LocalItem {
-  fullPath: string
-}
+import { LocalItem, LocalItemWithFullPath, UploadProgress, SyncConfiguration, SyncType } from '@renderer/types/sync'
 
 // Configuration Management Functions
 export async function createSyncConfiguration(
   localPath: string,
-  remoteFolderId: string
+  remoteFolderId: string,
+  type: SyncType
 ): Promise<SyncConfiguration> {
   const profile = useUserStore.getState().profile
 
@@ -48,6 +22,7 @@ export async function createSyncConfiguration(
       user_id: profile.id,
       local_path: localPath,
       remote_folder_id: remoteFolderId,
+      type: type,
     })
     .select()
     .single()
@@ -63,6 +38,7 @@ export async function createSyncConfiguration(
     localPath: data.local_path,
     remoteFolderId: data.remote_folder_id,
     lastSyncedAt: data.last_synced_at,
+    type: type,
   }
 }
 
@@ -86,6 +62,7 @@ export async function getSyncConfiguration(userId: string): Promise<SyncConfigur
     localPath: data.local_path,
     remoteFolderId: data.remote_folder_id,
     lastSyncedAt: data.last_synced_at,
+    type: data.type,
   }
 }
 
@@ -112,9 +89,10 @@ export async function scanLocalDirectory(directoryPath: string): Promise<LocalIt
   }
 }
 
-export async function initializeSync(localPath: string): Promise<{ 
+export async function initializeSync(localPath: string, type: SyncType): Promise<{ 
   syncId: number, 
-  remoteFolderId: string 
+  remoteFolderId: string,
+  type: SyncType
 }> {
   const profile = useUserStore.getState().profile
 
@@ -146,11 +124,12 @@ export async function initializeSync(localPath: string): Promise<{
     })
 
     // 2. Create sync configuration
-    const syncConfig = await createSyncConfiguration(localPath, remoteFolder.id)
+    const syncConfig = await createSyncConfiguration(localPath, remoteFolder.id, type)
 
     return {
       syncId: syncConfig.id,
-      remoteFolderId: remoteFolder.id
+      remoteFolderId: remoteFolder.id,
+      type: type
     }
   } catch (error) {
     console.error('Sync initialization failed:', error)

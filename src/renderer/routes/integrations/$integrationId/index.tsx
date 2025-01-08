@@ -2,14 +2,11 @@ import { createFileRoute, useParams } from '@tanstack/react-router'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
-import { Radio, Folder, FolderSync, Upload } from 'lucide-react'
+import { Radio, Folder } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@renderer/components/ui/card'
-import { Alert, AlertDescription, AlertTitle } from '@renderer/components/ui/alert'
 import { Progress } from '@renderer/components/ui/progress'
 import { useState } from 'react'
-import { SelectFilesDialog } from '@renderer/components/dialogs/select-files'
-import { DemoItem } from '@renderer/types/items'
 import { useToast } from '@renderer/hooks/use-toast'
 import { Steps, Step } from '@renderer/components/ui/steps'
 
@@ -83,18 +80,6 @@ function IntegrationDetail() {
   }
 
   const canProceedToStep2 = selectedPath !== null
-  
-  const handleStepChange = (step: number) => {
-    if (step === 2 && !canProceedToStep2) {
-      toast({
-        title: "Complete Step 1",
-        description: "Please select an FL Studio folder first",
-        variant: "destructive"
-      })
-      return
-    }
-    setCurrentStep(step)
-  }
 
   const resetStep1 = () => {
     setSelectedPath(null)
@@ -125,8 +110,8 @@ function IntegrationDetail() {
 
       <PageContent>
         <div className="max-w-3xl mx-auto space-y-8">
-          <Steps value={currentStep} onChange={handleStepChange}>
-            <Step value={1} title="Choose FL Studio Folder">
+          <Steps>
+            <Step value={1} title="Choose FL Studio Folder" canProceedToStep2={canProceedToStep2}>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
@@ -159,7 +144,7 @@ function IntegrationDetail() {
               </Card>
             </Step>
 
-            <Step value={2} title="Start Sync">
+            <Step value={2} title="Start Sync" canProceedToStep2={canProceedToStep2}>
               <Card>
                 <CardHeader>
                   <CardTitle>Step 2: Start Synchronization</CardTitle>
@@ -181,20 +166,6 @@ function IntegrationDetail() {
               </Card>
             </Step>
           </Steps>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Download Manager</CardTitle>
-              <CardDescription>
-                Active downloads and uploads will appear here
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground">
-                No active transfers
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </PageContent>
     </PageMain>

@@ -8,6 +8,7 @@ import log from 'electron-log/main'
 import chokidar from 'chokidar'
 import fs from 'fs/promises'
 import { rm } from 'fs/promises'
+import { startWatching, stopWatching } from './file-watcher'
 
 // Initialize remote module
 initialize()
@@ -140,6 +141,27 @@ ipcMain.handle('delete-file', async (_, filePath: string) => {
     await rm(filePath, { force: true })
   } catch (error) {
     console.error('Failed to delete file:', error)
+    throw error
+  }
+})
+
+// Add these IPC handlers
+ipcMain.handle('start-watching', async (_, syncId: number, directoryPath: string) => {
+  try {
+    startWatching(syncId, directoryPath)
+    return true
+  } catch (error) {
+    console.error('Failed to start directory watching:', error)
+    throw error
+  }
+})
+
+ipcMain.handle('stop-watching', async (_, syncId: number) => {
+  try {
+    stopWatching(syncId)
+    return true
+  } catch (error) {
+    console.error('Failed to stop directory watching:', error)
     throw error
   }
 })

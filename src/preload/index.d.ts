@@ -23,6 +23,17 @@ declare global {
       joinPath: (...paths: string[]) => Promise<string>
       deleteDirectory: (path: string) => Promise<void>
       deleteFile: (path: string) => Promise<void>
+      startWatching: (syncId: number, path: string) => Promise<boolean>
+      stopWatching: (syncId: number) => Promise<boolean>
+      onFileSystemEvent: (callback: (event: {
+        type: string
+        syncId: number
+        data: {
+          name: string
+          path: string
+          type: 'file' | 'folder'
+        }
+      }) => void) => void
     }
   }
 }

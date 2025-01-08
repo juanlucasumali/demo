@@ -46,6 +46,12 @@ const api = {
   },
   deleteDirectory: (path: string) => ipcRenderer.invoke('delete-directory', path),
   deleteFile: (path: string) => ipcRenderer.invoke('delete-file', path),
+  startWatching: (syncId: number, path: string) => 
+    ipcRenderer.invoke('start-watching', syncId, path),
+  stopWatching: (syncId: number) => 
+    ipcRenderer.invoke('stop-watching', syncId),
+  onFileSystemEvent: (callback: (event: any) => void) => 
+    ipcRenderer.on('file-system-event', (_, event) => callback(event))
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

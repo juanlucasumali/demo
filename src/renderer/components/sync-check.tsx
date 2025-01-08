@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { useUserStore } from '@renderer/stores/user-store'
+import { useFileWatcher } from '@renderer/hooks/useFileWatcher'
 import { 
   getSyncConfiguration, 
   compareLocalWithRemote,
@@ -10,6 +11,10 @@ import {
 import { SyncType } from '@renderer/types/sync'
 
 export function SyncCheck() {
+  // Initialize file watcher
+  useFileWatcher()
+
+  // Keep existing initial sync check logic
   useEffect(() => {
     async function checkSync() {
       try {

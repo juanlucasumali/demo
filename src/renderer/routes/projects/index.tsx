@@ -29,7 +29,6 @@ export default function Projects() {
     <PageMain>
       <PageHeader
         title={'Projects'}
-        description={'What will you create today?'}
         icon={Box}
       >
         <Button variant="default" onClick={() => dialogState.createProject.onOpen()}>

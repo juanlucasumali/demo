@@ -47,7 +47,6 @@ function Home() {
       {/* Page Header */}
       <PageHeader
         title="Home"
-        description="Supercharge creativity, simplify your media."
         icon={HomeIcon}
       >
         <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file' })}>

@@ -69,7 +69,7 @@ function ProjectPage() {
   if (isLoading.currentProject || isLoading.filesAndFolders) {
     return (
       <PageMain>
-        <PageHeader title="" description="" icon={Box} />
+        <PageHeader title="" icon={Box} />
       </PageMain>
     )
   }
@@ -80,7 +80,6 @@ function ProjectPage() {
       <PageMain>
         <PageHeader
           title="Project Not Found"
-          description="The requested project could not be found."
           icon={Box}
         />
       </PageMain>
@@ -91,7 +90,6 @@ function ProjectPage() {
     <PageMain>
       <PageHeader
         title={currentProject.name}
-        description={currentProject.description || 'No description provided'}
         icon={Box}
         tag={currentProject.tags}
         owner={currentProject.owner ?? undefined}

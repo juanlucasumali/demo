@@ -241,10 +241,9 @@ export const createColumns = ({
       <DataTableColumnHeader column={column} title="Shared With" disabled={true}/>
     ),
     cell: ({ row }) => {
-      const owner = row.original.owner;
       const friends = row.original.sharedWith ?? [];
       
-      return <AvatarGroup owner={owner!!} users={friends} size="md" />;
+      return <AvatarGroup users={friends} size="md" />;
     }
   },
 
@@ -382,39 +381,6 @@ if (enableActions) {
                   }}
                 >
                   WAV to MP3
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={row.original.format !== FileFormat.MP3}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    try {
-                      // First, show the save dialog to get user interaction
-                      const handle = await window.showSaveFilePicker({
-                        suggestedName: row.original.name.replace(/\.mp3$/i, '.wav'),
-                        types: [{
-                          description: 'WAV Audio',
-                          accept: { 'audio/wav': ['.wav'] }
-                        }]
-                      });
-
-                      // Then download and convert
-                      const mp3Data = await b2Service.retrieveFile(row.original.filePath!);
-                      const wavData = await AudioConverterService.mp3ToWav(mp3Data);
-                      
-                      // Save the converted file
-                      const writable = await handle.createWritable();
-                      await writable.write(wavData);
-                      await writable.close();
-                      
-                      console.log('✅ MP3 to WAV conversion saved successfully');
-                    } catch (error) {
-                      if (error instanceof Error && error.name !== 'AbortError') {
-                        console.error('❌ Conversion failed:', error);
-                      }
-                    }
-                  }}
-                >
-                  MP3 to WAV
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>

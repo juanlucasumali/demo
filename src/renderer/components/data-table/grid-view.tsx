@@ -15,7 +15,7 @@ interface DataTableGridViewProps<TData> {
   enableSelection?: boolean
   enableRowLink?: boolean
   onRowClick?: (item: TData) => void
-  onToggleStar?: (id: string, isStarred: boolean) => void
+  onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void
 }
 
 export function DataTableGridView<TData>({ 
@@ -60,7 +60,7 @@ export function DataTableGridView<TData>({
                 e.preventDefault()
                 e.stopPropagation()
                 if (onToggleStar) {
-                  onToggleStar(itemId, !isStarred)
+                  onToggleStar(itemId, !isStarred, row.getValue("type") as ItemType)
                 }
               }}
             >

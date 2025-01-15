@@ -50,7 +50,7 @@ interface DataTableProps<DemoItem> {
   showSearch?: boolean
   onRowClick?: (item: DemoItem) => void
   isLoading?: boolean
-  onToggleStar?: (id: string, isStarred: boolean) => void
+  onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void
 }
 
 export type AudioState = {

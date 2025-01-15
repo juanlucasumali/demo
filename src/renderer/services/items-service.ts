@@ -60,6 +60,7 @@ async function getItemSharing(itemId: string, itemType: 'file' | 'project'): Pro
 
 // Generic function to fetch items with sharing info
 async function getProjectsWithSharing(userId: string): Promise<DemoItem[]> {
+  // Get all projects (both owned and shared)
   const ownedQuery = supabase
     .from('projects')
     .select(`
@@ -78,11 +79,25 @@ async function getProjectsWithSharing(userId: string): Promise<DemoItem[]> {
     .eq('shared_items.shared_with_id', userId)
     .neq('owner_id', userId);
 
-  const [{ data: owned = [], error: ownedError }, { data: shared = [], error: sharedError }] = 
-    await Promise.all([ownedQuery, sharedQuery]);
+  // Get starred projects for this user
+  const starredQuery = supabase
+    .from('starred_items')
+    .select('project_id')
+    .eq('user_id', userId)
+    .not('project_id', 'is', null);
+
+  const [
+    { data: owned = [], error: ownedError }, 
+    { data: shared = [], error: sharedError },
+    { data: starred = [], error: starredError }
+  ] = await Promise.all([ownedQuery, sharedQuery, starredQuery]);
 
   if (ownedError) throw ownedError;
   if (sharedError) throw sharedError;
+  if (starredError) throw starredError;
+
+  // Create a set of starred project IDs for efficient lookup
+  const starredProjectIds = new Set(starred?.map(s => s.project_id) || []);
 
   const items = [...(owned || []), ...(shared || [])];
   return Promise.all(items.map(async (item) => {
@@ -93,6 +108,7 @@ async function getProjectsWithSharing(userId: string): Promise<DemoItem[]> {
       owner: await processUserProfile(item.owner),
       sharedWith,
       type: ItemType.PROJECT,
+      isStarred: starredProjectIds.has(item.id),
       createdAt: new Date(item.created_at),
       lastModified: new Date(item.last_modified),
       lastOpened: new Date(item.last_opened),
@@ -112,7 +128,7 @@ export async function getFilesWithSharing(
     includeNested?: boolean
   }
 ): Promise<DemoItem[]> {
-  // First, get all files (both owned and shared)
+  // Get all files (both owned and shared)
   const ownedQuery = supabase
     .from('files')
     .select(`
@@ -137,11 +153,25 @@ export async function getFilesWithSharing(
     .eq('shared_items.shared_with_id', userId)
     .neq('owner_id', userId);
 
-  const [{ data: owned = [], error: ownedError }, { data: shared = [], error: sharedError }] = 
-    await Promise.all([ownedQuery, sharedQuery]);
+  // Get starred files for this user
+  const starredQuery = supabase
+    .from('starred_items')
+    .select('file_id')
+    .eq('user_id', userId)
+    .not('file_id', 'is', null);
+
+  const [
+    { data: owned = [], error: ownedError }, 
+    { data: shared = [], error: sharedError },
+    { data: starred = [], error: starredError }
+  ] = await Promise.all([ownedQuery, sharedQuery, starredQuery]);
 
   if (ownedError) throw ownedError;
   if (sharedError) throw sharedError;
+  if (starredError) throw starredError;
+
+  // Create a set of starred file IDs for efficient lookup
+  const starredFileIds = new Set(starred?.map(s => s.file_id) || []);
 
   // Combine all items
   let items = [...(owned || []), ...(shared || [])];
@@ -150,20 +180,16 @@ export async function getFilesWithSharing(
   if (filters) {
     if (filters.parentFolderId !== undefined) {
       if (filters.parentFolderId === null) {
-        // For root items, only include items with no folder associations
         items = items.filter(item => 
           !item.file_folders || item.file_folders.length === 0
         );
       } else if (filters.includeNested) {
-        // Get all nested item IDs
         const nestedIds = await getAllNestedItems(filters.parentFolderId);
-        // Include both direct children and nested items
         items = items.filter(item => 
           item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId) ||
           nestedIds.includes(item.id)
         );
       } else {
-        // For items in a specific folder (direct children only)
         items = items.filter(item => 
           item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId)
         );
@@ -192,6 +218,7 @@ export async function getFilesWithSharing(
       owner: await processUserProfile(item.owner),
       sharedWith,
       type: item.type as ItemType,
+      isStarred: starredFileIds.has(item.id),
       createdAt: new Date(item.created_at),
       lastModified: new Date(item.last_modified),
       lastOpened: new Date(item.last_opened),
@@ -334,7 +361,6 @@ export async function addFileOrFolder(
         owner_id: currentUserId,
         description: item.description,
         icon_url: item.icon,
-        is_starred: item.isStarred,
         tags: item.tags,
         format: item.format,
         size: fileContent ? fileContent.byteLength : item.size,
@@ -444,7 +470,6 @@ export async function addProject(item: Omit<DemoItem, 'id'>, sharedWith?: UserPr
       name: item.name,
       description: item.description,
       icon_url: item.icon,
-      is_starred: item.isStarred,
     })
     .select()
     .single();
@@ -618,7 +643,6 @@ export async function updateItem(item: DemoItem, originalItem: DemoItem) {
     name: item.name,
     description: item.description,
     icon_url: item.icon,
-    is_starred: item.isStarred,
     last_modified: new Date().toISOString(),
     tags: item.tags,
     format: item.format,
@@ -690,24 +714,38 @@ export async function updateItem(item: DemoItem, originalItem: DemoItem) {
   }
 }
 
-export async function toggleItemStar(id: string, isStarred: boolean) {
+export async function toggleItemStar(id: string, isStarred: boolean, type: ItemType) {
   const userId = getCurrentUserId()
-
-  console.log('Toggling star for item:', id, isStarred)
   
-  // Try to update in both tables - one will succeed based on where the item exists
-  await Promise.all([
-    supabase
-      .from('files')
-      .update({ is_starred: isStarred })
-      .eq('id', id)
-      .eq('owner_id', userId),
-    supabase
-      .from('projects')
-      .update({ is_starred: isStarred })
-      .eq('id', id)
-      .eq('owner_id', userId)
-  ])
+  console.log('Toggling star for item:', id, isStarred, type)
+  
+  if (isStarred) {
+    // Add star
+    const { error } = await supabase
+      .from('starred_items')
+      .insert({
+        user_id: userId,
+        file_id: type === ItemType.PROJECT ? null : id,
+        project_id: type === ItemType.PROJECT ? id : null
+      })
+      .single()
+    
+    if (error && error.code !== '23505') { // Ignore unique constraint violations
+      console.error('❌ Failed to add star:', error);
+      throw error
+    }
+  } else {
+    // Remove star
+    const { error } = await supabase
+      .from('starred_items')
+      .delete()
+      .match({ 
+        user_id: userId, 
+        [type === ItemType.PROJECT ? 'project_id' : 'file_id']: id 
+      })
+    
+    if (error) throw error
+  }
 }
 
 export async function getFolder(folderId: string): Promise<DemoItem | null> {

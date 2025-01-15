@@ -55,7 +55,7 @@ export default function Projects() {
           viewMode="grid"
           pageSize={12}
           isLoading={isLoading.projects}
-          onToggleStar={(id, isStarred) => toggleStar({ id, isStarred })}
+          onToggleStar={(id, isStarred, type) => toggleStar({ id, isStarred, type })}
         />
       </PageContent>
 

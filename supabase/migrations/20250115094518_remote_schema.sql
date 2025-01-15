@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "last_modified" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "last_opened" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
+    "local_path" "text",
     CONSTRAINT "files_type_check" CHECK (("type" = ANY (ARRAY['file'::"text", 'folder'::"text"])))
 );
 
@@ -173,6 +174,17 @@ CREATE TABLE IF NOT EXISTS "public"."shared_items" (
 
 ALTER TABLE "public"."shared_items" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."starred_items" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "file_id" "uuid",
+    "project_id" "uuid",
+    CONSTRAINT "starred_items_one_id_not_null" CHECK (((("file_id" IS NOT NULL) AND ("project_id" IS NULL)) OR (("project_id" IS NOT NULL) AND ("file_id" IS NULL))))
+);
+
+ALTER TABLE "public"."starred_items" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."sync_configurations" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -180,7 +192,8 @@ CREATE TABLE IF NOT EXISTS "public"."sync_configurations" (
     "remote_folder_id" "uuid",
     "last_synced_at" timestamp with time zone,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "type" "text"
 );
 
 ALTER TABLE "public"."sync_configurations" OWNER TO "postgres";
@@ -237,6 +250,15 @@ ALTER TABLE ONLY "public"."shared_items"
 ALTER TABLE ONLY "public"."shared_items"
     ADD CONSTRAINT "shared_items_unique_project_share" UNIQUE ("project_id", "shared_with_id");
 
+ALTER TABLE ONLY "public"."starred_items"
+    ADD CONSTRAINT "starred_items_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."starred_items"
+    ADD CONSTRAINT "starred_items_unique_file" UNIQUE ("user_id", "file_id");
+
+ALTER TABLE ONLY "public"."starred_items"
+    ADD CONSTRAINT "starred_items_unique_project" UNIQUE ("user_id", "project_id");
+
 ALTER TABLE ONLY "public"."sync_configurations"
     ADD CONSTRAINT "sync_configurations_id_key" UNIQUE ("id");
 
@@ -263,6 +285,12 @@ CREATE INDEX "idx_file_folders_folder_id" ON "public"."file_folders" USING "btre
 CREATE INDEX "idx_file_projects_file_id" ON "public"."file_projects" USING "btree" ("file_id");
 
 CREATE INDEX "idx_file_projects_project_id" ON "public"."file_projects" USING "btree" ("project_id");
+
+CREATE INDEX "idx_starred_items_file_id" ON "public"."starred_items" USING "btree" ("file_id");
+
+CREATE INDEX "idx_starred_items_project_id" ON "public"."starred_items" USING "btree" ("project_id");
+
+CREATE INDEX "idx_starred_items_user_id" ON "public"."starred_items" USING "btree" ("user_id");
 
 CREATE INDEX "notifications_to_user_id_idx" ON "public"."notifications" USING "btree" ("to_user_id");
 
@@ -316,6 +344,15 @@ ALTER TABLE ONLY "public"."shared_items"
 
 ALTER TABLE ONLY "public"."shared_items"
     ADD CONSTRAINT "shared_items_shared_with_id_fkey" FOREIGN KEY ("shared_with_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."starred_items"
+    ADD CONSTRAINT "starred_items_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."starred_items"
+    ADD CONSTRAINT "starred_items_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."starred_items"
+    ADD CONSTRAINT "starred_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."sync_configurations"
     ADD CONSTRAINT "sync_configurations_remote_folder_id_fkey" FOREIGN KEY ("remote_folder_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
@@ -379,6 +416,10 @@ GRANT ALL ON TABLE "public"."projects" TO "service_role";
 GRANT ALL ON TABLE "public"."shared_items" TO "anon";
 GRANT ALL ON TABLE "public"."shared_items" TO "authenticated";
 GRANT ALL ON TABLE "public"."shared_items" TO "service_role";
+
+GRANT ALL ON TABLE "public"."starred_items" TO "anon";
+GRANT ALL ON TABLE "public"."starred_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."starred_items" TO "service_role";
 
 GRANT ALL ON TABLE "public"."sync_configurations" TO "anon";
 GRANT ALL ON TABLE "public"."sync_configurations" TO "authenticated";

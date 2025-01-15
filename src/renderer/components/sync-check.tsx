@@ -51,6 +51,7 @@ export function SyncCheck() {
               },
               dismissible: false,
               duration: Infinity,
+              closeButton: true
             })
           }
         }

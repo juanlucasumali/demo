@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as itemsService from '@renderer/services/items-service'
-import { DemoItem } from '@renderer/types/items';
+import { DemoItem, ItemType } from '@renderer/types/items';
 import { UserProfile } from '@renderer/types/users';
 
 interface UseItemsOptions {
@@ -103,8 +103,8 @@ export function useItems(options?: UseItemsOptions) {
 
   // Toggle star mutation
   const toggleStar = useMutation({
-    mutationFn: ({ id, isStarred }: { id: string; isStarred: boolean }) => 
-      itemsService.toggleItemStar(id, isStarred),
+    mutationFn: ({ id, isStarred, type }: { id: string; isStarred: boolean; type: ItemType }) => 
+      itemsService.toggleItemStar(id, isStarred, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files-and-folders'] })
       queryClient.invalidateQueries({ queryKey: ['projects'] })

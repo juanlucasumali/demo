@@ -14,7 +14,7 @@ import {
 import { ColumnDef, CellContext } from "@tanstack/react-table"
 import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download, Play, Pause, Loader2, MinusCircle } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
-import { DemoItem, FileFormat } from "@renderer/types/items"
+import { DemoItem, FileFormat, ItemType } from "@renderer/types/items"
 import { formatDuration, isAudioFile, mimeTypes } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
 import { Checkbox } from "@renderer/components/ui/checkbox"
@@ -51,7 +51,7 @@ interface ColumnOptions {
   onShare?: (item: DemoItem) => void
   onDelete?: (item: DemoItem) => void
   onRemove?: (item: DemoItem) => void
-  onToggleStar?: (id: string, isStarred: boolean) => void;
+  onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void;
 }
 
 export const createColumns = ({
@@ -186,7 +186,7 @@ export const createColumns = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   if (enableStarToggle && onToggleStar) {
-                    onToggleStar(itemId, !isStarred);
+                    onToggleStar(itemId, !isStarred, type);
                   }
                 }}
                 style={{ cursor: enableStarToggle ? 'pointer' : 'default' }}

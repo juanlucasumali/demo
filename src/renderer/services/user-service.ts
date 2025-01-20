@@ -1,6 +1,7 @@
 import { supabase } from "@renderer/lib/supabase"
 import { UserProfile } from "@renderer/types/users"
 import { b2Service } from "./b2-service"
+import { DemoItem } from "@renderer/types/items"
 
 export async function createProfile(data: UserProfile, avatarInfo?: { b2FileId: string, fileName: string }) {
   const { error } = await supabase
@@ -85,5 +86,109 @@ export async function getAvatarUrl(b2FileId: string): Promise<string> {
   } catch (error) {
     console.error('Failed to get avatar URL:', error)
     throw error
+  }
+}
+
+export async function updateHighlights(userId: string, items: DemoItem[]) {
+  // First delete existing highlights
+  const { error: deleteError } = await supabase
+    .from('highlights')
+    .delete()
+    .eq('user_id', userId)
+
+  if (deleteError) {
+    console.error('Failed to delete existing highlights:', deleteError)
+    throw deleteError
+  }
+
+  // If there are no items to add, we're done
+  if (items.length === 0) return
+
+  // Insert new highlights with positions
+  const highlights = items.map((item, index) => ({
+    user_id: userId,
+    file_id: item.id,
+    position: index
+  }))
+
+  const { error } = await supabase
+    .from('highlights')
+    .upsert(highlights, {
+      onConflict: 'user_id,position',
+      ignoreDuplicates: false
+    })
+
+  if (error) {
+    console.error('Failed to update highlights:', error)
+    throw error
+  }
+}
+
+export async function getHighlights(userId: string): Promise<DemoItem[]> {
+  const { data, error } = await supabase
+    .from('highlights')
+    .select(`
+      position,
+      file:file_id (*)
+    `)
+    .eq('user_id', userId)
+    .order('position')
+
+  if (error) {
+    console.error('Failed to get highlights:', error)
+    throw error
+  }
+  return data.map(h => h.file) as unknown as DemoItem[]
+}
+
+export async function updateFavorites(userId: string, favorites: {
+  movie: string | null,
+  song: string | null,
+  place: string | null
+}) {
+  const { error } = await supabase
+    .from('favorites')
+    .upsert({
+      user_id: userId,
+      ...favorites
+    }, {
+      onConflict: 'user_id',
+      ignoreDuplicates: false
+    })
+
+  if (error) {
+    console.error('Failed to update favorites:', error)
+    throw error
+  }
+}
+
+export async function getFavorites(userId: string) {
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Failed to get favorites:', error)
+    throw error // Ignore not found error
+  }
+  return data || { movie: null, song: null, place: null }
+}
+
+export async function updateProfile(profile: UserProfile) {
+  const { error } = await supabase
+    .from('users')
+    .update({
+      avatar: profile.avatar,
+      name: profile.name,
+      username: profile.username,
+      description: profile.description
+    })
+    .eq('id', profile.id);
+
+  if (error) {
+    console.error('Failed to update profile:', error);
+    throw error;
   }
 }

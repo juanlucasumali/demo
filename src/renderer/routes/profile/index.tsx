@@ -34,15 +34,15 @@ export default function Profile() {
             <Highlights/>
             <div className="grid gap-4 grid-cols-2">
                 <Favorites/>
-                <FavoriteSongs/>
+                {/* <FavoriteSongs/> */}
             </div>
             </div>
-            <div className="flex flex-row-reverse gap-2 px-4 pt-6">
+            {/* <div className="flex flex-row-reverse gap-2 px-4 pt-6">
               <SocialIcon url="www.instagram.com" fgColor='hsl(var(--primary))' bgColor='transparent' className='bg-background'/>
               <SocialIcon url="www.spotify.com" fgColor='hsl(var(--primary))' bgColor='transparent' className='bg-background'/>
               <SocialIcon url="www.youtube.com" fgColor='hsl(var(--primary))' bgColor='transparent' className='bg-background'/>
               <SocialIcon url="www.reddit.com" fgColor='hsl(var(--primary))' bgColor='transparent' className='bg-background'/>
-          </div>
+            </div> */}
         </div>
 
         {/* Socials */}

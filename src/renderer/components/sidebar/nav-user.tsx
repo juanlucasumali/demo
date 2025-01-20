@@ -18,7 +18,7 @@ export function NavUser({}: {}) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        {/* <Link to="/profile"> */}
+        <Link to="/profile">
           <SidebarMenuButton tooltip={'Home'} isActive={useRouterState().location.pathname === '/profile'}
             size="lg"
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -31,7 +31,7 @@ export function NavUser({}: {}) {
               <span className="truncate font-normal">@{profile?.username}</span>
             </div>
           </SidebarMenuButton>
-        {/* </Link> */}
+        </Link>
       </SidebarMenuItem>
     </SidebarMenu>
   )

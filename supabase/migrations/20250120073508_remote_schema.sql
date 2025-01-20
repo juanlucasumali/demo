@@ -42,6 +42,150 @@ $$;
 
 ALTER FUNCTION "public"."check_email_exists"("email" "text") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid" DEFAULT NULL::"uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_collection_id" "uuid" DEFAULT NULL::"uuid", "p_include_nested" boolean DEFAULT false) RETURNS TABLE("id" "uuid", "owner_id" "uuid", "type" "text", "name" "text", "description" "text", "icon_url" "text", "tags" "text", "format" "text", "size" bigint, "duration" integer, "file_path" "text", "created_at" timestamp with time zone, "last_modified" timestamp with time zone, "last_opened" timestamp with time zone, "local_path" "text", "owner_data" "jsonb", "shared_with" "jsonb", "is_starred" boolean, "file_projects" "uuid"[], "file_collections" "uuid"[], "file_folders" "uuid"[])
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  nested_folder_ids UUID[];
+BEGIN
+  -- Get nested folder IDs if needed
+  IF p_include_nested AND p_parent_folder_id IS NOT NULL THEN
+    WITH RECURSIVE folder_hierarchy AS (
+      -- Base case: direct children
+      SELECT id FROM files 
+      WHERE id IN (SELECT file_id FROM file_folders WHERE folder_id = p_parent_folder_id)
+      
+      UNION
+      
+      -- Recursive case
+      SELECT f.id
+      FROM files f
+      INNER JOIN file_folders ff ON f.id = ff.file_id
+      INNER JOIN folder_hierarchy fh ON ff.folder_id = fh.id
+    )
+    SELECT array_agg(id) INTO nested_folder_ids FROM folder_hierarchy;
+  END IF;
+
+  RETURN QUERY
+  WITH filtered_files AS (
+    SELECT f.*
+    FROM files f
+    WHERE 
+      -- Base ownership/sharing filter
+      (f.owner_id = p_user_id OR 
+       EXISTS (
+         SELECT 1 FROM shared_items si 
+         WHERE si.file_id = f.id 
+         AND si.shared_with_id = p_user_id
+       ))
+      AND
+      -- Parent folder filter with corrected root-level logic
+      CASE 
+        -- For root level (no parent folder), only return items with no parent folders
+        WHEN p_parent_folder_id IS NULL THEN 
+          NOT EXISTS (
+            SELECT 1 
+            FROM file_folders ff 
+            WHERE ff.file_id = f.id
+          )
+        -- For nested folders with include_nested flag
+        WHEN p_include_nested THEN
+          f.id = ANY(nested_folder_ids) OR
+          EXISTS (
+            SELECT 1 
+            FROM file_folders ff 
+            WHERE ff.file_id = f.id 
+            AND ff.folder_id = p_parent_folder_id
+          )
+        -- For direct children of a folder
+        ELSE
+          EXISTS (
+            SELECT 1 
+            FROM file_folders ff 
+            WHERE ff.file_id = f.id 
+            AND ff.folder_id = p_parent_folder_id
+          )
+      END
+      -- Project filter
+      AND (
+        p_project_id IS NULL OR
+        EXISTS (
+          SELECT 1 FROM file_projects fp 
+          WHERE fp.file_id = f.id 
+          AND fp.project_id = p_project_id
+        )
+      )
+      -- Collection filter
+      AND (
+        p_collection_id IS NULL OR
+        EXISTS (
+          SELECT 1 FROM file_collections fc 
+          WHERE fc.file_id = f.id 
+          AND fc.collection_id = p_collection_id
+        )
+      )
+  )
+  SELECT 
+    f.id,
+    f.owner_id,
+    f.type,
+    f.name,
+    f.description,
+    f.icon_url,
+    f.tags,
+    f.format,
+    f.size,
+    f.duration,
+    f.file_path,
+    f.created_at,
+    f.last_modified,
+    f.last_opened,
+    f.local_path,
+    jsonb_build_object(
+      'id', u.id,
+      'name', u.name,
+      'email', u.email,
+      'avatar', u.avatar
+    ) as owner_data,
+    COALESCE(
+      jsonb_agg(
+        DISTINCT jsonb_build_object(
+          'id', shared_user.id,
+          'name', shared_user.name,
+          'email', shared_user.email,
+          'avatar', shared_user.avatar
+        )
+      ) FILTER (WHERE shared_user.id IS NOT NULL),
+      '[]'::jsonb
+    ) as shared_with,
+    EXISTS(
+      SELECT 1 FROM starred_items si 
+      WHERE si.file_id = f.id 
+      AND si.user_id = p_user_id
+    ) as is_starred,
+    ARRAY(
+      SELECT fp.project_id FROM file_projects fp WHERE fp.file_id = f.id
+    ) as file_projects,
+    ARRAY(
+      SELECT fc.collection_id FROM file_collections fc WHERE fc.file_id = f.id
+    ) as file_collections,
+    ARRAY(
+      SELECT ff.folder_id FROM file_folders ff WHERE ff.file_id = f.id
+    ) as file_folders
+  FROM filtered_files f
+  INNER JOIN users u ON f.owner_id = u.id
+  LEFT JOIN shared_items si ON f.id = si.file_id
+  LEFT JOIN users shared_user ON si.shared_with_id = shared_user.id
+  GROUP BY 
+    f.id, f.owner_id, f.type, f.name, f.description, f.icon_url, 
+    f.tags, f.format, f.size, f.duration, f.file_path, f.created_at, 
+    f.last_modified, f.last_opened, f.local_path, 
+    u.id, u.name, u.email, u.avatar;
+END;
+$$;
+
+ALTER FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."migrate_existing_relationships"() RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -118,7 +262,6 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
     "name" "text" NOT NULL,
     "description" "text",
     "icon_url" "text",
-    "is_starred" boolean DEFAULT false,
     "tags" "text",
     "format" "text",
     "size" bigint,
@@ -154,7 +297,6 @@ CREATE TABLE IF NOT EXISTS "public"."projects" (
     "name" "text" NOT NULL,
     "description" "text",
     "icon_url" "text",
-    "is_starred" boolean DEFAULT false,
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "last_modified" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "last_opened" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
@@ -380,6 +522,10 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."migrate_existing_relationships"() TO "anon";
 GRANT ALL ON FUNCTION "public"."migrate_existing_relationships"() TO "authenticated";

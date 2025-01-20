@@ -120,7 +120,7 @@ async function getProjectsWithSharing(userId: string): Promise<DemoItem[]> {
 }
 
 export async function getFilesWithSharing(
-  userId: string, 
+  userId: string,
   filters?: {
     parentFolderId?: string | null,
     projectId?: string | null,
@@ -128,104 +128,30 @@ export async function getFilesWithSharing(
     includeNested?: boolean
   }
 ): Promise<DemoItem[]> {
-  // Get all files (both owned and shared)
-  const ownedQuery = supabase
-    .from('files')
-    .select(`
-      *,
-      owner:owner_id(*),
-      file_projects!file_projects_file_id_fkey(project_id),
-      file_collections!file_collections_file_id_fkey(collection_id),
-      file_folders!file_folders_file_id_fkey(folder_id)
-    `)
-    .eq('owner_id', userId);
+  const { data, error } = await supabase
+    .rpc('get_filtered_files', {
+      p_user_id: userId,
+      p_parent_folder_id: filters?.parentFolderId,
+      p_project_id: filters?.projectId,
+      p_collection_id: filters?.collectionId,
+      p_include_nested: filters?.includeNested || false
+    });
 
-  const sharedQuery = supabase
-    .from('files')
-    .select(`
-      *,
-      owner:owner_id(*),
-      my_share:shared_items!inner(shared_with:shared_with_id(*)),
-      file_projects!file_projects_file_id_fkey(project_id),
-      file_collections!file_collections_file_id_fkey(collection_id),
-      file_folders!file_folders_file_id_fkey(folder_id)
-    `)
-    .eq('shared_items.shared_with_id', userId)
-    .neq('owner_id', userId);
+  if (error) throw error;
 
-  // Get starred files for this user
-  const starredQuery = supabase
-    .from('starred_items')
-    .select('file_id')
-    .eq('user_id', userId)
-    .not('file_id', 'is', null);
-
-  const [
-    { data: owned = [], error: ownedError }, 
-    { data: shared = [], error: sharedError },
-    { data: starred = [], error: starredError }
-  ] = await Promise.all([ownedQuery, sharedQuery, starredQuery]);
-
-  if (ownedError) throw ownedError;
-  if (sharedError) throw sharedError;
-  if (starredError) throw starredError;
-
-  // Create a set of starred file IDs for efficient lookup
-  const starredFileIds = new Set(starred?.map(s => s.file_id) || []);
-
-  // Combine all items
-  let items = [...(owned || []), ...(shared || [])];
-
-  // Apply filters after fetching
-  if (filters) {
-    if (filters.parentFolderId !== undefined) {
-      if (filters.parentFolderId === null) {
-        items = items.filter(item => 
-          !item.file_folders || item.file_folders.length === 0
-        );
-      } else if (filters.includeNested) {
-        const nestedIds = await getAllNestedItems(filters.parentFolderId);
-        items = items.filter(item => 
-          item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId) ||
-          nestedIds.includes(item.id)
-        );
-      } else {
-        items = items.filter(item => 
-          item.file_folders?.some(ff => ff.folder_id === filters.parentFolderId)
-        );
-      }
-    }
-    
-    if (filters.projectId) {
-      items = items.filter(item => 
-        item.file_projects?.some(fp => fp.project_id === filters.projectId)
-      );
-    }
-    
-    if (filters.collectionId) {
-      items = items.filter(item => 
-        item.file_collections?.some(fc => fc.collection_id === filters.collectionId)
-      );
-    }
-  }
-
-  // Process and return the filtered items
-  return Promise.all(items.map(async (item) => {
-    const sharedWith = await getItemSharing(item.id, 'file');
-    return {
-      ...toCamelCase(item),
-      id: item.id,
-      owner: await processUserProfile(item.owner),
-      sharedWith,
-      type: item.type as ItemType,
-      isStarred: starredFileIds.has(item.id),
-      createdAt: new Date(item.created_at),
-      lastModified: new Date(item.last_modified),
-      lastOpened: new Date(item.last_opened),
-      projectIds: (item.file_projects || []).map(fp => fp.project_id),
-      collectionIds: (item.file_collections || []).map(fc => fc.collection_id),
-      parentFolderIds: (item.file_folders || []).map(ff => ff.folder_id),
-    };
+  return (data || []).map(item => ({
+    ...toCamelCase(item),
+    id: item.id,
+    owner: item.owner_data,
+    sharedWith: item.shared_with,
+    type: item.type as ItemType,
+    isStarred: item.is_starred,
+    createdAt: new Date(item.created_at),
+    lastModified: new Date(item.last_modified),
+    lastOpened: new Date(item.last_opened),
+    projectIds: item.file_projects,
+    collectionIds: item.file_collections,
+    parentFolderIds: item.file_folders,
   }));
 }
 

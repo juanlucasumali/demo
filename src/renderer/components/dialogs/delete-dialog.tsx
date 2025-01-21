@@ -69,7 +69,6 @@ export function DeleteDialog({ open, onOpenChange, item, handleDialogClose, dele
             className={`bg-red-500 text-primary hover:bg-red-500 ${
               isDeleting || isLoading ? "cursor-not-allowed opacity-50" : ""
             }`}
-            disabled={isDeleting || isLoading}
             onClick={handleDelete}
           >
             {isDeleting ? (

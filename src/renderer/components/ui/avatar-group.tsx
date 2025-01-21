@@ -3,6 +3,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip"
 import { MoreHorizontal, X } from "lucide-react"
 import { UserProfile } from "@renderer/types/users"
+import { Link } from "@tanstack/react-router"
 
 interface AvatarGroupProps {
   owner?: UserProfile
@@ -52,12 +53,14 @@ export function AvatarGroup({
       {remainingUsers.map((user) => (
         <DropdownMenuItem key={user.id} className="flex items-center justify-between">
           <div className="flex items-center">
-            <Avatar className="h-6 w-6 mr-2">
-              <AvatarImage src={user.avatar || ""} alt={user.username} />
-              <AvatarFallback>
+            <Link to={`/profiles/${user.id}` as any}>
+              <Avatar className="h-6 w-6 mr-2">
+                <AvatarImage src={user.avatar || ""} alt={user.username} />
+                <AvatarFallback>
                 {user.username[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+                </AvatarFallback>
+              </Avatar>
+            </Link>
             <span>@{user.username}</span>
           </div>
           {showRemove && onRemove && user.id !== owner?.id && (
@@ -84,12 +87,14 @@ export function AvatarGroup({
           <Tooltip key={user.id}>
             <TooltipTrigger asChild>
               <div className={`absolute ${avatarPositions[index]}`}>
-                <Avatar className={`${avatarSize} border-2 border-background`}>
-                  <AvatarImage src={user.avatar || ""} alt={user.username} />
-                  <AvatarFallback className="text-sm">
-                    {user.username[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <Link to={`/profiles/${user.id}` as any}>
+                  <Avatar className={`${avatarSize} border-2 border-background`}>
+                    <AvatarImage src={user.avatar || ""} alt={user.username} />
+                    <AvatarFallback className="text-sm">
+                      {user.username[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -115,11 +120,13 @@ export function AvatarGroup({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className={`absolute ${avatarPositions[4]}`}>
-                <Avatar className={`${avatarSize} border-2 border-background cursor-pointer`}>
-                  <AvatarFallback>
-                    <MoreHorizontal className="h-4 w-4" />
+                <Link to={`/profiles/${owner?.id}` as any}>
+                  <Avatar className={`${avatarSize} border-2 border-background cursor-pointer`}>
+                    <AvatarFallback>
+                      <MoreHorizontal className="h-4 w-4" />
                   </AvatarFallback>
-                </Avatar>
+                  </Avatar>
+                </Link>
               </div>
             </DropdownMenuTrigger>
             {renderDropdownContent()}
@@ -136,12 +143,14 @@ export function AvatarGroup({
           <Tooltip key={user.id}>
             <TooltipTrigger asChild>
               <div className={`cursor-${onRemove ? "pointer" : "default"}`}>
-                <Avatar className={`${avatarSize} border-2 border-background`}>
-                  <AvatarImage src={user.avatar || ""} alt={user.username} />
-                  <AvatarFallback>
-                    {user.username[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+              <Link to={`/profiles/${user.id}` as any}>
+                  <Avatar className={`${avatarSize} border-2 border-background`}>
+                    <AvatarImage src={user.avatar || ""} alt={user.username} />
+                    <AvatarFallback>
+                      {user.username[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -167,11 +176,13 @@ export function AvatarGroup({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="cursor-pointer">
-                <Avatar className={`${avatarSize} border-2 border-background`}>
-                  <AvatarFallback>
-                    <MoreHorizontal className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
+                <Link to={`/profiles/${owner?.id}` as any}>
+                  <Avatar className={`${avatarSize} border-2 border-background`}>
+                    <AvatarFallback>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
               </div>
             </DropdownMenuTrigger>
             {renderDropdownContent()}

@@ -6,23 +6,27 @@ import { Plus, X } from "lucide-react";
 import { SelectFilesDialog } from "../dialogs/select-files";
 import { DemoItem } from "@renderer/types/items";
 import { useToast } from "@renderer/hooks/use-toast";
-import { useUserStore } from "@renderer/stores/user-store";
+import { useUsers } from "@renderer/hooks/use-users";
 import folderImage from "../../assets/macos-folder.png";
 import fileImage from "../../assets/macos-song.png";
+import { UserProfile } from "@renderer/types/users";
+import { useUserStore } from "@renderer/stores/user-store";
 
-interface HighlightsProps {}
+interface HighlightsProps {
+  profile: UserProfile | null | undefined
+}
 
-export function Highlights({}: HighlightsProps) {
+export function Highlights({ profile }: HighlightsProps) {
   const { toast } = useToast();
-  const { highlights, updateHighlights, fetchHighlights } = useUserStore();
+  const { highlights, updateHighlights, isLoading } = useUsers({ 
+    userId: profile?.id 
+  });
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
   const [chooseFiles, setChooseFiles] = React.useState(false);
-
-  React.useEffect(() => {
-    fetchHighlights();
-  }, [fetchHighlights]);
+  const currentUser = useUserStore(state => state.profile);
+  const canEdit = currentUser?.id === profile?.id;
 
   React.useEffect(() => {
     if (!api) return;
@@ -43,7 +47,7 @@ export function Highlights({}: HighlightsProps) {
       return;
     }
     try {
-      await updateHighlights(items);
+      await updateHighlights({ userId: profile!.id, items });
       setChooseFiles(false);
     } catch (error) {
       toast({
@@ -57,7 +61,7 @@ export function Highlights({}: HighlightsProps) {
   const handleRemoveFile = async (fileId: string) => {
     try {
       const newHighlights = highlights.filter(file => file.id !== fileId);
-      await updateHighlights(newHighlights);
+      await updateHighlights({ userId: profile!.id, items: newHighlights });
     } catch (error) {
       toast({
         title: "Error",
@@ -73,7 +77,7 @@ export function Highlights({}: HighlightsProps) {
         Highlights
       </div>
       <div className="content-center">
-        {highlights.length === 0 ? (
+        {highlights.length === 0 && canEdit ? (
           <div className="flex justify-center pb-6">
             <Button
               variant="outline"
@@ -95,14 +99,16 @@ export function Highlights({}: HighlightsProps) {
                   >
                     <div className="p-1">
                       <div className="relative">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute -right-2 -top-2 h-6 w-6 rounded-full z-10"
-                          onClick={() => handleRemoveFile(file.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute -right-2 -top-2 h-6 w-6 rounded-full z-10"
+                            onClick={() => handleRemoveFile(file.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Card>
                           <CardContent className="flex flex-col items-center justify-center p-6">
                             <img
@@ -119,7 +125,7 @@ export function Highlights({}: HighlightsProps) {
                     </div>
                   </CarouselItem>
                 ))}
-                {highlights.length < 3 && (
+                {highlights.length < 3 && canEdit && (
                   <CarouselItem className="pl-1 md:basis-1/2 lg:basis-1/3">
                     <div className="p-1 flex items-center justify-center" style={{ minHeight: "200px" }}>
                       <Button

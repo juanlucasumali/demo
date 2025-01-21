@@ -86,7 +86,6 @@ export function DataTableGridView<TData>({
                     {(owner || hasCollaborators) && (
                       <div className="absolute top-0 right-0 w-full h-full">
                         <AvatarGroup
-                          owner={owner}
                           users={sharedWith || []}
                           size="sm"
                           variant="grid"
@@ -127,7 +126,7 @@ export function DataTableGridView<TData>({
           <div key={row.id}>
             {enableRowLink ? (
               <Link 
-                to={`/projects/${itemId}`}
+                to={`/projects/${itemId}` as any}
                 className="no-underline text-foreground"
               >
                 {content}

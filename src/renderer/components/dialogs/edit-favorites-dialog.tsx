@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface FavoritesData {
   movie: string | null;
@@ -24,6 +24,11 @@ export function EditFavoritesDialog({
   onSave,
 }: EditFavoritesDialogProps) {
   const [formData, setFormData] = useState<FavoritesData>(initialData);
+
+  // Update form data when initialData changes
+  useEffect(() => {
+    setFormData(initialData);
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

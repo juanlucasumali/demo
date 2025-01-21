@@ -1,22 +1,26 @@
+import { useState } from "react";
 import { Card, CardContent } from "../ui/card";
 import { Carousel, CarouselContent } from "../ui/carousel";
 import { Button } from "../ui/button";
 import { Edit2 } from "lucide-react";
-import { useState, useEffect } from "react";
 import { EditFavoritesDialog } from "../dialogs/edit-favorites-dialog";
-import { useUserStore } from "@renderer/stores/user-store";
+import { useUsers } from "@renderer/hooks/use-users";
 import { useToast } from "@renderer/hooks/use-toast";
+import { UserProfile } from "@renderer/types/users";
+import { useUserStore } from "@renderer/stores/user-store";
 
-interface FavoritesProps {}
+interface FavoritesProps {
+  profile: UserProfile | null | undefined
+}
 
-export function Favorites({}: FavoritesProps) {
+export function Favorites({ profile }: FavoritesProps) {
   const { toast } = useToast();
-  const { favorites, updateFavorites, fetchFavorites } = useUserStore();
+  const { favorites, updateFavorites, isLoading } = useUsers({ 
+    userId: profile?.id 
+  });
   const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    fetchFavorites();
-  }, [fetchFavorites]);
+  const currentUser = useUserStore(state => state.profile);
+  const canEdit = currentUser?.id === profile?.id;
 
   const handleSave = async (data: {
     movie: string | null;
@@ -24,7 +28,7 @@ export function Favorites({}: FavoritesProps) {
     place: string | null;
   }) => {
     try {
-      await updateFavorites(data);
+      await updateFavorites({ userId: profile!.id, data });
       setIsEditing(false);
     } catch (error) {
       toast({
@@ -40,14 +44,16 @@ export function Favorites({}: FavoritesProps) {
       <Carousel className="bg-muted/50 px-4 pt-4 pb-2 rounded-xl">
         <div className="flex justify-between items-center pb-2">
           <div className="text-xs text-muted-foreground">Favorites</div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setIsEditing(true)}
-          >
-            <Edit2 className="h-4 w-4" />
-          </Button>
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <CarouselContent className="-ml-1">
           <div className="p-1">

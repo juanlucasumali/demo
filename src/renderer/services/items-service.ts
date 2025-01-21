@@ -5,6 +5,7 @@ import { UserProfile } from '@renderer/types/users'
 import { toCamelCase } from '@renderer/lib/utils'
 import { b2Service } from '@renderer/services/b2-service'
 import { shareNewItem } from './share-service'
+import * as userService from './user-service'
 
 // Helper function to get current user ID
 const getCurrentUserId = () => {
@@ -13,32 +14,21 @@ const getCurrentUserId = () => {
   return user.id
 }
 
-// Helper function to process user profiles with avatar URLs
-async function processUserProfile(profile: any, store = useUserStore.getState()): Promise<UserProfile> {
-  const camelProfile = toCamelCase(profile);
+// Updated helper function to process user profiles with avatar URLs
+async function processUserProfile(profile: any): Promise<UserProfile> {
+  const camelProfile = toCamelCase(profile)
   
-  // If profile has an avatar and we haven't cached its URL yet
-  if (camelProfile.avatar && !store.avatarUrls.has(camelProfile.avatar)) {
+  // If profile has an avatar, get its URL using the user service
+  if (camelProfile.avatar) {
     try {
-      const avatarData = await store.getAvatar(camelProfile.avatar);
-      const blob = new Blob([avatarData]);
-      const avatarUrl = URL.createObjectURL(blob);
-      
-      // Store the URL in our map
-      store.avatarUrls.set(camelProfile.avatar, avatarUrl);
-      
-      // Update the profile's avatar field to use the URL
-      camelProfile.avatar = avatarUrl;
+      camelProfile.avatar = await userService.getAvatarUrl(camelProfile.avatar)
     } catch (error) {
-      console.error('Failed to load avatar:', error);
-      camelProfile.avatar = null;
+      console.error('Failed to load avatar:', error)
+      camelProfile.avatar = null
     }
-  } else if (camelProfile.avatar) {
-    // Use cached URL
-    camelProfile.avatar = store.avatarUrls.get(camelProfile.avatar)!;
   }
   
-  return camelProfile;
+  return camelProfile
 }
 
 // Helper function to get sharing information for an item
@@ -48,14 +38,14 @@ async function getItemSharing(itemId: string, itemType: 'file' | 'project'): Pro
     .select(`
       shared_with:shared_with_id(*)
     `)
-    .eq(itemType === 'file' ? 'file_id' : 'project_id', itemId);
+    .eq(itemType === 'file' ? 'file_id' : 'project_id', itemId)
 
-  if (error) throw error;
+  if (error) throw error
   
   // Process each user to include avatar URLs
   return Promise.all(
     (data || []).map(share => processUserProfile(share.shared_with))
-  );
+  )
 }
 
 // Generic function to fetch items with sharing info
@@ -137,7 +127,10 @@ export async function getFilesWithSharing(
       p_include_nested: filters?.includeNested || false
     });
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Error fetching files:', error);
+    throw error;
+  }
 
   return (data || []).map(item => ({
     ...toCamelCase(item),

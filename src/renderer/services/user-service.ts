@@ -3,10 +3,16 @@ import { UserProfile } from "@renderer/types/users"
 import { b2Service } from "./b2-service"
 import { DemoItem } from "@renderer/types/items"
 
+// Cache for avatar URLs to prevent multiple blob URL creations
+const avatarUrlCache = new Map<string, string>()
+
 export async function createProfile(data: UserProfile, avatarInfo?: { b2FileId: string, fileName: string }) {
   const { error } = await supabase
     .from('users')
-    .insert(data)
+    .insert({
+      ...data,
+      avatar: avatarInfo?.b2FileId || null
+    })
   
   if (error) {
     // If profile creation fails and we have avatar info, clean up the uploaded avatar
@@ -48,7 +54,7 @@ export async function uploadAvatar(userId: string, file: File): Promise<{b2FileI
   }
 }
 
-export async function getProfile(userId: string) {
+export async function getProfile(userId: string): Promise<UserProfile> {
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -56,7 +62,20 @@ export async function getProfile(userId: string) {
     .single()
   
   if (error) throw error
-  return data as UserProfile
+
+  const profile = data as UserProfile
+
+  // If profile has an avatar, get its URL
+  if (profile.avatar) {
+    try {
+      profile.avatar = await getAvatarUrl(profile.avatar)
+    } catch (error) {
+      console.error('Failed to load avatar:', error)
+      profile.avatar = null
+    }
+  }
+
+  return profile
 }
 
 export async function checkHasProfile(userId: string): Promise<boolean> {
@@ -79,10 +98,20 @@ export async function getAvatar(b2FileId: string): Promise<ArrayBuffer> {
 }
 
 export async function getAvatarUrl(b2FileId: string): Promise<string> {
+  // Check cache first
+  if (avatarUrlCache.has(b2FileId)) {
+    return avatarUrlCache.get(b2FileId)!
+  }
+
   try {
     const avatarData = await b2Service.retrieveFile(b2FileId)
     const blob = new Blob([avatarData])
-    return URL.createObjectURL(blob)
+    const url = URL.createObjectURL(blob)
+    
+    // Store in cache
+    avatarUrlCache.set(b2FileId, url)
+    
+    return url
   } catch (error) {
     console.error('Failed to get avatar URL:', error)
     throw error
@@ -177,18 +206,30 @@ export async function getFavorites(userId: string) {
 }
 
 export async function updateProfile(profile: UserProfile) {
+  // If the avatar is a URL, we need to get the original b2FileId
+  const avatarId = profile.avatar && avatarUrlCache.has(profile.avatar) 
+    ? Array.from(avatarUrlCache.entries())
+        .find(([_, url]) => url === profile.avatar)?.[0] 
+    : profile.avatar
+
   const { error } = await supabase
     .from('users')
     .update({
-      avatar: profile.avatar,
+      avatar: avatarId,
       name: profile.name,
       username: profile.username,
       description: profile.description
     })
-    .eq('id', profile.id);
+    .eq('id', profile.id)
 
   if (error) {
-    console.error('Failed to update profile:', error);
-    throw error;
+    console.error('Failed to update profile:', error)
+    throw error
   }
+}
+
+// Add a cleanup function to revoke object URLs
+export function cleanupAvatarUrls(): void {
+  avatarUrlCache.forEach(url => URL.revokeObjectURL(url))
+  avatarUrlCache.clear()
 }

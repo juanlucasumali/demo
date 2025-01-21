@@ -12,12 +12,12 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as ProjectsIndexImport } from './routes/projects/index'
-import { Route as ProfileIndexImport } from './routes/profile/index'
 import { Route as IntegrationsIndexImport } from './routes/integrations/index'
 import { Route as HomeIndexImport } from './routes/home/index'
 import { Route as CreateProfileIndexImport } from './routes/create-profile/index'
 import { Route as AuthIndexImport } from './routes/auth/index'
 import { Route as ProjectsProjectIdIndexImport } from './routes/projects/$projectId/index'
+import { Route as ProfilesUserIdIndexImport } from './routes/profiles/$userId/index'
 import { Route as IntegrationsIntegrationIdIndexImport } from './routes/integrations/$integrationId/index'
 import { Route as HomeFoldersFolderIdImport } from './routes/home/folders/$folderId'
 import { Route as ProjectsProjectIdCollectionIdIndexImport } from './routes/projects/$projectId/$collectionId/index'
@@ -27,12 +27,6 @@ import { Route as ProjectsProjectIdCollectionIdIndexImport } from './routes/proj
 const ProjectsIndexRoute = ProjectsIndexImport.update({
   id: '/projects/',
   path: '/projects/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ProfileIndexRoute = ProfileIndexImport.update({
-  id: '/profile/',
-  path: '/profile/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -63,6 +57,12 @@ const AuthIndexRoute = AuthIndexImport.update({
 const ProjectsProjectIdIndexRoute = ProjectsProjectIdIndexImport.update({
   id: '/projects/$projectId/',
   path: '/projects/$projectId/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProfilesUserIdIndexRoute = ProfilesUserIdIndexImport.update({
+  id: '/profiles/$userId/',
+  path: '/profiles/$userId/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -118,13 +118,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntegrationsIndexImport
       parentRoute: typeof rootRoute
     }
-    '/profile/': {
-      id: '/profile/'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileIndexImport
-      parentRoute: typeof rootRoute
-    }
     '/projects/': {
       id: '/projects/'
       path: '/projects'
@@ -144,6 +137,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations/$integrationId'
       fullPath: '/integrations/$integrationId'
       preLoaderRoute: typeof IntegrationsIntegrationIdIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/profiles/$userId/': {
+      id: '/profiles/$userId/'
+      path: '/profiles/$userId'
+      fullPath: '/profiles/$userId'
+      preLoaderRoute: typeof ProfilesUserIdIndexImport
       parentRoute: typeof rootRoute
     }
     '/projects/$projectId/': {
@@ -170,10 +170,10 @@ export interface FileRoutesByFullPath {
   '/create-profile': typeof CreateProfileIndexRoute
   '/home': typeof HomeIndexRoute
   '/integrations': typeof IntegrationsIndexRoute
-  '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
   '/integrations/$integrationId': typeof IntegrationsIntegrationIdIndexRoute
+  '/profiles/$userId': typeof ProfilesUserIdIndexRoute
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/$collectionId': typeof ProjectsProjectIdCollectionIdIndexRoute
 }
@@ -183,10 +183,10 @@ export interface FileRoutesByTo {
   '/create-profile': typeof CreateProfileIndexRoute
   '/home': typeof HomeIndexRoute
   '/integrations': typeof IntegrationsIndexRoute
-  '/profile': typeof ProfileIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
   '/integrations/$integrationId': typeof IntegrationsIntegrationIdIndexRoute
+  '/profiles/$userId': typeof ProfilesUserIdIndexRoute
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/$collectionId': typeof ProjectsProjectIdCollectionIdIndexRoute
 }
@@ -197,10 +197,10 @@ export interface FileRoutesById {
   '/create-profile/': typeof CreateProfileIndexRoute
   '/home/': typeof HomeIndexRoute
   '/integrations/': typeof IntegrationsIndexRoute
-  '/profile/': typeof ProfileIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/home/folders/$folderId': typeof HomeFoldersFolderIdRoute
   '/integrations/$integrationId/': typeof IntegrationsIntegrationIdIndexRoute
+  '/profiles/$userId/': typeof ProfilesUserIdIndexRoute
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/$collectionId/': typeof ProjectsProjectIdCollectionIdIndexRoute
 }
@@ -212,10 +212,10 @@ export interface FileRouteTypes {
     | '/create-profile'
     | '/home'
     | '/integrations'
-    | '/profile'
     | '/projects'
     | '/home/folders/$folderId'
     | '/integrations/$integrationId'
+    | '/profiles/$userId'
     | '/projects/$projectId'
     | '/projects/$projectId/$collectionId'
   fileRoutesByTo: FileRoutesByTo
@@ -224,10 +224,10 @@ export interface FileRouteTypes {
     | '/create-profile'
     | '/home'
     | '/integrations'
-    | '/profile'
     | '/projects'
     | '/home/folders/$folderId'
     | '/integrations/$integrationId'
+    | '/profiles/$userId'
     | '/projects/$projectId'
     | '/projects/$projectId/$collectionId'
   id:
@@ -236,10 +236,10 @@ export interface FileRouteTypes {
     | '/create-profile/'
     | '/home/'
     | '/integrations/'
-    | '/profile/'
     | '/projects/'
     | '/home/folders/$folderId'
     | '/integrations/$integrationId/'
+    | '/profiles/$userId/'
     | '/projects/$projectId/'
     | '/projects/$projectId/$collectionId/'
   fileRoutesById: FileRoutesById
@@ -250,10 +250,10 @@ export interface RootRouteChildren {
   CreateProfileIndexRoute: typeof CreateProfileIndexRoute
   HomeIndexRoute: typeof HomeIndexRoute
   IntegrationsIndexRoute: typeof IntegrationsIndexRoute
-  ProfileIndexRoute: typeof ProfileIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   HomeFoldersFolderIdRoute: typeof HomeFoldersFolderIdRoute
   IntegrationsIntegrationIdIndexRoute: typeof IntegrationsIntegrationIdIndexRoute
+  ProfilesUserIdIndexRoute: typeof ProfilesUserIdIndexRoute
   ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
   ProjectsProjectIdCollectionIdIndexRoute: typeof ProjectsProjectIdCollectionIdIndexRoute
 }
@@ -263,10 +263,10 @@ const rootRouteChildren: RootRouteChildren = {
   CreateProfileIndexRoute: CreateProfileIndexRoute,
   HomeIndexRoute: HomeIndexRoute,
   IntegrationsIndexRoute: IntegrationsIndexRoute,
-  ProfileIndexRoute: ProfileIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   HomeFoldersFolderIdRoute: HomeFoldersFolderIdRoute,
   IntegrationsIntegrationIdIndexRoute: IntegrationsIntegrationIdIndexRoute,
+  ProfilesUserIdIndexRoute: ProfilesUserIdIndexRoute,
   ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
   ProjectsProjectIdCollectionIdIndexRoute:
     ProjectsProjectIdCollectionIdIndexRoute,
@@ -286,10 +286,10 @@ export const routeTree = rootRoute
         "/create-profile/",
         "/home/",
         "/integrations/",
-        "/profile/",
         "/projects/",
         "/home/folders/$folderId",
         "/integrations/$integrationId/",
+        "/profiles/$userId/",
         "/projects/$projectId/",
         "/projects/$projectId/$collectionId/"
       ]
@@ -306,9 +306,6 @@ export const routeTree = rootRoute
     "/integrations/": {
       "filePath": "integrations/index.tsx"
     },
-    "/profile/": {
-      "filePath": "profile/index.tsx"
-    },
     "/projects/": {
       "filePath": "projects/index.tsx"
     },
@@ -317,6 +314,9 @@ export const routeTree = rootRoute
     },
     "/integrations/$integrationId/": {
       "filePath": "integrations/$integrationId/index.tsx"
+    },
+    "/profiles/$userId/": {
+      "filePath": "profiles/$userId/index.tsx"
     },
     "/projects/$projectId/": {
       "filePath": "projects/$projectId/index.tsx"

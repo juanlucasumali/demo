@@ -9,19 +9,22 @@ import { useState } from "react";
 import { useToast } from "@renderer/hooks/use-toast";
 
 interface ProfileHeaderProps {
-  profile: UserProfile;
+  profile: UserProfile | null | undefined
 }
 
 export function ProfileHeader({
-  profile,
+  profile
 }: ProfileHeaderProps) {
   const { uploadAvatar, updateProfile } = useUserStore();
+  const currentUser = useUserStore(state => state.profile);
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
 
+  const canEdit = currentUser?.id === profile?.id;
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !profile) return;
 
     try {
       setIsUploading(true);
@@ -48,32 +51,36 @@ export function ProfileHeader({
   };
 
   return (
-    <div className="flex items-center gap-6 container mx-auto pt-10 px-10">
+    <div className="flex items-center gap-6 container mx-auto py-10 px-10">
       
       {/* Avatar Column */}
       <div className="flex flex-col items-center relative">
         <div className="flex items-center justify-center w-48 h-48 rounded-full group">
           <Avatar className="h-48 w-48">
-            <AvatarImage src={profile.avatar ?? undefined} alt={profile.username} />
+            <AvatarImage src={profile?.avatar ?? undefined} alt={profile?.username} />
             <AvatarFallback className="text-8xl font-bold rounded-full">
-              {profile.username?.[0]?.toUpperCase() || "U"}
+              {profile?.username?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
-          <label
-            htmlFor="avatar-upload"
-            className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full 
-              opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-          >
-            <PencilIcon className="h-8 w-8 text-white" />
-          </label>
-          <Input
-            id="avatar-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleAvatarChange}
-            disabled={isUploading}
-          />
+          {canEdit && (
+            <>
+              <label
+                htmlFor="avatar-upload"
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full 
+                  opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                <PencilIcon className="h-8 w-8 text-white" />
+              </label>
+              <Input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+                disabled={isUploading}
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -81,10 +88,10 @@ export function ProfileHeader({
       <div className="flex flex-col items-start flex-grow gap-4">
         {/* Username and Dropdown */}
         <div className="flex items-end gap-2 -mb-3">
-          <h1 className="text-4xl font-bold tracking-tight pr-2">{profile.name}</h1>
+          <h1 className="text-4xl font-bold tracking-tight pr-2">{profile?.name}</h1>
         </div>
         {/* Username */}
-        <div className="text-center text-sm text-muted-foreground">@{profile.username}</div>
+        <div className="text-center text-sm text-muted-foreground">@{profile?.username}</div>
 
         {/* If you're current user, this button will be an EditProfile dropdown */}
 
@@ -120,8 +127,8 @@ export function ProfileHeader({
         </div>
 
         {/* Description at the bottom */}
-        {profile.description && (
-          <p className="text-sm mt-auto">{profile.description}</p>
+        {profile?.description && (
+          <p className="text-sm mt-auto">{profile?.description}</p>
         )}
       </div>
     </div>

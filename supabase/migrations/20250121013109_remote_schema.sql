@@ -44,8 +44,7 @@ ALTER FUNCTION "public"."check_email_exists"("email" "text") OWNER TO "postgres"
 
 CREATE OR REPLACE FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid" DEFAULT NULL::"uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_collection_id" "uuid" DEFAULT NULL::"uuid", "p_include_nested" boolean DEFAULT false) RETURNS TABLE("id" "uuid", "owner_id" "uuid", "type" "text", "name" "text", "description" "text", "icon_url" "text", "tags" "text", "format" "text", "size" bigint, "duration" integer, "file_path" "text", "created_at" timestamp with time zone, "last_modified" timestamp with time zone, "last_opened" timestamp with time zone, "local_path" "text", "owner_data" "jsonb", "shared_with" "jsonb", "is_starred" boolean, "file_projects" "uuid"[], "file_collections" "uuid"[], "file_folders" "uuid"[])
     LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $$
-DECLARE
+    AS $$DECLARE
   nested_folder_ids UUID[];
 BEGIN
   -- Get nested folder IDs if needed
@@ -145,7 +144,8 @@ BEGIN
       'id', u.id,
       'name', u.name,
       'email', u.email,
-      'avatar', u.avatar
+      'avatar', u.avatar,
+      'username', u.username
     ) as owner_data,
     COALESCE(
       jsonb_agg(
@@ -153,7 +153,8 @@ BEGIN
           'id', shared_user.id,
           'name', shared_user.name,
           'email', shared_user.email,
-          'avatar', shared_user.avatar
+          'avatar', shared_user.avatar,
+          'username', shared_user.username
         )
       ) FILTER (WHERE shared_user.id IS NOT NULL),
       '[]'::jsonb
@@ -180,9 +181,8 @@ BEGIN
     f.id, f.owner_id, f.type, f.name, f.description, f.icon_url, 
     f.tags, f.format, f.size, f.duration, f.file_path, f.created_at, 
     f.last_modified, f.last_opened, f.local_path, 
-    u.id, u.name, u.email, u.avatar;
-END;
-$$;
+    u.id, u.name, u.email, u.avatar, u.username;
+END;$$;
 
 ALTER FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) OWNER TO "postgres";
 
@@ -227,6 +227,17 @@ CREATE TABLE IF NOT EXISTS "public"."collections" (
 );
 
 ALTER TABLE "public"."collections" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."favorites" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "movie" "text",
+    "song" "text",
+    "place" "text",
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+);
+
+ALTER TABLE "public"."favorites" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."file_collections" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
@@ -275,6 +286,17 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
 );
 
 ALTER TABLE "public"."files" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."highlights" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "file_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
+    "position" smallint NOT NULL,
+    CONSTRAINT "highlights_position_check" CHECK ((("position" >= 0) AND ("position" <= 2)))
+);
+
+ALTER TABLE "public"."highlights" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."notifications" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
@@ -356,6 +378,12 @@ ALTER TABLE "public"."users" OWNER TO "postgres";
 ALTER TABLE ONLY "public"."collections"
     ADD CONSTRAINT "collections_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."favorites"
+    ADD CONSTRAINT "favorites_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."favorites"
+    ADD CONSTRAINT "favorites_user_id_key" UNIQUE ("user_id");
+
 ALTER TABLE ONLY "public"."file_collections"
     ADD CONSTRAINT "file_collections_file_id_collection_id_key" UNIQUE ("file_id", "collection_id");
 
@@ -376,6 +404,12 @@ ALTER TABLE ONLY "public"."file_projects"
 
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."highlights"
+    ADD CONSTRAINT "highlights_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."highlights"
+    ADD CONSTRAINT "highlights_user_id_position_key" UNIQUE ("user_id", "position");
 
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_pkey" PRIMARY KEY ("id");
@@ -439,6 +473,9 @@ CREATE INDEX "notifications_to_user_id_idx" ON "public"."notifications" USING "b
 ALTER TABLE ONLY "public"."collections"
     ADD CONSTRAINT "collections_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
+ALTER TABLE ONLY "public"."favorites"
+    ADD CONSTRAINT "favorites_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
 ALTER TABLE ONLY "public"."file_collections"
     ADD CONSTRAINT "file_collections_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "public"."collections"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
@@ -459,6 +496,12 @@ ALTER TABLE ONLY "public"."file_projects"
 
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."highlights"
+    ADD CONSTRAINT "highlights_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."highlights"
+    ADD CONSTRAINT "highlights_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_from_user_id_fkey" FOREIGN KEY ("from_user_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
@@ -506,9 +549,25 @@ CREATE POLICY "Enable insert for users based on user_id" ON "public"."users" FOR
 
 CREATE POLICY "No manual deletion" ON "public"."users" FOR DELETE TO "authenticated" USING (false);
 
+CREATE POLICY "Users can delete their own favorites" ON "public"."favorites" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+CREATE POLICY "Users can delete their own highlights" ON "public"."highlights" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+CREATE POLICY "Users can insert their own favorites" ON "public"."favorites" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+CREATE POLICY "Users can insert their own highlights" ON "public"."highlights" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
 CREATE POLICY "Users can update own profile" ON "public"."users" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
 
+CREATE POLICY "Users can update their own favorites" ON "public"."favorites" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+CREATE POLICY "Users can update their own highlights" ON "public"."highlights" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
 CREATE POLICY "Users can view all profiles" ON "public"."users" FOR SELECT TO "authenticated", "anon" USING (true);
+
+CREATE POLICY "Users can view their own favorites" ON "public"."favorites" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+CREATE POLICY "Users can view their own highlights" ON "public"."highlights" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
 
@@ -535,6 +594,10 @@ GRANT ALL ON TABLE "public"."collections" TO "anon";
 GRANT ALL ON TABLE "public"."collections" TO "authenticated";
 GRANT ALL ON TABLE "public"."collections" TO "service_role";
 
+GRANT ALL ON TABLE "public"."favorites" TO "anon";
+GRANT ALL ON TABLE "public"."favorites" TO "authenticated";
+GRANT ALL ON TABLE "public"."favorites" TO "service_role";
+
 GRANT ALL ON TABLE "public"."file_collections" TO "anon";
 GRANT ALL ON TABLE "public"."file_collections" TO "authenticated";
 GRANT ALL ON TABLE "public"."file_collections" TO "service_role";
@@ -550,6 +613,10 @@ GRANT ALL ON TABLE "public"."file_projects" TO "service_role";
 GRANT ALL ON TABLE "public"."files" TO "anon";
 GRANT ALL ON TABLE "public"."files" TO "authenticated";
 GRANT ALL ON TABLE "public"."files" TO "service_role";
+
+GRANT ALL ON TABLE "public"."highlights" TO "anon";
+GRANT ALL ON TABLE "public"."highlights" TO "authenticated";
+GRANT ALL ON TABLE "public"."highlights" TO "service_role";
 
 GRANT ALL ON TABLE "public"."notifications" TO "anon";
 GRANT ALL ON TABLE "public"."notifications" TO "authenticated";

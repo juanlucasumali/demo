@@ -96,7 +96,6 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
         size: null,
         duration: null,
         collectionIds: [],
-        localPath: null
       };
 
       await addProject({ item: newProject, sharedWith: selectedUsers });

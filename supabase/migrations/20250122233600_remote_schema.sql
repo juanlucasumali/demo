@@ -42,7 +42,7 @@ $$;
 
 ALTER FUNCTION "public"."check_email_exists"("email" "text") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid" DEFAULT NULL::"uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_collection_id" "uuid" DEFAULT NULL::"uuid", "p_include_nested" boolean DEFAULT false) RETURNS TABLE("id" "uuid", "owner_id" "uuid", "type" "text", "name" "text", "description" "text", "icon_url" "text", "tags" "text", "format" "text", "size" bigint, "duration" integer, "file_path" "text", "created_at" timestamp with time zone, "last_modified" timestamp with time zone, "last_opened" timestamp with time zone, "local_path" "text", "owner_data" "jsonb", "shared_with" "jsonb", "is_starred" boolean, "file_projects" "uuid"[], "file_collections" "uuid"[], "file_folders" "uuid"[])
+CREATE OR REPLACE FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid" DEFAULT NULL::"uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_collection_id" "uuid" DEFAULT NULL::"uuid", "p_include_nested" boolean DEFAULT false) RETURNS TABLE("id" "uuid", "owner_id" "uuid", "type" "text", "name" "text", "description" "text", "icon_url" "text", "tags" "text", "format" "text", "size" bigint, "duration" integer, "file_path" "text", "created_at" timestamp with time zone, "last_modified" timestamp with time zone, "last_opened" timestamp with time zone, "owner_data" "jsonb", "shared_with" "jsonb", "is_starred" boolean, "file_projects" "uuid"[], "file_collections" "uuid"[], "file_folders" "uuid"[])
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$DECLARE
   nested_folder_ids UUID[];
@@ -51,8 +51,13 @@ BEGIN
   IF p_include_nested AND p_parent_folder_id IS NOT NULL THEN
     WITH RECURSIVE folder_hierarchy AS (
       -- Base case: direct children
-      SELECT id FROM files 
-      WHERE id IN (SELECT file_id FROM file_folders WHERE folder_id = p_parent_folder_id)
+      SELECT files.id 
+      FROM files 
+      WHERE files.id IN (
+        SELECT file_id 
+        FROM file_folders 
+        WHERE folder_id = p_parent_folder_id
+      )
       
       UNION
       
@@ -62,7 +67,7 @@ BEGIN
       INNER JOIN file_folders ff ON f.id = ff.file_id
       INNER JOIN folder_hierarchy fh ON ff.folder_id = fh.id
     )
-    SELECT array_agg(id) INTO nested_folder_ids FROM folder_hierarchy;
+    SELECT array_agg(folder_hierarchy.id) INTO nested_folder_ids FROM folder_hierarchy;
   END IF;
 
   RETURN QUERY
@@ -139,7 +144,6 @@ BEGIN
     f.created_at,
     f.last_modified,
     f.last_opened,
-    f.local_path,
     jsonb_build_object(
       'id', u.id,
       'name', u.name,
@@ -180,7 +184,7 @@ BEGIN
   GROUP BY 
     f.id, f.owner_id, f.type, f.name, f.description, f.icon_url, 
     f.tags, f.format, f.size, f.duration, f.file_path, f.created_at, 
-    f.last_modified, f.last_opened, f.local_path, 
+    f.last_modified, f.last_opened,
     u.id, u.name, u.email, u.avatar, u.username;
 END;$$;
 
@@ -281,7 +285,6 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "last_modified" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "last_opened" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    "local_path" "text",
     CONSTRAINT "files_type_check" CHECK (("type" = ANY (ARRAY['file'::"text", 'folder'::"text"])))
 );
 

@@ -203,14 +203,33 @@ class B2Service {
       throw error;
     }
   }
+  
+  generatePath = (type: 'avatar' | 'file' | 'folder', metadata: {
+    userId: string,
+    fileId: string,
+    fileName: string
+  }) => {
+    const timestamp = Date.now();
+    const sanitizedName = metadata.fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    return `${type}/${metadata.userId}/${timestamp}_${metadata.fileId}_${sanitizedName}`;
+  } 
 
-  generateStoragePath(userId: string, fileId: string, fileName: string): string {
-    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-    return `${userId}/${fileId}/${sanitizedFileName}`;
+  async storeAvatar(userId: string, fileId: string, fileName: string, data: ArrayBuffer): Promise<string> {
+    const storagePath = this.generatePath('avatar', {userId, fileId, fileName});
+    console.log(`Storing avatar at path: ${storagePath}`);
+    
+    try {
+      const b2FileId = await this.uploadFile(storagePath, data);
+      console.log(`Avatar stored successfully with B2 fileId: ${b2FileId}`);
+      return b2FileId;
+    } catch (error) {
+      console.error('Failed to store avatar:', error);
+      throw error;
+    }
   }
 
   async storeFile(userId: string, fileId: string, fileName: string, data: ArrayBuffer): Promise<string> {
-    const storagePath = this.generateStoragePath(userId, fileId, fileName);
+    const storagePath = this.generatePath('file', {userId, fileId, fileName});
     console.log(`Storing file at path: ${storagePath}`);
     
     try {

@@ -40,7 +40,7 @@ export async function uploadAvatar(userId: string, file: File): Promise<{b2FileI
     const fileName = `avatars/${userId}-${Date.now()}.${fileExt}`
     
     // Upload to B2
-    const b2FileId = await b2Service.storeFile(
+    const b2FileId = await b2Service.storeAvatar(
       userId,
       'avatar',
       fileName,

@@ -81,16 +81,7 @@ export function EditFileDialog({
 
   const onSubmit = async (data: EditFileFormValues) => {
     try {
-
-      let newLocalPath: string | null = null
       // Create updated item object
-      if (existingFile.localPath) {
-        newLocalPath = existingFile.localPath.replace(existingFile.name, data.fileName)
-        console.log("existingFile.name:", existingFile.name)
-        console.log("data.fileName:", data.fileName)
-        console.log("newLocalPath:", newLocalPath)
-      }
-
       const updatedItem = {
         ...existingFile,
         name: data.fileName,
@@ -98,7 +89,6 @@ export function EditFileDialog({
         description: data.description || "",
         lastModified: new Date(),
         sharedWith: selectedUsers,
-        localPath: newLocalPath,
       };
 
       console.log("updatedItem:", updatedItem)

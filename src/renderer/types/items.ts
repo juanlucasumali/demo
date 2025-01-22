@@ -39,8 +39,7 @@ export interface DemoItem {
     size: number | null;
     duration: number | null;
     filePath: string | null;
-    localPath: string | null;
-    
+
     owner: UserProfile | null;
     sharedWith: UserProfile[] | null
 }

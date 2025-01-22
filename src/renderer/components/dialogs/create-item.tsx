@@ -43,7 +43,6 @@ interface CreateItemProps {
   parentFolderId?: string | null;
   collectionId?: string | null;
   sharedWith: UserProfile[] | null;
-  localPath?: string | null;
 }
 
 export function CreateItem({
@@ -55,7 +54,6 @@ export function CreateItem({
   parentFolderId = null,
   collectionId = null,
   sharedWith,
-  localPath
 }: CreateItemProps) {
   const { toast } = useToast();
   const { addFileOrFolder } = useItems();
@@ -68,8 +66,6 @@ export function CreateItem({
   const currentUser = useUserStore((state) => state.profile);
   const [isUploading, setIsUploading] = useState(false);
   const [originalExtension, setOriginalExtension] = useState<string | null>(null);
-
-  console.log('📂 Local path:', localPath);
 
   const form = useForm<CreateItemFormValues>({
     resolver: zodResolver(createItemSchema),
@@ -93,28 +89,6 @@ export function CreateItem({
     }
   };
 
-  // const handleLocalFileSystemOperation = async (
-  //   itemName: string,
-  //   fileContent?: Buffer
-  // ) => {
-  //   if (!localPath) return;
-
-  //   try {
-  //     const fullLocalPath = await window.api.joinPath(localPath, itemName);
-      
-  //     if (type === 'folder') {
-  //       await window.api.createLocalDirectory(fullLocalPath);
-  //       console.log('✅ Local directory created:', fullLocalPath);
-  //     } else if (type === 'file' && fileContent) {
-  //       await window.api.writeLocalFile(fullLocalPath, fileContent);
-  //       console.log('✅ Local file written:', fullLocalPath);
-  //     }
-  //   } catch (error) {
-  //     console.error('❌ Local filesystem operation failed:', error);
-  //     throw new Error('Failed to create item in local filesystem');
-  //   }
-  // };
-
   const onSubmit: SubmitHandler<CreateItemFormValues> = async (data) => {
     try {
       if (!currentUser) return;
@@ -135,14 +109,6 @@ export function CreateItem({
         variant: "default",
       });
 
-      // if (localPath) {
-      //   const fileContent = selectedFile ? await selectedFile.arrayBuffer() : undefined;
-      //   await handleLocalFileSystemOperation(
-      //     finalFileName,
-      //     fileContent ? Buffer.from(fileContent) : undefined
-      //   );
-      // }
-
       const newItem = {
         createdAt: new Date(),
         lastModified: new Date(),
@@ -162,7 +128,6 @@ export function CreateItem({
         description: data.description || "",
         icon: null,
         collectionIds: location === 'collection' ? [collectionId!] : [],
-        localPath: localPath ? await window.api.joinPath(localPath, finalFileName) : null
       };
 
       if (type === 'file' && selectedFile) {

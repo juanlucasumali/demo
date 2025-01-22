@@ -17,6 +17,7 @@ import { useAuth } from '@renderer/context/auth-context'
 import { useUserStore } from '@renderer/stores/user-store'
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 
 export function ProfileDropdown() {
   const navigate = useNavigate()
@@ -70,26 +71,18 @@ export function ProfileDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className='w-56' align='end' forceMount>
-        {/* <DropdownMenuSeparator />
+        <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem 
-            onClick={() => navigate({ to: '/profile' })}
-            disabled={isLoading}
-          >
+          <Link to={`/profiles/${profile.id}` as any}>
+            <DropdownMenuItem 
+              disabled={isLoading}
+            >
             Profile
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+            {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={isLoading}>
-            Billing
-            <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled={isLoading}>
-            Settings
-            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled={isLoading}>New Team</DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator /> */}
+        <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={e => {
             e.preventDefault()
@@ -107,7 +100,7 @@ export function ProfileDropdown() {
           ) : (
             <>
               Log out
-              <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+              {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
             </>
           )}
         </DropdownMenuItem>

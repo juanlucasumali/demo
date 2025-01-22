@@ -51,7 +51,8 @@ export function SyncCheck() {
               },
               dismissible: false,
               duration: Infinity,
-              closeButton: false
+              closeButton: false,
+              position: 'bottom-left'
             })
           }
         }
@@ -130,7 +131,8 @@ return (
             },
             dismissible: false,
             duration: Infinity,
-            closeButton: false
+            closeButton: false,
+            position: 'bottom-left'
           })
         }
       }}

@@ -17,6 +17,28 @@ export async function createSyncConfiguration(
     throw new Error('Profile not found')
   }
 
+  // First, check for and delete any existing configuration
+  const { data: existingConfig } = await supabase
+    .from('sync_configurations')
+    .select()
+    .eq('user_id', profile.id)
+    .eq('type', type)
+    .single()
+
+  if (existingConfig) {
+    // // Clean up old remote folder if it exists
+    // if (existingConfig.remote_folder_id) {
+    //   await cleanupRemoteFolder(existingConfig.remote_folder_id)
+    // }
+    
+    // Delete the existing configuration
+    await supabase
+      .from('sync_configurations')
+      .delete()
+      .eq('id', existingConfig.id)
+  }
+
+  // Create new configuration
   const { data, error } = await supabase
     .from('sync_configurations')
     .insert({

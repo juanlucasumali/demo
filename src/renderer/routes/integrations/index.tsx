@@ -5,6 +5,11 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Button } from '@renderer/components/ui/button'
 import { Music2, Mic2, Radio, Link2 } from 'lucide-react'
 import { useToast } from '@renderer/hooks/use-toast'
+import { useEffect, useState } from 'react'
+import { getSyncConfiguration } from '@renderer/services/sync-service'
+import { useUserStore } from '@renderer/stores/user-store'
+import { SyncType } from '@renderer/types/sync'
+import { Skeleton } from '@renderer/components/ui/skeleton'
 
 export const Route = createFileRoute('/integrations/')({
   component: Integrations,
@@ -43,10 +48,35 @@ const integrations = [
 export default function Integrations() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const [flStudioConnected, setFlStudioConnected] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const profile = useUserStore((state) => state.profile)
+
+  useEffect(() => {
+    async function checkExistingConfig() {
+      if (!profile) return
+
+      try {
+        const config = await getSyncConfiguration(profile.id)
+        if (config?.type === SyncType.FL_STUDIO) {
+          setFlStudioConnected(true)
+        }
+      } catch (error) {
+        console.error('Failed to check configuration:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkExistingConfig()
+  }, [profile])
 
   const handleIntegrationClick = (integration: typeof integrations[0]) => {
     if (integration.available) {
-      navigate({ to: '/integrations/$integrationId', params: { integrationId: integration.id }})
+      navigate({ 
+        to: '/integrations/$integrationId', 
+        params: { integrationId: integration.id }
+      })
     } else {
       toast({
         title: "Coming Soon",
@@ -55,6 +85,16 @@ export default function Integrations() {
       })
     }
   }
+
+  const IntegrationCardSkeleton = () => (
+    <div className="group relative flex flex-col items-center p-4 rounded-lg border">
+      <div className="relative">
+        <Skeleton className="w-32 h-32 rounded-2xl mb-2" />
+      </div>
+      <Skeleton className="h-4 w-24 mb-3" />
+      <Skeleton className="h-8 w-32" />
+    </div>
+  )
 
   return (
     <PageMain>
@@ -66,35 +106,53 @@ export default function Integrations() {
 
       <PageContent>
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-          {integrations.map((integration) => {
-            const Icon = integration.icon
-            
-            return (
-              <div
-                key={integration.id}
-                className="group relative flex flex-col items-center p-4 rounded-lg border hover:shadow-md transition-all duration-200 hover:bg-muted/50"
-              >
-                <div className="relative">
-                  <div className="w-32 h-32 rounded-2xl mb-2 flex items-center justify-center">
-                    <Icon className="w-16 h-16 text-muted-foreground" />
-                  </div>
-                </div>
-
-                <h3 className="font-normal text-sm mb-3 text-center">
-                  {integration.name}
-                </h3>
-
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-24"
-                  onClick={() => handleIntegrationClick(integration)}
+          {isLoading ? (
+            // Show skeleton cards while loading
+            <>
+              <IntegrationCardSkeleton />
+              <IntegrationCardSkeleton />
+              <IntegrationCardSkeleton />
+              <IntegrationCardSkeleton />
+            </>
+          ) : (
+            // Show actual integration cards
+            integrations.map((integration) => {
+              const Icon = integration.icon
+              const isConnected = integration.id === 'fl-studio' && flStudioConnected
+              
+              return (
+                <div
+                  key={integration.id}
+                  className="group relative flex flex-col items-center p-4 rounded-lg border hover:shadow-md transition-all duration-200 hover:bg-muted/50"
                 >
-                  Connect
-                </Button>
-              </div>
-            )
-          })}
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-2xl mb-2 flex items-center justify-center">
+                      <Icon className="w-16 h-16 text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  <h3 className="font-normal text-sm mb-3 text-center">
+                    {integration.name}
+                  </h3>
+
+                  {isConnected && (
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Already configured
+                    </div>
+                  )}
+
+                  <Button 
+                    variant={isConnected ? "secondary" : "outline"}
+                    size="sm"
+                    className="w-32"
+                    onClick={() => handleIntegrationClick(integration)}
+                  >
+                    {isConnected ? 'Reconfigure' : 'Connect'}
+                  </Button>
+                </div>
+              )
+            })
+          )}
         </div>
       </PageContent>
     </PageMain>

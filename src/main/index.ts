@@ -73,7 +73,7 @@ ipcMain.handle('scan-directory', async (_, directoryPath: string) => {
     path: string
     type: 'file' | 'folder'
     size?: number
-    lastModified?: Date
+    lastModified: Date
   }> = []
 
   return new Promise((resolve, reject) => {
@@ -95,18 +95,24 @@ ipcMain.handle('scan-directory', async (_, directoryPath: string) => {
             path: relativePath,
             type: 'file',
             size: stats?.size,
-            lastModified: stats?.mtime
+            lastModified: stats?.mtime || new Date()
           })
         })
-        .on('addDir', (dirPath) => {
+        .on('addDir', async (dirPath) => {
           if (dirPath === directoryPath) return
           
-          const relativePath = path.relative(directoryPath, dirPath)
-          items.push({
-            name: path.basename(dirPath),
-            path: relativePath,
-            type: 'folder'
-          })
+          try {
+            const stats = await fs.stat(dirPath)
+            const relativePath = path.relative(directoryPath, dirPath)
+            items.push({
+              name: path.basename(dirPath),
+              path: relativePath,
+              type: 'folder',
+              lastModified: stats.mtime
+            })
+          } catch (error) {
+            console.error(`Failed to get stats for directory: ${dirPath}`, error)
+          }
         })
         .on('error', (error) => {
           console.error('Error while scanning directory:', error)
@@ -141,7 +147,7 @@ ipcMain.handle('delete-file', async (_, filePath: string) => {
   } catch (error) {
     console.error('Failed to delete file:', error)
     throw error
-  }
+}
 })
 
 function createWindow(): void {

@@ -44,6 +44,16 @@ const api = {
       throw error
     }
   },
+  setFileTime: async (filePath: string, mtime: number) => {
+    try {
+      const time = new Date(mtime)
+      await fs.promises.utimes(filePath, time, time)
+      return true
+    } catch (error) {
+      console.error('Failed to set file time:', error)
+      throw error
+    }
+  },
   deleteDirectory: (path: string) => ipcRenderer.invoke('delete-directory', path),
   deleteFile: (path: string) => ipcRenderer.invoke('delete-file', path),
 }

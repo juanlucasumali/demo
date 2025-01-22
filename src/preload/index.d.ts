@@ -10,12 +10,13 @@ declare global {
       onUpdateDownloaded: (callback: (event: any, info: any) => void) => void
       onUpdateError: (callback: (event: any, error: any) => void) => void
       onUpdateProgress: (callback: (event: any, progress: any) => void) => void
+      setFileTime: (filePath: string, mtime: number) => Promise<boolean>
       scanDirectory: (path: string) => Promise<Array<{
         name: string
         path: string
         type: 'file' | 'folder'
         size?: number
-        lastModified?: Date
+        lastModified: Date
       }>>
       readFile: (path: string) => Promise<Buffer>
       createLocalDirectory: (dirPath: string) => Promise<boolean>

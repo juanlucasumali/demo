@@ -384,17 +384,22 @@ export async function compareLocalWithRemote(
   console.log("remoteMap:", remoteMap)
   console.log("localMap:", localMap)
 
+  // Inside compareLocalWithRemote function
   // Check for added/modified files
   localMap.forEach((localItem, path) => {
     const remoteItem = remoteMap.get(path);
     if (!remoteItem) {
       added.push(localItem);
-    } 
-    // else if (localItem.type === 'file') {
-    //   if (localItem.lastModified !== remoteItem.lastModified) {
-    //     modified.push(localItem);
-    //   }
-    // }
+    } else if (localItem.type === 'file') {
+      // Convert both dates to timestamps for comparison
+      const localTimestamp = localItem.lastModified?.getTime() || 0;
+      const remoteTimestamp = new Date(remoteItem.lastModified).getTime();
+      
+      // If timestamps differ by more than 1 second, consider the file modified
+      if (Math.abs(localTimestamp - remoteTimestamp) > 1000) {
+        modified.push(localItem);
+      }
+    }
   });
 
   // Check for removed files (exist in remote but not local)
@@ -722,6 +727,10 @@ export async function updateLocalFromRemote(
       if (remoteItem?.filePath) {
         const fileContent = await b2Service.downloadFile(remoteItem.filePath);
         await window.api.writeLocalFile(fullPath, Buffer.from(fileContent));
+        
+        // Set the file's modification time to match remote
+        const remoteModTime = new Date(remoteItem.lastModified).getTime();
+        await window.api.setFileTime(fullPath, remoteModTime);
       }
 
       processedChanges++;

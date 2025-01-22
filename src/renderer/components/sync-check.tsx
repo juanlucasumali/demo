@@ -51,7 +51,7 @@ export function SyncCheck() {
               },
               dismissible: false,
               duration: Infinity,
-              closeButton: true
+              closeButton: false
             })
           }
         }
@@ -110,16 +110,35 @@ export function SyncCheck() {
     }
   }
 
-  return (
-    <>
-      <SyncDetailsDialog 
-        open={showDetails} 
-        onOpenChange={setShowDetails}
-        diff={currentDiff || { added: [], modified: [], removed: [] }}
-        localPath={currentConfig?.localPath || ''}
-        remoteFolderId={currentConfig?.remoteFolderId || ''}
-        onSyncDirectionChosen={handleSyncDirectionChosen}
-      />
-    </>
-  )
+// Replace the SyncDetailsDialog component render with:
+return (
+  <>
+    <SyncDetailsDialog 
+      open={showDetails} 
+      onOpenChange={(open) => {
+        // Only update dialog visibility
+        setShowDetails(open);
+        
+        // Don't dismiss the toast when closing dialog without resolution
+        if (!open && hasPendingDiffRef.current) {
+          // Re-show the toast if there are still pending differences
+          toast('Files Out of Sync', {
+            description: 'Local and remote files have differences',
+            action: {
+              label: 'View Details',
+              onClick: () => setShowDetails(true)
+            },
+            dismissible: false,
+            duration: Infinity,
+            closeButton: false
+          })
+        }
+      }}
+      diff={currentDiff || { added: [], modified: [], removed: [] }}
+      localPath={currentConfig?.localPath || ''}
+      remoteFolderId={currentConfig?.remoteFolderId || ''}
+      onSyncDirectionChosen={handleSyncDirectionChosen}
+    />
+  </>
+)
 } 

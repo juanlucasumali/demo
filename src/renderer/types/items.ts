@@ -42,4 +42,6 @@ export interface DemoItem {
 
     owner: UserProfile | null;
     sharedWith: UserProfile[] | null
+
+    primaryParentId?: string;
 }

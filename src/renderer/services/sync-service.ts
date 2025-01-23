@@ -1,6 +1,6 @@
 import { supabase } from '@renderer/lib/supabase'
 import { useUserStore } from '@renderer/stores/user-store'
-import { FileFormat, ItemType } from '@renderer/types/items'
+import { DemoItem, FileFormat, ItemType } from '@renderer/types/items'
 import { addFileOrFolder, getFilesWithSharing, getItemsToDeleteRecursively } from './items-service'
 import { LocalItem, LocalItemWithFullPath, UploadProgress, SyncConfiguration, SyncType } from '@renderer/types/sync'
 import { b2Service } from '@renderer/services/b2-service'
@@ -144,7 +144,6 @@ export async function initializeSync(localPath: string, type: SyncType): Promise
       createdAt: new Date(),
       lastModified: new Date(),
       lastOpened: new Date(),
-      localPath: null,
     })
 
     // 2. Create sync configuration
@@ -162,111 +161,113 @@ export async function initializeSync(localPath: string, type: SyncType): Promise
 }
 
 export async function beginUpload(
-  items: LocalItemWithFullPath[], 
-  remoteFolderId: string,
+  items: LocalItemWithFullPath[],
+  rootFolderId: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<void> {
   const profile = useUserStore.getState().profile
   if (!profile) throw new Error('User not authenticated')
-
-  const totalFiles = items.filter(item => item.type === 'file').length
-  let uploadedFiles = 0
-  const folderIdMap = new Map<string, string>()
-  folderIdMap.set('', remoteFolderId)
+  
+  // Track created items for cleanup
+  const createdItems: string[] = []
 
   try {
-    const sortedItems = [...items].sort((a, b) => {
-      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
-      return a.path.split('/').length - b.path.split('/').length
-    })
+    const folderMap = new Map<string, string>()
+    folderMap.set('', rootFolderId)
 
-    for (const item of sortedItems) {
-      const parentPath = item.path.split('/').slice(0, -1).join('/')
-      const parentId = folderIdMap.get(parentPath || '')
+    // Create folders first
+    const folders = items.filter(item => item.type === 'folder')
+    for (const folder of folders) {
+      const parentPath = folder.path.split('/').slice(0, -1).join('/')
+      const parentId = folderMap.get(parentPath) || rootFolderId
 
-      if (!parentId) {
-        throw new Error(`Parent folder ID not found for path: ${item.path}`)
-      }
+      const newFolder = await addFileOrFolder({
+        name: folder.name,
+        type: ItemType.FOLDER,
+        owner: profile,
+        description: null,
+        isStarred: false,
+        projectIds: [],
+        collectionIds: [],
+        parentFolderIds: [parentId],
+        primaryParentId: parentId,
+        tags: null,
+        format: null,
+        size: null,
+        duration: null,
+        icon: null,
+        filePath: null,
+        sharedWith: [],
+        createdAt: new Date(),
+        lastModified: folder.lastModified || new Date(),
+        lastOpened: new Date(),
+      })
 
+      createdItems.push(newFolder.id)
+      folderMap.set(folder.path, newFolder.id)
+    }
+
+    // Handle files
+    const files = items.filter(item => item.type === 'file')
+    const totalFiles = files.length
+    let processedFiles = 0
+
+    for (const file of files) {
+      const parentPath = file.path.split('/').slice(0, -1).join('/')
+      const parentId = folderMap.get(parentPath) || rootFolderId
+      const fileContent = await window.api.readFile(file.fullPath)
+      const format = file.name.includes('.') 
+        ? file.name.split('.').pop()?.toLowerCase() as FileFormat 
+        : null
+
+      const newFile = await addFileOrFolder({
+        name: file.name,
+        type: ItemType.FILE,
+        owner: profile,
+        description: null,
+        isStarred: false,
+        projectIds: [],
+        collectionIds: [],
+        parentFolderIds: [parentId],
+        primaryParentId: parentId,
+        tags: null,
+        format,
+        size: file.size || null,
+        duration: null,
+        icon: null,
+        filePath: null,
+        sharedWith: [],
+        createdAt: new Date(),
+        lastModified: file.lastModified || new Date(),
+        lastOpened: new Date(),
+      }, [], fileContent)
+
+      createdItems.push(newFile.id)
+      processedFiles++
+      onProgress?.({
+        uploadedFiles: processedFiles,
+        totalFiles,
+        currentFile: file.name
+      })
+    }
+  } catch (error) {
+    console.error('Upload failed:', error)
+    
+    // Clean up all created items in reverse order (files before folders)
+    console.log('🧹 Starting cleanup of created items...')
+    for (const itemId of createdItems.reverse()) {
       try {
-        if (item.type === 'folder') {
-          const folder = await addFileOrFolder({
-            name: item.name,
-            type: ItemType.FOLDER,
-            owner: profile,
-            description: null,
-            isStarred: false,
-            projectIds: [],
-            collectionIds: [],
-            parentFolderIds: [parentId],
-            tags: null,
-            format: null,
-            size: null,
-            duration: null,
-            icon: null,
-            filePath: item.path,
-            createdAt: new Date(),
-            lastModified: item.lastModified || new Date(),
-            lastOpened: new Date(),
-            sharedWith: [],
-            localPath: item.fullPath,
-          })
-          folderIdMap.set(item.path, folder.id)
-        } else {
-          const fileContent = await window.api.readFile(item.fullPath)
-          const format = item.name.includes('.') 
-            ? item.name.split('.').pop()?.toLowerCase() as FileFormat 
-            : null
-          
-          await addFileOrFolder({
-            name: item.name,
-            type: ItemType.FILE,
-            owner: profile,
-            description: null,
-            isStarred: false,
-            projectIds: [],
-            collectionIds: [],
-            parentFolderIds: [parentId],
-            tags: null,
-            format,
-            size: item.size || null,
-            duration: null,
-            icon: null,
-            filePath: null,
-            localPath: item.fullPath,
-            sharedWith: [],
-            createdAt: new Date(),
-            lastModified: item.lastModified || new Date(),
-            lastOpened: new Date(),
-          }, [], fileContent)
-
-          uploadedFiles++
-          onProgress?.({
-            uploadedFiles,
-            totalFiles,
-            currentFile: item.name
-          })
-        }
-      } catch (error: any) {
-        console.error('❌ Failed to process item:', {
-          path: item.path,
-          error,
-          stack: error.stack
-        })
-        throw new Error(`Failed to process ${item.type}: ${item.path}`)
+        await cleanupRemoteFolder(itemId)
+      } catch (cleanupError) {
+        console.error(`Failed to clean up item ${itemId}:`, cleanupError)
       }
     }
-  } catch (error: any) {
-    console.error('❌ Upload process failed:', {
-      error,
-      stack: error.stack
-    })
-    await cleanupRemoteFolder(remoteFolderId)
+    
     throw error
   }
 }
 
-async function cleanupRemoteFolder(folderId: string): Promise<void> {
+export async function cleanupRemoteFolder(folderId: string): Promise<void> {
   try {
     const itemsToDelete = await getItemsToDeleteRecursively(folderId)
     console.log('🗑️ Cleaning up remote folder:', { folderId, itemsCount: itemsToDelete.length })
@@ -354,7 +355,6 @@ export async function createRemoteFolder(localPath: string): Promise<string> {
     duration: null,
     icon: null,
     filePath: null,
-    localPath: localPath,
     createdAt: new Date(),
     lastModified: new Date(),
     lastOpened: new Date(),
@@ -382,31 +382,54 @@ export async function compareLocalWithRemote(
   localPath: string,
   remoteFolderId: string
 ): Promise<EnhancedDiffResult> {
-  // Get local items
   const localItems = await scanLocalDirectory(localPath);
   const localMap = new Map(localItems.map(item => [item.path, item]));
 
-  // Get remote items with full details
   const remoteItems = await getFilesWithSharing(useUserStore.getState().profile!.id, {
     parentFolderId: remoteFolderId,
     includeNested: true
   });
 
-  const remoteMap = new Map(await Promise.all(remoteItems.map(async item => {
-    const relativePath = item.localPath 
-      ? await window.api.joinPath(item.localPath.replace(localPath, ''))
-      : '';
-    return [relativePath.replace(/^[/\\]/, ''), item] as [string, typeof item]; // Type assertion to fix Map constructor
-  })));
+  const remoteMap = new Map();
+  
+  const buildRemotePath = async (item: DemoItem): Promise<string> => {
+    const pathParts: string[] = [item.name];
+    let currentItem = item;
+    
+    while (true) {
+      const { data: parentRelation } = await supabase
+        .from('file_folders')
+        .select('folder_id')
+        .eq('file_id', currentItem.id)
+        .eq('primary_parent', true)
+        .single();
+      
+      if (!parentRelation || parentRelation.folder_id === remoteFolderId) break;
+      
+      const { data: parent } = await supabase
+        .from('files')
+        .select('*')
+        .eq('id', parentRelation.folder_id)
+        .single();
+      
+      if (!parent) break;
+      pathParts.unshift(parent.name);
+      currentItem = parent;
+    }
+    
+    return pathParts.join('/');
+  };
+
+  // Build remote paths using only primary parent relationships
+  for (const item of remoteItems) {
+    const relativePath = await buildRemotePath(item);
+    remoteMap.set(relativePath, item);
+  }
 
   const added: LocalItem[] = [];
   const modified: LocalItem[] = [];
   const removed: RemoteItem[] = [];
 
-  console.log("remoteMap:", remoteMap)
-  console.log("localMap:", localMap)
-
-  // Inside compareLocalWithRemote function
   // Check for added/modified files
   localMap.forEach((localItem, path) => {
     const remoteItem = remoteMap.get(path);
@@ -424,6 +447,9 @@ export async function compareLocalWithRemote(
     }
   });
 
+  console.log("Local Items", localItems)
+  console.log("Remote Items", remoteMap)
+
   // Check for removed files (exist in remote but not local)
   remoteMap.forEach((remoteItem, path) => {
     if (path && !localMap.has(path)) {
@@ -432,24 +458,14 @@ export async function compareLocalWithRemote(
         name: remoteItem.name,
         type: remoteItem.type,
         filePath: remoteItem.filePath,
-        localPath: remoteItem.localPath
+        localPath: path // Include the constructed path
       });
     }
   });
 
-  console.log("remoteItems:", remoteItems)
-  console.log("localItems:", localItems)
-
   console.log('🔄 Comparison result:', { added, modified, removed });
 
   return { added, modified, removed };
-}
-
-// Add new interface for folder mapping
-interface FolderMapping {
-  localPath: string;
-  remoteFolderId: string;
-  parentPath: string | null;
 }
 
 // New helper function to build folder mapping
@@ -467,19 +483,42 @@ async function buildFolderMapping(
     includeNested: true
   });
 
-  // Map existing remote folders
+  // Build paths for existing remote folders using primary parent relationships
   const remoteFolders = remoteItems.filter(item => item.type === ItemType.FOLDER);
   for (const folder of remoteFolders) {
-    if (folder.localPath) {
-      folderMap.set(folder.localPath, folder.id);
-      console.log('📂 Mapped existing remote folder:', {
-        localPath: folder.localPath,
-        remoteFolderId: folder.id
-      });
+    const pathParts: string[] = [folder.name];
+    let currentItem = folder;
+    
+    while (true) {
+      const { data: parentRelation } = await supabase
+        .from('file_folders')
+        .select('folder_id')
+        .eq('file_id', currentItem.id)
+        .eq('primary_parent', true)
+        .single();
+      
+      if (!parentRelation || parentRelation.folder_id === rootFolderId) break;
+      
+      const { data: parent } = await supabase
+        .from('files')
+        .select('*')
+        .eq('id', parentRelation.folder_id)
+        .single();
+      
+      if (!parent) break;
+      pathParts.unshift(parent.name);
+      currentItem = parent;
     }
+    
+    const remotePath = `${basePath}/${pathParts.join('/')}`;
+    folderMap.set(remotePath, folder.id);
+    console.log('📂 Mapped existing remote folder:', {
+      remotePath,
+      remoteFolderId: folder.id
+    });
   }
 
-  // Then process any new folders
+  // Process new folders in order of path depth
   const folders = items
     .filter(item => item.type === 'folder')
     .sort((a, b) => a.path.split('/').length - b.path.split('/').length);
@@ -487,17 +526,15 @@ async function buildFolderMapping(
   for (const folder of folders) {
     const fullPath = `${basePath}/${folder.path}`;
     
-    // Skip if folder already exists in remote
     if (folderMap.has(fullPath)) {
       console.log('📂 Folder already exists in remote:', fullPath);
       continue;
     }
 
-    // Get parent folder path by removing the last segment from the full path
     const parentPath = fullPath.split('/').slice(0, -1).join('/');
     const parentId = parentPath === basePath ? rootFolderId : folderMap.get(parentPath);
 
-    console.log('📂 Processing folder:', {
+    console.log('📂 Processing new folder:', {
       fullPath,
       parentPath,
       parentId
@@ -512,7 +549,6 @@ async function buildFolderMapping(
       throw new Error(`Parent folder not found for: ${folder.path}`);
     }
 
-    // Create new folder
     const remoteFolder = await addFileOrFolder({
       name: folder.name,
       type: ItemType.FOLDER,
@@ -522,13 +558,13 @@ async function buildFolderMapping(
       projectIds: [],
       collectionIds: [],
       parentFolderIds: [parentId],
+      primaryParentId: parentId, // Add primary parent designation
       tags: null,
       format: null,
       size: null,
       duration: null,
       icon: null,
       filePath: null,
-      localPath: fullPath,
       createdAt: new Date(),
       lastModified: folder.lastModified || new Date(),
       lastOpened: new Date(),
@@ -662,7 +698,6 @@ export async function updateExistingSync(
         duration: null,
         icon: null,
         filePath: b2FileId,
-        localPath: file.fullPath,
         sharedWith: [],
         createdAt: new Date(),
         lastModified: file.lastModified || new Date(),
@@ -695,6 +730,35 @@ export async function updateLocalFromRemote(
   let processedChanges = 0;
 
   try {
+    // Helper function to build local path from remote item
+    const buildLocalPath = async (remoteItem: RemoteItem): Promise<string> => {
+      const pathParts: string[] = [remoteItem.name];
+      let currentItem = remoteItem;
+      
+      while (true) {
+        const { data: parentRelation } = await supabase
+          .from('file_folders')
+          .select('folder_id')
+          .eq('file_id', currentItem.id)
+          .eq('primary_parent', true)
+          .single();
+        
+        if (!parentRelation || parentRelation.folder_id === remoteFolderId) break;
+        
+        const { data: parent } = await supabase
+          .from('files')
+          .select('*')
+          .eq('id', parentRelation.folder_id)
+          .single();
+        
+        if (!parent) break;
+        pathParts.unshift(parent.name);
+        currentItem = parent;
+      }
+      
+      return window.api.joinPath(localPath, pathParts.join('/'));
+    };
+
     // 1. Handle local files that don't exist in remote (delete them)
     for (const localItem of diff.added) {
       const fullPath = await window.api.joinPath(localPath, localItem.path);
@@ -712,20 +776,13 @@ export async function updateLocalFromRemote(
 
     // 2. Process remote-only items (create them locally)
     for (const remoteItem of diff.removed) {
-      console.log("remoteItem:", remoteItem)
-      const fullPath = remoteItem.localPath || await window.api.joinPath(localPath, remoteItem.name);
-      console.log("fullPath:", fullPath)
+      const fullPath = await buildLocalPath(remoteItem);
       
       if (remoteItem.type === ItemType.FOLDER) {
         await window.api.createLocalDirectory(fullPath);
       } else if (remoteItem.filePath) {
-        // Download file from B2
-        console.log("downloading file from B2 to local")
-        console.log("remoteItem.filePath:", remoteItem.filePath)
         const fileContent = await b2Service.downloadFile(remoteItem.filePath);
-        console.log("fileContent:", fileContent)
         await window.api.writeLocalFile(fullPath, Buffer.from(fileContent));
-        console.log("file written to local")
       }
 
       processedChanges++;
@@ -739,19 +796,21 @@ export async function updateLocalFromRemote(
     // 3. Process modified files
     for (const modifiedItem of diff.modified) {
       const fullPath = await window.api.joinPath(localPath, modifiedItem.path);
-      const remoteItems = await getFilesWithSharing(profile.id, {
-        parentFolderId: remoteFolderId,
-        includeNested: true
-      });
       
-      const remoteItem = remoteItems.find(item => item.localPath === fullPath);
+      // Find the corresponding remote item using primary parent relationship
+      const { data: remoteItem } = await supabase
+        .from('files')
+        .select('*, file_folders!inner(*)')
+        .eq('name', modifiedItem.name)
+        .eq('file_folders.primary_parent', true)
+        .single();
       
-      if (remoteItem?.filePath) {
-        const fileContent = await b2Service.downloadFile(remoteItem.filePath);
+      if (remoteItem?.file_path) {
+        const fileContent = await b2Service.downloadFile(remoteItem.file_path);
         await window.api.writeLocalFile(fullPath, Buffer.from(fileContent));
         
         // Set the file's modification time to match remote
-        const remoteModTime = new Date(remoteItem.lastModified).getTime();
+        const remoteModTime = new Date(remoteItem.last_modified).getTime();
         await window.api.setFileTime(fullPath, remoteModTime);
       }
 

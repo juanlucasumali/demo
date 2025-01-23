@@ -5,7 +5,8 @@ import {
   getSyncConfiguration, 
   compareLocalWithRemote,
   updateExistingSync, 
-  updateLocalFromRemote
+  updateLocalFromRemote,
+  cleanupRemoteFolder
 } from '@renderer/services/sync-service'
 import { SyncType } from '@renderer/types/sync'
 import { SyncDetailsDialog } from './dialogs/sync-details-dialog'
@@ -14,14 +15,16 @@ export function SyncCheck() {
   const [showDetails, setShowDetails] = useState(false)
   const [currentDiff, setCurrentDiff] = useState<any>(null)
   const [currentConfig, setCurrentConfig] = useState<any>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
   const hasPendingDiffRef = useRef(false)
+  const createdItemsRef = useRef<string[]>([])
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout
 
     async function checkSync() {
-      if (hasPendingDiffRef.current || showDetails) {
-        console.log('Skipping sync check due to pending differences or open dialog')
+      if (hasPendingDiffRef.current || showDetails || isSyncing) {
+        console.log('Skipping sync check due to pending differences, open dialog, or ongoing sync')
         return
       }
 
@@ -61,30 +64,30 @@ export function SyncCheck() {
       }
     }
 
-    // Start initial check
-    checkSync()
-    
-    // Only set up interval if dialog is not shown
-    if (!showDetails) {
-      intervalId = setInterval(checkSync, 10000) // 10 seconds
+    if (!showDetails && !isSyncing) {
+      checkSync()
+      intervalId = setInterval(checkSync, 10000)
     }
 
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
+      if (intervalId) clearInterval(intervalId)
     }
-  }, [showDetails]) // Add showDetails as dependency
+  }, [showDetails, isSyncing])
 
   const handleSyncDirectionChosen = async (useRemote: boolean) => {
     if (!currentConfig || !currentDiff) return
+    setIsSyncing(true)
+    createdItemsRef.current = []
 
     try {
       if (useRemote) {
         await updateLocalFromRemote(
           currentConfig.localPath,
           currentConfig.remoteFolderId,
-          currentDiff
+          currentDiff,
+          (progress) => {
+            toast.info(`Updating local files: ${progress.currentFile}`)
+          }
         )
       } else {
         const itemsWithFullPath = [...currentDiff.added, ...currentDiff.modified].map(item => ({
@@ -92,14 +95,17 @@ export function SyncCheck() {
           fullPath: `${currentConfig.localPath}/${item.path}`,
           path: item.path
         }))
+
         await updateExistingSync(
           itemsWithFullPath,
           currentConfig.remoteFolderId,
-          currentDiff
+          currentDiff,
+          (progress) => {
+            toast.info(`Updating remote files: ${progress.currentFile}`)
+          }
         )
       }
       
-      // Reset state after successful sync
       hasPendingDiffRef.current = false
       setShowDetails(false)
       setCurrentDiff(null)
@@ -108,39 +114,50 @@ export function SyncCheck() {
     } catch (error) {
       console.error('Sync failed:', error)
       toast.error('Failed to sync files. Please try again.')
+
+      // Clean up any created items if sync failed
+      if (createdItemsRef.current.length > 0) {
+        toast.info('Cleaning up created items...')
+        for (const itemId of createdItemsRef.current.reverse()) {
+          try {
+            await cleanupRemoteFolder(itemId)
+          } catch (cleanupError) {
+            console.error(`Failed to clean up item ${itemId}:`, cleanupError)
+          }
+        }
+      }
+    } finally {
+      setIsSyncing(false)
+      createdItemsRef.current = []
     }
   }
 
-// Replace the SyncDetailsDialog component render with:
-return (
-  <>
-    <SyncDetailsDialog 
-      open={showDetails} 
-      onOpenChange={(open) => {
-        // Only update dialog visibility
-        setShowDetails(open);
-        
-        // Don't dismiss the toast when closing dialog without resolution
-        if (!open && hasPendingDiffRef.current) {
-          // Re-show the toast if there are still pending differences
-          toast('Files Out of Sync', {
-            description: 'Local and remote files have differences',
-            action: {
-              label: 'View Details',
-              onClick: () => setShowDetails(true)
-            },
-            dismissible: false,
-            duration: Infinity,
-            closeButton: false,
-            position: 'bottom-left'
-          })
-        }
-      }}
-      diff={currentDiff || { added: [], modified: [], removed: [] }}
-      localPath={currentConfig?.localPath || ''}
-      remoteFolderId={currentConfig?.remoteFolderId || ''}
-      onSyncDirectionChosen={handleSyncDirectionChosen}
-    />
-  </>
-)
+  return (
+    <>
+      <SyncDetailsDialog 
+        open={showDetails} 
+        onOpenChange={(open) => {
+          setShowDetails(open)
+          if (!open && hasPendingDiffRef.current) {
+            toast('Files Out of Sync', {
+              description: 'Local and remote files have differences',
+              action: {
+                label: 'View Details',
+                onClick: () => setShowDetails(true)
+              },
+              dismissible: false,
+              duration: Infinity,
+              closeButton: false,
+              position: 'bottom-left'
+            })
+          }
+        }}
+        diff={currentDiff || { added: [], modified: [], removed: [] }}
+        localPath={currentConfig?.localPath || ''}
+        remoteFolderId={currentConfig?.remoteFolderId || ''}
+        onSyncDirectionChosen={handleSyncDirectionChosen}
+        isSyncing={isSyncing}
+      />
+    </>
+  )
 } 

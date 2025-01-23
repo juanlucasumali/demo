@@ -247,7 +247,7 @@ async function addToCollections(fileId: string, collectionIds: string[]) {
   if (error) throw error;
 }
 
-async function addToFolders(fileId: string, folderIds: string[]) {
+async function addToFolders(fileId: string, folderIds: string[], primaryParentId?: string) {
   if (!folderIds.length) return;
   
   const { error } = await supabase
@@ -255,7 +255,8 @@ async function addToFolders(fileId: string, folderIds: string[]) {
     .insert(
       folderIds.map(folderId => ({
         file_id: fileId,
-        folder_id: folderId
+        folder_id: folderId,
+        primary_parent: folderId === primaryParentId
       }))
     );
   
@@ -285,6 +286,7 @@ export async function addFileOrFolder(
         size: fileContent ? fileContent.byteLength : item.size,
         duration: item.duration,
         file_path: item.filePath,
+        last_modified: item.lastModified,
       })
       .select()
       .single();
@@ -300,7 +302,7 @@ export async function addFileOrFolder(
     const relationshipPromises = [
       addToProjects(data.id, item.projectIds),
       addToCollections(data.id, item.collectionIds),
-      addToFolders(data.id, item.parentFolderIds)
+      addToFolders(data.id, item.parentFolderIds, item.primaryParentId)
     ];
 
     // Handle B2 upload if it's a file with content

@@ -56,6 +56,18 @@ const api = {
   },
   deleteDirectory: (path: string) => ipcRenderer.invoke('delete-directory', path),
   deleteFile: (path: string) => ipcRenderer.invoke('delete-file', path),
+  getFileStats: async (filePath: string) => {
+    try {
+      const stats = await fs.promises.stat(filePath);
+      return {
+        mtime: stats.mtime,
+        size: stats.size
+      };
+    } catch (error) {
+      console.error('Failed to get file stats:', error);
+      throw error;
+    }
+  },
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

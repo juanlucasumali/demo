@@ -24,6 +24,10 @@ declare global {
       joinPath: (...paths: string[]) => Promise<string>
       deleteDirectory: (path: string) => Promise<void>
       deleteFile: (path: string) => Promise<void>
+      getFileStats: (path: string) => Promise<{
+        mtime: Date;
+        size: number;
+      }>
     }
   }
 }

@@ -256,7 +256,8 @@ CREATE TABLE IF NOT EXISTS "public"."file_folders" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "file_id" "uuid" NOT NULL,
     "folder_id" "uuid" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
+    "primary_parent" boolean DEFAULT false NOT NULL
 );
 
 ALTER TABLE "public"."file_folders" OWNER TO "postgres";
@@ -269,6 +270,17 @@ CREATE TABLE IF NOT EXISTS "public"."file_projects" (
 );
 
 ALTER TABLE "public"."file_projects" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."file_sync_states" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "sync_config_id" "uuid" NOT NULL,
+    "file_path" "text" NOT NULL,
+    "local_modified_at" timestamp with time zone NOT NULL,
+    "remote_modified_at" timestamp with time zone NOT NULL,
+    "last_synced_at" timestamp with time zone NOT NULL
+);
+
+ALTER TABLE "public"."file_sync_states" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."files" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
@@ -405,6 +417,12 @@ ALTER TABLE ONLY "public"."file_projects"
 ALTER TABLE ONLY "public"."file_projects"
     ADD CONSTRAINT "file_projects_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."file_sync_states"
+    ADD CONSTRAINT "file_sync_states_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."file_sync_states"
+    ADD CONSTRAINT "file_sync_states_sync_config_id_file_path_key" UNIQUE ("sync_config_id", "file_path");
+
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_pkey" PRIMARY KEY ("id");
 
@@ -496,6 +514,9 @@ ALTER TABLE ONLY "public"."file_projects"
 
 ALTER TABLE ONLY "public"."file_projects"
     ADD CONSTRAINT "file_projects_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."file_sync_states"
+    ADD CONSTRAINT "file_sync_states_sync_config_id_fkey" FOREIGN KEY ("sync_config_id") REFERENCES "public"."sync_configurations"("id");
 
 ALTER TABLE ONLY "public"."files"
     ADD CONSTRAINT "files_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
@@ -612,6 +633,10 @@ GRANT ALL ON TABLE "public"."file_folders" TO "service_role";
 GRANT ALL ON TABLE "public"."file_projects" TO "anon";
 GRANT ALL ON TABLE "public"."file_projects" TO "authenticated";
 GRANT ALL ON TABLE "public"."file_projects" TO "service_role";
+
+GRANT ALL ON TABLE "public"."file_sync_states" TO "anon";
+GRANT ALL ON TABLE "public"."file_sync_states" TO "authenticated";
+GRANT ALL ON TABLE "public"."file_sync_states" TO "service_role";
 
 GRANT ALL ON TABLE "public"."files" TO "anon";
 GRANT ALL ON TABLE "public"."files" TO "authenticated";

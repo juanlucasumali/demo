@@ -2,7 +2,7 @@ import { supabase } from '@renderer/lib/supabase'
 import { useUserStore } from '@renderer/stores/user-store'
 import { DemoItem, FileFormat, ItemType } from '@renderer/types/items'
 import { addFileOrFolder, getFilesWithSharing, getItemsToDeleteRecursively } from './items-service'
-import { LocalItem, LocalItemWithFullPath, UploadProgress, SyncConfiguration, SyncType } from '@renderer/types/sync'
+import { LocalItem, LocalItemWithFullPath, UploadProgress, SyncConfiguration, SyncType, EnhancedDiffResult, RemoteItem } from '@renderer/types/sync'
 import { b2Service } from '@renderer/services/b2-service'
 
 // Configuration Management Functions
@@ -364,30 +364,32 @@ export async function createRemoteFolder(localPath: string): Promise<string> {
   return folder.id
 } 
 
-interface RemoteItem {
-  id: string;
-  name: string;
-  type: ItemType;
-  filePath: string | null;
-  localPath: string | null;
-}
-
-interface EnhancedDiffResult {
-  added: LocalItem[];      // exists in local but not in remote
-  modified: LocalItem[];   // exists in both but different
-  removed: RemoteItem[];   // exists in remote but not in local
+interface SyncComparisonResult extends EnhancedDiffResult {
+  syncAction: 'NO_CHANGE' | 'USE_REMOTE' | 'USE_LOCAL' | 'CONFLICT';
 }
 
 export async function compareLocalWithRemote(
   localPath: string,
-  remoteFolderId: string
-): Promise<EnhancedDiffResult> {
+  remoteFolderId: string,
+  lastSyncedAt: Date | null
+): Promise<SyncComparisonResult> {
+  console.log('🔄 Starting sync comparison:', {
+    localPath,
+    remoteFolderId,
+    lastSyncedAt: lastSyncedAt?.toISOString()
+  });
+
   const localItems = await scanLocalDirectory(localPath);
   const localMap = new Map(localItems.map(item => [item.path, item]));
 
   const remoteItems = await getFilesWithSharing(useUserStore.getState().profile!.id, {
     parentFolderId: remoteFolderId,
     includeNested: true
+  });
+
+  console.log('📊 Found items:', {
+    localCount: localItems.length,
+    remoteCount: remoteItems.length
   });
 
   const remoteMap = new Map();
@@ -429,20 +431,40 @@ export async function compareLocalWithRemote(
   const added: LocalItem[] = [];
   const modified: LocalItem[] = [];
   const removed: RemoteItem[] = [];
+  let syncAction: 'NO_CHANGE' | 'USE_REMOTE' | 'USE_LOCAL' | 'CONFLICT' = 'NO_CHANGE';
 
   // Check for added/modified files
   localMap.forEach((localItem, path) => {
     const remoteItem = remoteMap.get(path);
     if (!remoteItem) {
+      console.log('📝 Found new local item:', { path, type: localItem.type });
       added.push(localItem);
     } else if (localItem.type === 'file') {
-      // Convert both dates to timestamps for comparison
       const localTimestamp = localItem.lastModified?.getTime() || 0;
       const remoteTimestamp = new Date(remoteItem.lastModified).getTime();
-      
-      // If timestamps differ by more than 1 second, consider the file modified
+      const lastSyncTimestamp = lastSyncedAt?.getTime() || 0;
+
+      console.log('⏰ Comparing timestamps:', {
+        path,
+        localTime: new Date(localTimestamp).toISOString(),
+        remoteTime: new Date(remoteTimestamp).toISOString(),
+        lastSyncTime: lastSyncedAt?.toISOString()
+      });
+
       if (Math.abs(localTimestamp - remoteTimestamp) > 1000) {
         modified.push(localItem);
+        
+        // Determine sync action
+        if (localTimestamp === lastSyncTimestamp && remoteTimestamp > lastSyncTimestamp) {
+          console.log('🔄 Remote changes detected:', { path });
+          syncAction = 'USE_REMOTE';
+        } else if (remoteTimestamp === lastSyncTimestamp && localTimestamp > lastSyncTimestamp) {
+          console.log('🔄 Local changes detected:', { path });
+          syncAction = 'USE_LOCAL';
+        } else if (localTimestamp !== lastSyncTimestamp && remoteTimestamp !== lastSyncTimestamp) {
+          console.log('⚠️ Conflict detected:', { path });
+          syncAction = 'CONFLICT';
+        }
       }
     }
   });
@@ -458,14 +480,20 @@ export async function compareLocalWithRemote(
         name: remoteItem.name,
         type: remoteItem.type,
         filePath: remoteItem.filePath,
-        localPath: path // Include the constructed path
+        localPath: path, // Include the constructed path
+        lastModified: remoteItem.lastModified
       });
     }
   });
 
-  console.log('🔄 Comparison result:', { added, modified, removed });
+  console.log('🔄 Comparison complete:', {
+    added: added.length,
+    modified: modified.length,
+    removed: removed.length,
+    syncAction
+  });
 
-  return { added, modified, removed };
+  return { added, modified, removed, syncAction };
 }
 
 // New helper function to build folder mapping
@@ -608,11 +636,19 @@ export async function updateExistingSync(
     for (const removedPath of diff.removed) {
       console.log("removedPath:", removedPath)
       console.log(`📄 Processing removal for: ${removedPath}`)
+      
+      // Find the file by name and parent folder relationship instead
       const { data, error } = await supabase
         .from('files')
-        .select('id, file_path, type')
-        .eq('local_path', removedPath.localPath)
-        .single()
+        .select(`
+          id, 
+          file_path, 
+          type,
+          file_folders!file_folders_file_id_fkey(*)
+        `)
+        .eq('name', removedPath.name)
+        .eq('file_folders.primary_parent', true)
+        .single();
 
       console.log("data:", data)
       console.log("error:", error)
@@ -702,6 +738,7 @@ export async function updateExistingSync(
         createdAt: new Date(),
         lastModified: file.lastModified || new Date(),
         lastOpened: new Date(),
+        primaryParentId: parentId,
       }, [], fileContent);
 
       processedChanges++;
@@ -759,6 +796,21 @@ export async function updateLocalFromRemote(
       return window.api.joinPath(localPath, pathParts.join('/'));
     };
 
+    const verifyModificationTime = async (fullPath: string, expectedTime: number) => {
+      const stats = await window.api.getFileStats(fullPath);
+      const actualTime = stats.mtime.getTime();
+      
+      console.log('⏰ Verifying modification time:', {
+        path: fullPath,
+        expected: new Date(expectedTime).toISOString(),
+        actual: new Date(actualTime).toISOString(),
+        difference: Math.abs(actualTime - expectedTime),
+        success: Math.abs(actualTime - expectedTime) <= 1000 // Allow 1s difference
+      });
+
+      return Math.abs(actualTime - expectedTime) <= 1000;
+    };
+
     // 1. Handle local files that don't exist in remote (delete them)
     for (const localItem of diff.added) {
       const fullPath = await window.api.joinPath(localPath, localItem.path);
@@ -780,9 +832,36 @@ export async function updateLocalFromRemote(
       
       if (remoteItem.type === ItemType.FOLDER) {
         await window.api.createLocalDirectory(fullPath);
+        if (remoteItem.lastModified) {
+          const remoteModTime = new Date(remoteItem.lastModified).getTime();
+          console.log('⏰ Setting folder modification time:', {
+            path: fullPath,
+            time: new Date(remoteModTime).toISOString()
+          });
+          
+          await window.api.setFileTime(fullPath, remoteModTime);
+          const success = await verifyModificationTime(fullPath, remoteModTime);
+          if (!success) {
+            console.warn('⚠️ Failed to set folder modification time correctly');
+          }
+        }
       } else if (remoteItem.filePath) {
         const fileContent = await b2Service.downloadFile(remoteItem.filePath);
         await window.api.writeLocalFile(fullPath, Buffer.from(fileContent));
+        
+        if (remoteItem.lastModified) {
+          const remoteModTime = new Date(remoteItem.lastModified).getTime();
+          console.log('⏰ Setting file modification time:', {
+            path: fullPath,
+            time: new Date(remoteModTime).toISOString()
+          });
+          
+          await window.api.setFileTime(fullPath, remoteModTime);
+          const success = await verifyModificationTime(fullPath, remoteModTime);
+          if (!success) {
+            console.warn('⚠️ Failed to set file modification time correctly');
+          }
+        }
       }
 
       processedChanges++;
@@ -797,13 +876,19 @@ export async function updateLocalFromRemote(
     for (const modifiedItem of diff.modified) {
       const fullPath = await window.api.joinPath(localPath, modifiedItem.path);
       
-      // Find the corresponding remote item using primary parent relationship
-      const { data: remoteItem } = await supabase
+      // Specify the foreign key relationship explicitly
+      const { data: remoteItem, error } = await supabase
         .from('files')
-        .select('*, file_folders!inner(*)')
+        .select(`
+          *,
+          file_folders!file_folders_file_id_fkey(*)
+        `)
         .eq('name', modifiedItem.name)
         .eq('file_folders.primary_parent', true)
         .single();
+
+      console.log("remoteItem:", remoteItem);
+      console.log("error:", error);
       
       if (remoteItem?.file_path) {
         const fileContent = await b2Service.downloadFile(remoteItem.file_path);
@@ -812,6 +897,13 @@ export async function updateLocalFromRemote(
         // Set the file's modification time to match remote
         const remoteModTime = new Date(remoteItem.last_modified).getTime();
         await window.api.setFileTime(fullPath, remoteModTime);
+        const success = await verifyModificationTime(fullPath, remoteModTime);
+        if (!success) {
+          console.warn('⚠️ Failed to set modified file time correctly:', {
+            path: fullPath,
+            expectedTime: new Date(remoteModTime).toISOString()
+          });
+        }
       }
 
       processedChanges++;

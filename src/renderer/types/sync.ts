@@ -1,3 +1,5 @@
+import { ItemType } from "./items"
+
 export interface LocalItem {
     name: string
     path: string
@@ -28,3 +30,18 @@ export interface LocalItem {
   export interface LocalItemWithFullPath extends LocalItem {
     fullPath: string
   }
+
+export interface RemoteItem {
+  id: string;
+  name: string;
+  type: ItemType;
+  filePath: string | null;
+  localPath: string | null;
+  lastModified: Date | null;
+}
+
+export interface EnhancedDiffResult {
+  added: LocalItem[];      // exists in local but not in remote
+  modified: LocalItem[];   // exists in both but different
+  removed: RemoteItem[];   // exists in remote but not in local
+}

@@ -24,30 +24,62 @@ export function SyncCheck() {
 
     async function checkSync() {
       if (hasPendingDiffRef.current || showDetails || isSyncing) {
-        console.log('Skipping sync check due to pending differences, open dialog, or ongoing sync')
+        console.log('⏭️ Skipping sync check: pending changes or dialog open');
         return
       }
 
       try {
         const profile = useUserStore.getState().profile
         if (!profile) {
-          console.log('No profile found, skipping sync check')
+          console.log('👤 No profile found, skipping sync check');
           return
         }
 
         const existingConfig = await getSyncConfiguration(profile.id)
         
-        if (existingConfig?.type === SyncType.FL_STUDIO && existingConfig.localPath && existingConfig.remoteFolderId) {
-          const diff = await compareLocalWithRemote(existingConfig.localPath, existingConfig.remoteFolderId)
-          const hasDifferences = diff.added.length > 0 || diff.modified.length > 0 || diff.removed.length > 0
+        if (existingConfig?.type === SyncType.FL_STUDIO && 
+            existingConfig.localPath && 
+            existingConfig.remoteFolderId) {
           
+          console.log('🔍 Checking sync status:', {
+            localPath: existingConfig.localPath,
+            remoteFolderId: existingConfig.remoteFolderId,
+            lastSyncedAt: existingConfig.lastSyncedAt
+          });
+
+          const comparison = await compareLocalWithRemote(
+            existingConfig.localPath, 
+            existingConfig.remoteFolderId,
+            existingConfig.lastSyncedAt ? new Date(existingConfig.lastSyncedAt) : null
+          )
+          
+          const hasDifferences = comparison.added.length > 0 || 
+                               comparison.modified.length > 0 || 
+                               comparison.removed.length > 0;
+
           if (hasDifferences) {
-            hasPendingDiffRef.current = true
-            setCurrentDiff(diff)
-            setCurrentConfig(existingConfig)
+            console.log('📢 Differences detected:', {
+              action: comparison.syncAction,
+              changes: {
+                added: comparison.added.length,
+                modified: comparison.modified.length,
+                removed: comparison.removed.length
+              }
+            });
+
+            hasPendingDiffRef.current = true;
+            setCurrentDiff(comparison);
+            setCurrentConfig(existingConfig);
             
-            toast('Files Out of Sync', {
-              description: 'Local and remote files have differences',
+            // Show different messages based on sync action
+            const message = comparison.syncAction === 'CONFLICT' 
+              ? 'Sync conflict detected'
+              : 'Files out of sync';
+
+            toast(message, {
+              description: comparison.syncAction === 'CONFLICT'
+                ? 'Changes detected in both local and remote files'
+                : 'Local and remote files have differences',
               action: {
                 label: 'View Details',
                 onClick: () => setShowDetails(true)
@@ -56,23 +88,19 @@ export function SyncCheck() {
               duration: Infinity,
               closeButton: false,
               position: 'bottom-left'
-            })
+            });
           }
         }
       } catch (error) {
-        console.error('Failed to check sync status:', error)
+        console.error('❌ Failed to check sync status:', error);
       }
     }
 
-    if (!showDetails && !isSyncing) {
-      checkSync()
-      intervalId = setInterval(checkSync, 10000)
-    }
+    checkSync();
+    intervalId = setInterval(checkSync, 5000);
 
-    return () => {
-      if (intervalId) clearInterval(intervalId)
-    }
-  }, [showDetails, isSyncing])
+    return () => clearInterval(intervalId);
+  }, [showDetails, isSyncing]);
 
   const handleSyncDirectionChosen = async (useRemote: boolean) => {
     if (!currentConfig || !currentDiff) return

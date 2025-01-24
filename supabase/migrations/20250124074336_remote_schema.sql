@@ -44,13 +44,13 @@ ALTER FUNCTION "public"."check_email_exists"("email" "text") OWNER TO "postgres"
 
 CREATE OR REPLACE FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid" DEFAULT NULL::"uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_collection_id" "uuid" DEFAULT NULL::"uuid", "p_include_nested" boolean DEFAULT false) RETURNS TABLE("id" "uuid", "owner_id" "uuid", "type" "text", "name" "text", "description" "text", "icon_url" "text", "tags" "text", "format" "text", "size" bigint, "duration" integer, "file_path" "text", "created_at" timestamp with time zone, "last_modified" timestamp with time zone, "last_opened" timestamp with time zone, "owner_data" "jsonb", "shared_with" "jsonb", "is_starred" boolean, "file_projects" "uuid"[], "file_collections" "uuid"[], "file_folders" "uuid"[])
     LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $$DECLARE
+    AS $$
+DECLARE
   nested_folder_ids UUID[];
 BEGIN
   -- Get nested folder IDs if needed
   IF p_include_nested AND p_parent_folder_id IS NOT NULL THEN
     WITH RECURSIVE folder_hierarchy AS (
-      -- Base case: direct children
       SELECT files.id 
       FROM files 
       WHERE files.id IN (
@@ -58,10 +58,7 @@ BEGIN
         FROM file_folders 
         WHERE folder_id = p_parent_folder_id
       )
-      
       UNION
-      
-      -- Recursive case
       SELECT f.id
       FROM files f
       INNER JOIN file_folders ff ON f.id = ff.file_id
@@ -71,28 +68,96 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  WITH filtered_files AS (
+  WITH RECURSIVE folder_hierarchy AS (
+    -- Base case: directly shared or owned folders
+    SELECT 
+      f.id,
+      ARRAY[f.id] as path
+    FROM files f
+    LEFT JOIN shared_items si ON si.file_id = f.id
+    WHERE f.type = 'folder' 
+    AND (
+      f.owner_id = p_user_id 
+      OR si.shared_with_id = p_user_id
+    )
+    
+    UNION ALL
+    
+    -- Recursive case: both parent and child folders
+    SELECT 
+      CASE
+        WHEN ff.folder_id = fh.id THEN ff.file_id
+        ELSE ff.folder_id
+      END,
+      CASE
+        WHEN ff.folder_id = fh.id THEN fh.path || ff.file_id
+        ELSE fh.path || ff.folder_id
+      END
+    FROM folder_hierarchy fh
+    JOIN file_folders ff ON 
+      ff.folder_id = fh.id OR ff.file_id = fh.id
+    JOIN files f ON 
+      f.id = CASE
+        WHEN ff.folder_id = fh.id THEN ff.file_id
+        ELSE ff.folder_id
+      END
+    WHERE f.type = 'folder'
+      AND NOT f.id = ANY(fh.path)  -- Prevent cycles
+  ),
+  accessible_projects AS (
+    -- Projects directly owned or shared
+    SELECT p.id
+    FROM projects p
+    LEFT JOIN shared_items si ON si.project_id = p.id
+    WHERE p.owner_id = p_user_id 
+    OR si.shared_with_id = p_user_id
+  ),
+  accessible_collections AS (
+    -- Collections in accessible projects
+    SELECT c.id
+    FROM collections c
+    INNER JOIN accessible_projects ap ON c.project_id = ap.id
+  ),
+  filtered_files AS (
     SELECT f.*
     FROM files f
     WHERE 
-      -- Base ownership/sharing filter
-      (f.owner_id = p_user_id OR 
-       EXISTS (
-         SELECT 1 FROM shared_items si 
-         WHERE si.file_id = f.id 
-         AND si.shared_with_id = p_user_id
-       ))
+      -- Enhanced ownership/sharing filter with folder/project/collection inheritance
+      (
+        f.owner_id = p_user_id 
+        OR EXISTS (
+          SELECT 1 FROM shared_items si 
+          WHERE si.file_id = f.id 
+          AND si.shared_with_id = p_user_id
+        )
+        OR EXISTS (
+          SELECT 1 
+          FROM folder_hierarchy fh
+          INNER JOIN file_folders ff ON ff.folder_id = fh.id
+          WHERE ff.file_id = f.id
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM accessible_projects ap
+          INNER JOIN file_projects fp ON fp.project_id = ap.id
+          WHERE fp.file_id = f.id
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM accessible_collections ac
+          INNER JOIN file_collections fc ON fc.collection_id = ac.id
+          WHERE fc.file_id = f.id
+        )
+      )
       AND
       -- Parent folder filter with corrected root-level logic
       CASE 
-        -- For root level (no parent folder), only return items with no parent folders
         WHEN p_parent_folder_id IS NULL THEN 
           NOT EXISTS (
             SELECT 1 
             FROM file_folders ff 
             WHERE ff.file_id = f.id
           )
-        -- For nested folders with include_nested flag
         WHEN p_include_nested THEN
           f.id = ANY(nested_folder_ids) OR
           EXISTS (
@@ -101,7 +166,6 @@ BEGIN
             WHERE ff.file_id = f.id 
             AND ff.folder_id = p_parent_folder_id
           )
-        -- For direct children of a folder
         ELSE
           EXISTS (
             SELECT 1 
@@ -110,7 +174,6 @@ BEGIN
             AND ff.folder_id = p_parent_folder_id
           )
       END
-      -- Project filter
       AND (
         p_project_id IS NULL OR
         EXISTS (
@@ -119,7 +182,6 @@ BEGIN
           AND fp.project_id = p_project_id
         )
       )
-      -- Collection filter
       AND (
         p_collection_id IS NULL OR
         EXISTS (
@@ -186,7 +248,8 @@ BEGIN
     f.tags, f.format, f.size, f.duration, f.file_path, f.created_at, 
     f.last_modified, f.last_opened,
     u.id, u.name, u.email, u.avatar, u.username;
-END;$$;
+END;
+$$;
 
 ALTER FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) OWNER TO "postgres";
 

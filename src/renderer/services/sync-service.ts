@@ -373,11 +373,11 @@ export async function compareLocalWithRemote(
   remoteFolderId: string,
   lastSyncedAt: Date | null
 ): Promise<SyncComparisonResult> {
-  console.log('🔄 Starting sync comparison:', {
-    localPath,
-    remoteFolderId,
-    lastSyncedAt: lastSyncedAt?.toISOString()
-  });
+  // console.log('🔄 Starting sync comparison:', {
+  //   localPath,
+  //   remoteFolderId,
+  //   lastSyncedAt: lastSyncedAt?.toISOString()
+  // });
 
   const localItems = await scanLocalDirectory(localPath);
   const localMap = new Map(localItems.map(item => [item.path, item]));
@@ -387,10 +387,10 @@ export async function compareLocalWithRemote(
     includeNested: true
   });
 
-  console.log('📊 Found items:', {
-    localCount: localItems.length,
-    remoteCount: remoteItems.length
-  });
+  // console.log('📊 Found items:', {
+  //   localCount: localItems.length,
+  //   remoteCount: remoteItems.length
+  // });
 
   const remoteMap = new Map();
   
@@ -437,19 +437,19 @@ export async function compareLocalWithRemote(
   localMap.forEach((localItem, path) => {
     const remoteItem = remoteMap.get(path);
     if (!remoteItem) {
-      console.log('📝 Found new local item:', { path, type: localItem.type });
+      // console.log('📝 Found new local item:', { path, type: localItem.type });
       added.push(localItem);
     } else if (localItem.type === 'file') {
       const localTimestamp = localItem.lastModified?.getTime() || 0;
       const remoteTimestamp = new Date(remoteItem.lastModified).getTime();
       const lastSyncTimestamp = lastSyncedAt?.getTime() || 0;
 
-      console.log('⏰ Comparing timestamps:', {
-        path,
-        localTime: new Date(localTimestamp).toISOString(),
-        remoteTime: new Date(remoteTimestamp).toISOString(),
-        lastSyncTime: lastSyncedAt?.toISOString()
-      });
+      // console.log('⏰ Comparing timestamps:', {
+      //   path,
+      //   localTime: new Date(localTimestamp).toISOString(),
+      //   remoteTime: new Date(remoteTimestamp).toISOString(),
+      //   lastSyncTime: lastSyncedAt?.toISOString()
+      // });
 
       if (Math.abs(localTimestamp - remoteTimestamp) > 1000) {
         modified.push(localItem);
@@ -469,8 +469,8 @@ export async function compareLocalWithRemote(
     }
   });
 
-  console.log("Local Items", localItems)
-  console.log("Remote Items", remoteMap)
+  // console.log("Local Items", localItems)
+  // console.log("Remote Items", remoteMap)
 
   // Check for removed files (exist in remote but not local)
   remoteMap.forEach((remoteItem, path) => {
@@ -486,12 +486,12 @@ export async function compareLocalWithRemote(
     }
   });
 
-  console.log('🔄 Comparison complete:', {
-    added: added.length,
-    modified: modified.length,
-    removed: removed.length,
-    syncAction
-  });
+  // console.log('🔄 Comparison complete:', {
+  //   added: added.length,
+  //   modified: modified.length,
+  //   removed: removed.length,
+  //   syncAction
+  // });
 
   return { added, modified, removed, syncAction };
 }

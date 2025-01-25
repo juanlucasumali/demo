@@ -24,7 +24,7 @@ export function SyncCheck() {
 
     async function checkSync() {
       if (hasPendingDiffRef.current || showDetails || isSyncing) {
-        console.log('⏭️ Skipping sync check: pending changes or dialog open');
+        // console.log('⏭️ Skipping sync check: pending changes or dialog open');
         return
       }
 
@@ -41,11 +41,11 @@ export function SyncCheck() {
             existingConfig.localPath && 
             existingConfig.remoteFolderId) {
           
-          console.log('🔍 Checking sync status:', {
-            localPath: existingConfig.localPath,
-            remoteFolderId: existingConfig.remoteFolderId,
-            lastSyncedAt: existingConfig.lastSyncedAt
-          });
+          // console.log('🔍 Checking sync status:', {
+          //   localPath: existingConfig.localPath,
+          //   remoteFolderId: existingConfig.remoteFolderId,
+          //   lastSyncedAt: existingConfig.lastSyncedAt
+          // });
 
           const comparison = await compareLocalWithRemote(
             existingConfig.localPath, 
@@ -58,14 +58,14 @@ export function SyncCheck() {
                                comparison.removed.length > 0;
 
           if (hasDifferences) {
-            console.log('📢 Differences detected:', {
-              action: comparison.syncAction,
-              changes: {
-                added: comparison.added.length,
-                modified: comparison.modified.length,
-                removed: comparison.removed.length
-              }
-            });
+            // console.log('📢 Differences detected:', {
+            //   action: comparison.syncAction,
+            //   changes: {
+            //     added: comparison.added.length,
+            //     modified: comparison.modified.length,
+            //     removed: comparison.removed.length
+            //   }
+            // });
 
             hasPendingDiffRef.current = true;
             setCurrentDiff(comparison);

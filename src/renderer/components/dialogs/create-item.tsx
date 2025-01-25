@@ -17,19 +17,20 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { maxFileNameLength } from "@renderer/lib/utils";
 import { useUserStore } from "@renderer/stores/user-store";
 import { Loader2 } from "lucide-react";
+import { Progress } from "@renderer/components/ui/progress";
 
 const createItemSchema = z.object({
   name: z
     .string()
-    .min(1, { message: "Name is required." })
     .max(maxFileNameLength, { 
       message: `Name must not exceed ${maxFileNameLength} characters.` 
-    }),
+    })
+    .optional(),
   description: z
     .string()
     .max(200, { message: "Description must not exceed 200 characters." }),
   tags: z.any().nullable(),
-  file: z.custom<File>().optional()
+  files: z.custom<FileList>().optional()
 });
 
 type CreateItemFormValues = z.infer<typeof createItemSchema>;
@@ -60,12 +61,16 @@ export function CreateItem({
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
     sharedWith || []
   );
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { friends, isLoading } = useItems({ searchTerm });  
   const currentUser = useUserStore((state) => state.profile);
   const [isUploading, setIsUploading] = useState(false);
   const [originalExtension, setOriginalExtension] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [processedFiles, setProcessedFiles] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [currentFileName, setCurrentFileName] = useState<string>("");
 
   const form = useForm<CreateItemFormValues>({
     resolver: zodResolver(createItemSchema),
@@ -73,29 +78,32 @@ export function CreateItem({
       name: "",
       description: "",
       tags: null,
-      file: undefined
+      files: undefined
     },
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const originalExtension = file.name.split('.').pop()?.toLowerCase();
-      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
-      form.setValue("file", file);
-      form.setValue("name", sanitizedFileName);
-      setOriginalExtension(originalExtension || null);
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(files);
+      if (files.length === 1) {
+        const originalExtension = files[0].name.split('.').pop()?.toLowerCase();
+        form.setValue("name", files[0].name);
+        setOriginalExtension(originalExtension || null);
+      } else {
+        form.setValue("name", "");
+      }
     }
   };
 
   const onSubmit: SubmitHandler<CreateItemFormValues> = async (data) => {
-    try {
-      if (!currentUser) return;
-      if (type === 'file' && !selectedFile) return;
+    if (!currentUser) return;
+    
+    if (type === 'folder') {
+      if (!data.name) return;
 
-      let finalFileName = data.name;
-      if (type === 'file' && originalExtension) {
+      let finalFileName = data.name || "";
+      if (originalExtension) {
         const currentExtension = finalFileName.split('.').pop()?.toLowerCase();
         if (!currentExtension || currentExtension !== originalExtension) {
           finalFileName = `${finalFileName}.${originalExtension}`;
@@ -104,8 +112,8 @@ export function CreateItem({
 
       setIsUploading(true);
       toast({
-        title: "Uploading...",
-        description: type === 'file' ? "Your file is being uploaded" : "Creating folder",
+        title: "Creating folder...",
+        description: "Your folder is being created",
         variant: "default",
       });
 
@@ -116,89 +124,139 @@ export function CreateItem({
         name: finalFileName,
         isStarred: false,
         parentFolderIds: parentFolderId ? [parentFolderId] : [],
-        filePath: type === 'file' ? `/files/${finalFileName}` : finalFileName,
-        type: type === 'file' ? ItemType.FILE : ItemType.FOLDER,
-        duration: type === 'file' ? 0 : null,
-        format: type === 'file' ? (selectedFile?.name.split(".").pop() as FileFormat) : null,
+        filePath: finalFileName,
+        type: ItemType.FOLDER,
+        duration: null,
+        format: null,
         owner: currentUser,
         sharedWith: selectedUsers,
         tags: data.tags,
         projectIds: location === 'project' || location === 'collection' ? [projectId!] : [],
-        size: type === 'file' ? selectedFile?.size ?? null : null,
+        size: null,
         description: data.description || "",
         icon: null,
         collectionIds: location === 'collection' ? [collectionId!] : [],
       };
 
-      if (type === 'file' && selectedFile) {
-        const fileContent = await selectedFile.arrayBuffer();
-        await new Promise<void>((resolve, reject) => {
-          addFileOrFolder({ 
-            item: newItem, 
-            sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined,
-            fileContent
-          }, {
-            onSuccess: () => {
-              toast({
-                title: "Success!",
-                description: selectedUsers.length > 0
-                  ? `${type === 'file' ? 'File' : 'Folder'} created!`
-                  : `${type === 'file' ? 'File uploaded' : 'Folder created'} successfully.`,
-                variant: "default",
-              });
-              resolve();
-            },
-            onError: (error) => {
-              console.error('Creation error:', error);
-              toast({
-                title: "Error",
-                description: `Failed to ${type === 'file' ? 'upload file' : 'create folder'}.`,
-                variant: "destructive",
-              });
-              reject(error);
-            }
-          });
+      await new Promise<void>((resolve, reject) => {
+        addFileOrFolder({ 
+          item: newItem, 
+          sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined 
+        }, {
+          onSuccess: () => {
+            toast({
+              title: "Success!",
+              description: "Folder created successfully.",
+              variant: "default",
+            });
+            resolve();
+          },
+          onError: (error) => {
+            console.error('Creation error:', error);
+            toast({
+              title: "Error",
+              description: "Failed to create folder.",
+              variant: "destructive",
+            });
+            reject(error);
+          }
         });
-      } else {
-        await new Promise<void>((resolve, reject) => {
-          addFileOrFolder({ 
-            item: newItem, 
-            sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined 
-          }, {
-            onSuccess: () => {
-              toast({
-                title: "Success!",
-                description: `Folder created successfully.`,
-                variant: "default",
-              });
-              resolve();
-            },
-            onError: (error) => {
-              console.error('Creation error:', error);
-              toast({
-                title: "Error",
-                description: "Failed to create folder.",
-                variant: "destructive",
-              });
-              reject(error);
-            }
-          });
-        });
-      }
+      });
 
       form.reset();
-      setSelectedFile(null);
+      setSelectedFiles([]);
       setSelectedUsers([]);
       onClose();
-    } catch (error) {
-      console.error('Creation error:', error);
-      toast({
-        title: "Error",
-        description: `Failed to ${type === 'file' ? 'upload file' : 'create folder'}.`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
+    } else {
+      if (selectedFiles.length === 0) return;
+
+      setIsUploading(true);
+      setTotalFiles(selectedFiles.length);
+      setProcessedFiles(0);
+      setUploadProgress(0);
+
+      let successfulUploads = 0;
+
+      try {
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          setCurrentFileName(file.name);
+
+          const fileExtension = file.name.split('.').pop()?.toLowerCase();
+
+          const newItem = {
+            createdAt: new Date(),
+            lastModified: new Date(),
+            lastOpened: new Date(),
+            name: file.name,
+            isStarred: false,
+            parentFolderIds: parentFolderId ? [parentFolderId] : [],
+            filePath: null,
+            type: ItemType.FILE,
+            duration: 0,
+            format: fileExtension as FileFormat,
+            owner: currentUser,
+            sharedWith: selectedUsers,
+            tags: data.tags,
+            projectIds: location === 'project' || location === 'collection' ? [projectId!] : [],
+            size: file.size,
+            description: data.description || "",
+            icon: null,
+            collectionIds: location === 'collection' ? [collectionId!] : [],
+          };
+
+          try {
+            const fileContent = await file.arrayBuffer();
+            await new Promise<void>((resolve, reject) => {
+              addFileOrFolder({ 
+                item: newItem, 
+                sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined,
+                fileContent
+              }, {
+                onSuccess: () => {
+                  successfulUploads++;
+                  setProcessedFiles(successfulUploads);
+                  setUploadProgress((successfulUploads / selectedFiles.length) * 100);
+                  resolve();
+                },
+                onError: (error) => reject(error)
+              });
+            });
+          } catch (error) {
+            console.error(`Failed to upload ${file.name}:`, error);
+            toast({
+              title: `Failed to upload ${file.name}`,
+              description: "The upload will continue with remaining files",
+              variant: "destructive",
+              duration: 3000
+            });
+          }
+        }
+
+        toast({
+          title: "Upload Complete",
+          description: `Successfully uploaded ${successfulUploads} of ${selectedFiles.length} files`,
+          variant: "default",
+        });
+
+        form.reset();
+        setSelectedFiles([]);
+        setSelectedUsers([]);
+        onClose();
+      } catch (error) {
+        console.error('Upload failed:', error);
+        toast({
+          title: "Upload Failed",
+          description: "Some files failed to upload",
+          variant: "destructive",
+        });
+      } finally {
+        setIsUploading(false);
+        setUploadProgress(0);
+        setProcessedFiles(0);
+        setTotalFiles(0);
+        setCurrentFileName("");
+      }
     }
   };
 
@@ -214,14 +272,14 @@ export function CreateItem({
             {type === 'file' && (
               <FormField
                 control={form.control}
-                name="file"
+                name="files"
                 render={() => (
                   <FormItem>
-                    <FormLabel>File</FormLabel>
+                    <FormLabel>Files</FormLabel>
                     <FormControl>
                       <Input
                         type="file"
-                        // accept={allowedFormats.map((f) => `.${f}`).join(",")}
+                        multiple
                         onChange={handleFileChange}
                         className="pt-2"
                       />
@@ -232,19 +290,21 @@ export function CreateItem({
               />
             )}
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{type === 'file' ? 'File Name' : 'Folder Name'}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={`Name your ${type === 'file' ? 'file' : 'folder'}`} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {type !== 'file' && (
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Folder Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Name your folder" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {type !== 'file' && <FormField
               control={form.control}
@@ -260,7 +320,7 @@ export function CreateItem({
               )}
             />}
 
-            <FormField
+            {type !== 'file' && <FormField
               control={form.control}
               name="tags"
               render={({ field }) => (
@@ -275,7 +335,7 @@ export function CreateItem({
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            />}
 
             {location === 'home' && (
               <div>
@@ -287,6 +347,15 @@ export function CreateItem({
                   onSearch={setSearchTerm}
                   isLoading={isLoading.friends}
                 />
+              </div>
+            )}
+
+            {isUploading && (
+              <div className="space-y-2">
+                <Progress value={uploadProgress} />
+                <p className="text-sm text-muted-foreground">
+                  Uploading: {processedFiles} / {totalFiles} files
+                </p>
               </div>
             )}
 

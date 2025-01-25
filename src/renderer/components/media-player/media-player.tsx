@@ -37,6 +37,23 @@ export function MediaPlayer() {
     }
   }, [arrayBuffer]);
 
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (
+        e.code === 'Space' && 
+        isVisible && 
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault();
+        isPlaying ? pauseTrack() : resumeTrack();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isPlaying, isVisible, pauseTrack, resumeTrack]);
+
   const onReady = (ws) => {
     setWavesurfer(ws);
     setDuration(ws.getDuration());

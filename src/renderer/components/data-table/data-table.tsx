@@ -34,7 +34,8 @@ import { DataTableGridView } from "./grid-view"
 import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
 import { Button } from "@renderer/components/ui/button"
 import { Progress } from "@renderer/components/ui/progress"
-import { Trash } from "lucide-react"
+import { Trash, Share } from "lucide-react"
+import { BulkShareDialog } from "../dialogs/bulk-share-dialog"
 
 
 interface DataTableProps<DemoItem> {
@@ -55,6 +56,7 @@ interface DataTableProps<DemoItem> {
   isLoading?: boolean
   onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void
   onBulkDelete?: (items: DemoItem[]) => Promise<void>;
+  onBulkShare?: (items: DemoItem[]) => void;
 }
 
 export type AudioState = {
@@ -83,6 +85,7 @@ export function DataTable<DemoItem>({
   isLoading = false,
   onToggleStar,
   onBulkDelete,
+  onBulkShare,
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -169,6 +172,8 @@ export function DataTable<DemoItem>({
   });
 
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+
+  const [showBulkShare, setShowBulkShare] = React.useState(false);
 
   const handleRowMouseEnter = (rowId: string) => {
     setAudioState(prev => ({ ...prev, hoveredRow: rowId }));
@@ -344,7 +349,17 @@ export function DataTable<DemoItem>({
             />
             
             {table.getFilteredSelectedRowModel().rows.length > 0 && (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowBulkShare(true)}
+                  className="whitespace-nowrap"
+                >
+                  <Share className="h-4 w-4 mr-2" />
+                  Share {table.getFilteredSelectedRowModel().rows.length} items
+                </Button>
+
                 <Button
                   variant={showDeleteConfirm ? "destructive" : "outline"}
                   size="sm"
@@ -357,47 +372,45 @@ export function DataTable<DemoItem>({
                     }
                   }}
                   disabled={bulkDeleteProgress.isDeleting}
-                  className="relative group"
+                  className="relative group whitespace-nowrap"
                 >
                   <Trash className="h-4 w-4 mr-2" />
-                  {showDeleteConfirm ? (
-                    <>
-                      Confirm delete {table.getFilteredSelectedRowModel().rows.length} items?
-                      <span 
-                        className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-                                  px-2 py-1 rounded text-xs
-                                   opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        This action cannot be undone
-                      </span>
-                    </>
-                  ) : (
-                    `Delete ${table.getFilteredSelectedRowModel().rows.length} items`
+                  {showDeleteConfirm ? "Confirm delete?" : "Delete items"}
+                  {showDeleteConfirm && (
+                    <span 
+                      className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+                                bg-destructive text-destructive-foreground
+                                px-2 py-1 rounded text-xs
+                                opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      This action cannot be undone
+                    </span>
                   )}
                 </Button>
                 
                 {showDeleteConfirm && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => setShowDeleteConfirm(false)}
                   >
                     Cancel
                   </Button>
                 )}
-                
-                {bulkDeleteProgress.isDeleting && (
-                  <div className="flex-1 space-y-2 min-w-[200px]">
-                    <Progress value={(bulkDeleteProgress.processed / bulkDeleteProgress.total) * 100} />
-                    <p className="text-sm text-muted-foreground">
-                      Deleting: {bulkDeleteProgress.processed} / {bulkDeleteProgress.total} items
-                    </p>
-                  </div>
-                )}
               </div>
             )}
           </div>
-          <div className="flex items-center space-x-2" />
+        </div>
+      )}
+  
+      {bulkDeleteProgress.isDeleting && (
+        <div className="flex items-center space-x-4 pb-4">
+          <div className="flex-1 space-y-2">
+            <Progress value={(bulkDeleteProgress.processed / bulkDeleteProgress.total) * 100} />
+            <p className="text-sm text-muted-foreground">
+              Deleting: {bulkDeleteProgress.processed} / {bulkDeleteProgress.total} items
+            </p>
+          </div>
         </div>
       )}
   
@@ -496,6 +509,12 @@ export function DataTable<DemoItem>({
           <DataTablePagination table={table} />
         </div>
       )}
+
+      <BulkShareDialog
+        open={showBulkShare}
+        onOpenChange={setShowBulkShare}
+        selectedItems={table.getFilteredSelectedRowModel().rows.map(row => row.original as any)}
+      />
     </div>
   )
 }

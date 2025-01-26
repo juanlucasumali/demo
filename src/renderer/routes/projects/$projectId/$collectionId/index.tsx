@@ -27,7 +27,7 @@ export const Route = createFileRoute('/projects/$projectId/$collectionId/')({
 
 function CollectionPage() {
   const { projectId, collectionId } = useParams({ from: '/projects/$projectId/$collectionId/' })
-  const { currentCollection, currentProject, filesAndFolders, isLoading, deleteItem, updateItem } = useItems({ collectionId, projectId })
+  const { currentCollection, currentProject, filesAndFolders, isLoading, deleteItem, updateItem, bulkDelete } = useItems({ collectionId, projectId })
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -139,11 +139,15 @@ function CollectionPage() {
             <DataTable
               columns={columns}
               data={filesAndFolders}
-              enableSelection={false}
+              enableSelection={true}
               viewMode="table"
               pageSize={10}
               isLoading={isLoading.filesAndFolders}
               onRowClick={handleRowClick}
+              onBulkDelete={async (items) => {
+                const itemIds = items.map(item => item.id);
+                await bulkDelete(itemIds);
+              }}
             />
           </div>
         </div>

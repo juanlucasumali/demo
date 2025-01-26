@@ -35,7 +35,14 @@ export const Route = createFileRoute('/home/folders/$folderId')({
 
 function FolderPage() {
   const { folderId } = Route.useParams()
-  const { filesAndFolders, currentFolder, isLoading, updateItem, deleteItem } = useItems({ parentFolderId: folderId });
+  const { 
+    filesAndFolders, 
+    currentFolder, 
+    isLoading, 
+    updateItem, 
+    deleteItem,
+    bulkDelete 
+  } = useItems({ parentFolderId: folderId });
   const dialogState = useDialogState();
   const navigate = useNavigate();
   
@@ -98,6 +105,10 @@ function FolderPage() {
           data={filesAndFolders}
           onRowClick={handleRowClick}
           isLoading={isLoading.filesAndFolders}
+          onBulkDelete={async (items) => {
+            const itemIds = items.map(item => item.id);
+            await bulkDelete(itemIds);
+          }}
         />
       </PageContent>
 

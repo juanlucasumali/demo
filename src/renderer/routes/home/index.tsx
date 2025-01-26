@@ -32,7 +32,14 @@ export const Route = createFileRoute('/home/')({
 })
 
 function Home() {
-  const { filesAndFolders, isLoading, updateItem, deleteItem, toggleStar } = useItems();
+  const { 
+    filesAndFolders, 
+    isLoading, 
+    bulkDelete,
+    updateItem,
+    deleteItem,
+    toggleStar
+  } = useItems();
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -97,6 +104,10 @@ function Home() {
           data={filesAndFolders}
           onRowClick={handleRowClick}
           isLoading={isLoading.filesAndFolders}
+          onBulkDelete={async (items) => {
+            const itemIds = items.map(item => item.id);
+            await bulkDelete(itemIds);
+          }}
         />
       </PageContent>
 

@@ -422,7 +422,6 @@ export async function deleteItem(id: string) {
       .from('files')
       .select('type, file_path, name')
       .eq('id', id)
-      .eq('owner_id', userId)
       .single();
 
     console.log('📂 Item data:', item);
@@ -440,7 +439,6 @@ export async function deleteItem(id: string) {
           .from('files')
           .select('file_path, name, type')
           .in('id', itemsToDelete)
-          .eq('owner_id', userId)
           .not('file_path', 'is', null);
 
         // Delete from B2 first - only for actual files, not folders
@@ -474,7 +472,6 @@ export async function deleteItem(id: string) {
             .from('files')
             .delete()
             .in('id', batch)
-            .eq('owner_id', userId);
             
           if (deleteError) throw deleteError;
         }
@@ -501,8 +498,7 @@ export async function deleteItem(id: string) {
       supabase
         .from('files')
         .delete()
-        .eq('id', id)
-        .eq('owner_id', userId),
+        .eq('id', id),
       supabase
         .from('projects')
         .delete()

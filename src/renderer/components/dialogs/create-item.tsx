@@ -28,7 +28,8 @@ const createItemSchema = z.object({
     .optional(),
   description: z
     .string()
-    .max(200, { message: "Description must not exceed 200 characters." }),
+    .max(200, { message: "Description must not exceed 200 characters." })
+    .optional(),
   tags: z.any().nullable(),
   files: z.custom<FileList>().optional()
 });
@@ -86,13 +87,7 @@ export function CreateItem({
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       setSelectedFiles(files);
-      if (files.length === 1) {
-        const originalExtension = files[0].name.split('.').pop()?.toLowerCase();
-        form.setValue("name", files[0].name);
-        setOriginalExtension(originalExtension || null);
-      } else {
-        form.setValue("name", "");
-      }
+      form.setValue("name", "");
     }
   };
 

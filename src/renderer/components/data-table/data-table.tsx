@@ -32,6 +32,9 @@ import { Loader2 } from "lucide-react"
 import { ItemType } from '@renderer/types/items'
 import { DataTableGridView } from "./grid-view"
 import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
+import { Button } from "@renderer/components/ui/button"
+import { Progress } from "@renderer/components/ui/progress"
+import { Trash } from "lucide-react"
 
 
 interface DataTableProps<DemoItem> {
@@ -51,6 +54,7 @@ interface DataTableProps<DemoItem> {
   onRowClick?: (item: DemoItem) => void
   isLoading?: boolean
   onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void
+  onBulkDelete?: (items: DemoItem[]) => Promise<void>;
 }
 
 export type AudioState = {
@@ -64,7 +68,7 @@ export type AudioState = {
 export function DataTable<DemoItem>({
   columns,
   data,
-  enableSelection = false,
+  enableSelection = true,
   enableActions = true,
   enableSharedWith = true,
   viewMode = 'table',
@@ -78,6 +82,7 @@ export function DataTable<DemoItem>({
   onRowClick,
   isLoading = false,
   onToggleStar,
+  onBulkDelete,
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -156,6 +161,14 @@ export function DataTable<DemoItem>({
     currentRow: null,
     downloadingRow: null
   });
+
+  const [bulkDeleteProgress, setBulkDeleteProgress] = React.useState({
+    isDeleting: false,
+    processed: 0,
+    total: 0
+  });
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   const handleRowMouseEnter = (rowId: string) => {
     setAudioState(prev => ({ ...prev, hoveredRow: rowId }));
@@ -278,19 +291,112 @@ export function DataTable<DemoItem>({
     return item.type === ItemType.FOLDER
   }
 
+  const handleBulkDelete = async () => {
+    const selectedItems = table.getFilteredSelectedRowModel().rows.map(
+      row => row.original as DemoItem
+    );
+
+    try {
+      setBulkDeleteProgress({
+        isDeleting: true,
+        processed: 0,
+        total: selectedItems.length
+      });
+
+      // Delete items sequentially
+      for (const [index, item] of selectedItems.entries()) {
+        await onBulkDelete?.(selectedItems);
+        
+        setBulkDeleteProgress(prev => ({
+          ...prev,
+          processed: index + 1
+        }));
+      }
+
+      // Clear selection after successful deletion
+      table.toggleAllRowsSelected(false);
+
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+    } finally {
+      setBulkDeleteProgress({
+        isDeleting: false,
+        processed: 0,
+        total: 0
+      });
+      setShowDeleteConfirm(false); // Reset confirmation state
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Search Filter and Action Buttons Container */}
       {showSearch && (
         <div className="flex flex-row items-center pb-4 justify-between space-x-4 lg:space-y-0">
-          <Input
-            placeholder="Search files..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
-            }
-            className="w-full lg:max-w-sm"
-          />
+          <div className="flex-1 flex items-center space-x-4">
+            <Input
+              placeholder="Search files..."
+              value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("name")?.setFilterValue(event.target.value)
+              }
+              className="max-w-sm"
+            />
+            
+            {table.getFilteredSelectedRowModel().rows.length > 0 && (
+              <div className="flex items-center gap-4">
+                <Button
+                  variant={showDeleteConfirm ? "destructive" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (showDeleteConfirm) {
+                      handleBulkDelete();
+                      setShowDeleteConfirm(false);
+                    } else {
+                      setShowDeleteConfirm(true);
+                    }
+                  }}
+                  disabled={bulkDeleteProgress.isDeleting}
+                  className="relative group"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  {showDeleteConfirm ? (
+                    <>
+                      Confirm delete {table.getFilteredSelectedRowModel().rows.length} items?
+                      <span 
+                        className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+                                  px-2 py-1 rounded text-xs
+                                   opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        This action cannot be undone
+                      </span>
+                    </>
+                  ) : (
+                    `Delete ${table.getFilteredSelectedRowModel().rows.length} items`
+                  )}
+                </Button>
+                
+                {showDeleteConfirm && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                
+                {bulkDeleteProgress.isDeleting && (
+                  <div className="flex-1 space-y-2 min-w-[200px]">
+                    <Progress value={(bulkDeleteProgress.processed / bulkDeleteProgress.total) * 100} />
+                    <p className="text-sm text-muted-foreground">
+                      Deleting: {bulkDeleteProgress.processed} / {bulkDeleteProgress.total} items
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex items-center space-x-2" />
         </div>
       )}
@@ -301,76 +407,78 @@ export function DataTable<DemoItem>({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : viewMode === 'table' ? (
-          <Table>
-            {showColumnHeaders && (
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-            )}
-            <TableBody>
-              {isLoading ? (
-                // Single skeleton per row
-                Array.from({ length: pageSize }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell colSpan={columns.length}>
-                      <Skeleton className="h-6 py-2 w-full" />
+          <>
+            <Table>
+              {showColumnHeaders && (
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+              )}
+              <TableBody>
+                {isLoading ? (
+                  // Single skeleton per row
+                  Array.from({ length: pageSize }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={columns.length}>
+                        <Skeleton className="h-6 py-2 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : table.getRowModel().rows?.length ? (
+                  // Existing row rendering logic
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow 
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className={cn(
+                        isRowClickable(row) && "hover:bg-muted/50",
+                        isRowClickable(row) && "cursor-pointer",
+                        audioState.currentRow === row.id && "bg-muted/50"
+                      )}
+                      onMouseEnter={() => handleRowMouseEnter(row.id)}
+                      onMouseLeave={handleRowMouseLeave}
+                      onClick={() => isRowClickable(row) && onRowClick?.(row.original)}
+                      onDoubleClick={() => handleRowDoubleClick(row)}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell, 
+                            { 
+                              ...cell.getContext(), 
+                              audioState, 
+                              setAudioState,
+                              onPlayToggle: handlePlayToggle 
+                            }
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  // Existing no results row
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-12 text-center">
+                      No results.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : table.getRowModel().rows?.length ? (
-                // Existing row rendering logic
-                table.getRowModel().rows.map((row) => (
-                  <TableRow 
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className={cn(
-                      isRowClickable(row) && "hover:bg-muted/50",
-                      isRowClickable(row) && "cursor-pointer",
-                      audioState.currentRow === row.id && "bg-muted/50"
-                    )}
-                    onMouseEnter={() => handleRowMouseEnter(row.id)}
-                    onMouseLeave={handleRowMouseLeave}
-                    onClick={() => isRowClickable(row) && onRowClick?.(row.original)}
-                    onDoubleClick={() => handleRowDoubleClick(row)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell, 
-                          { 
-                            ...cell.getContext(), 
-                            audioState, 
-                            setAudioState,
-                            onPlayToggle: handlePlayToggle 
-                          }
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                // Existing no results row
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-12 text-center">
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </>
         ) : (
           <DataTableGridView
             table={table}

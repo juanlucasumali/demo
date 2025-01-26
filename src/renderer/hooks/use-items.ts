@@ -188,6 +188,18 @@ export function useItems(options?: UseItemsOptions) {
     enabled: true,
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (itemIds: string[]) => {
+      for (const id of itemIds) {
+        await itemsService.deleteItem(id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    }
+  });
+
   return {
     filesAndFolders,
     projects,
@@ -205,6 +217,7 @@ export function useItems(options?: UseItemsOptions) {
     currentCollection,
     removeCollection,
     friends: searchFriendsQuery.data || [],
+    bulkDelete: bulkDeleteMutation.mutate,
     isLoading: {
       addFileOrFolder: addFileOrFolder.isPending,
       addProject: addProject.isPending,
@@ -220,7 +233,8 @@ export function useItems(options?: UseItemsOptions) {
       collections: isLoadingCollections,
       currentCollection: isLoadingCurrentCollection,
       removeCollection: removeCollection.isPending,
-      friends: searchFriendsQuery.isLoading
+      friends: searchFriendsQuery.isLoading,
+      bulkDelete: bulkDeleteMutation.isPending
     }
   }
 } 

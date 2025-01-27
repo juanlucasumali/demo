@@ -24,6 +24,7 @@ import { AudioConverterService } from '@renderer/services/audio-converter'
 import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
 import { useToast } from "@renderer/hooks/use-toast"
 import { AudioState } from "./data-table"
+import { TableActions } from "./table-actions"
 
 interface CellContextWithAudio<TData> {
   audioState?: {
@@ -319,7 +320,7 @@ if (enableActions) {
       <div onClick={(e) => e.stopPropagation()}>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            { audioState?.downloadingRow === row.id ? (
+            {audioState?.downloadingRow === row.id ? (
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -332,141 +333,14 @@ if (enableActions) {
             )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation();
-              onEditFile?.(row.original)
-            }}>
-              <Edit className="mr-2 h-4 w-4" /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation();
-              onShare?.(row.original)
-            }}>
-              <Share className="mr-2 h-4 w-4" /> Share
-            </DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <RefreshCcw className="mr-2 h-4 w-4" /> Convert
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem
-                  disabled={row.original.format !== FileFormat.WAV}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    try {
-                      // First, show the save dialog to get user interaction
-                      const handle = await window.showSaveFilePicker({
-                        suggestedName: row.original.name.replace(/\.wav$/i, '.mp3'),
-                        types: [{
-                          description: 'MP3 Audio',
-                          accept: { 'audio/mpeg': ['.mp3'] }
-                        }]
-                      });
-
-                      // Then download and convert
-                      const wavData = await b2Service.retrieveFile(row.original.filePath!);
-                      const mp3Data = await AudioConverterService.wavToMp3(wavData);
-                      
-                      // Save the converted file
-                      const writable = await handle.createWritable();
-                      await writable.write(mp3Data);
-                      await writable.close();
-                      
-                      console.log('✅ WAV to MP3 conversion saved successfully');
-                    } catch (error) {
-                      if (error instanceof Error && error.name !== 'AbortError') {
-                        console.error('❌ Conversion failed:', error);
-                      }
-                    }
-                  }}
-                >
-                  WAV to MP3
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            {row.original.type === "file" && row.original.filePath && (
-              <DropdownMenuItem
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  try {
-                    setAudioState?.(prev => {
-                      return { ...prev, downloadingRow: row.id };
-                    });
-                    
-                    const fileName = row.original.name;
-                    const extension = row.original.format?.toLowerCase() || '';
-                    
-                    const baseFileName = fileName.toLowerCase().endsWith(`.${extension}`) 
-                      ? fileName 
-                      : `${fileName}.${extension}`;
-
-                    const handle = await window.showSaveFilePicker({
-                      suggestedName: baseFileName,
-                      types: [{
-                        description: `${extension.toUpperCase()} File`,
-                        accept: {
-                          [mimeTypes[extension] || 'application/octet-stream']: [`.${extension}`]
-                        }
-                      }]
-                    });
-                    
-                    // Download the file from B2
-                    const fileData = await b2Service.retrieveFile(row.original.filePath!);
-                    
-                    // Write directly as ArrayBuffer
-                    const writable = await handle.createWritable();
-                    await writable.write(fileData);
-                    await writable.close();
-
-                    toast({
-                      title: "Download Complete",
-                      description: `Successfully downloaded ${fileName}`,
-                    });
-
-                  } catch (error) {
-                    if (error instanceof Error && error.name !== 'AbortError') {
-                      console.error('❌ Download failed:', error);
-                      toast({
-                        variant: "destructive",
-                        title: "Download Failed",
-                        description: "There was an error downloading your file.",
-                      });
-                    }
-                  } finally {
-                    setAudioState?.(prev => ({ ...prev, downloadingRow: null }));
-                  }
-                }}
-              >
-              <Download className="mr-2 h-4 w-4" />
-                Download
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            {/* {(location === 'folder' || location === 'project' || location === 'collection') && (
-              <DropdownMenuItem 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove?.(row.original)
-                }}
-                className="text-orange-500"
-              >
-                <MinusCircle className="mr-2 h-4 w-4" /> Remove from {
-                  location === 'folder' ? "folder" :
-                  location === 'project' ? "project" :
-                  location === 'collection' ? "collection" :
-                  ""
-                }
-              </DropdownMenuItem>
-            )} */}
-            <DropdownMenuItem 
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.(row.original)
-              }}
-              className="text-red-500"
-            >
-              <Trash className="mr-2 h-4 w-4" /> Delete
-            </DropdownMenuItem>
+            <TableActions
+              menuType="dropdown"
+              row={row}
+              onEditFile={onEditFile}
+              onShare={onShare}
+              onDelete={onDelete}
+              setAudioState={setAudioState}
+            />
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

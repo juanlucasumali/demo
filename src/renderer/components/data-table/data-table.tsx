@@ -36,6 +36,7 @@ import { Button } from "@renderer/components/ui/button"
 import { Progress } from "@renderer/components/ui/progress"
 import { Trash, Share } from "lucide-react"
 import { BulkShareDialog } from "../dialogs/bulk-share-dialog"
+import { TableRowWithContext } from "./table-row-with-context"
 
 
 interface DataTableProps<DemoItem> {
@@ -57,6 +58,9 @@ interface DataTableProps<DemoItem> {
   onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void
   onBulkDelete?: (items: DemoItem[]) => Promise<void>;
   onBulkShare?: (items: DemoItem[]) => void;
+  onEditFile?: (item: DemoItem) => void
+  onShare?: (item: DemoItem) => void
+  onDelete?: (item: DemoItem) => void
 }
 
 export type AudioState = {
@@ -85,7 +89,9 @@ export function DataTable<DemoItem>({
   isLoading = false,
   onToggleStar,
   onBulkDelete,
-  onBulkShare,
+  onEditFile,
+  onShare,
+  onDelete,
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -451,35 +457,42 @@ export function DataTable<DemoItem>({
                     </TableRow>
                   ))
                 ) : table.getRowModel().rows?.length ? (
-                  // Existing row rendering logic
                   table.getRowModel().rows.map((row) => (
-                    <TableRow 
+                    <TableRowWithContext
                       key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className={cn(
-                        isRowClickable(row) && "hover:bg-muted/50",
-                        isRowClickable(row) && "cursor-pointer",
-                        audioState.currentRow === row.id && "bg-muted/50"
-                      )}
-                      onMouseEnter={() => handleRowMouseEnter(row.id)}
-                      onMouseLeave={handleRowMouseLeave}
-                      onClick={() => isRowClickable(row) && onRowClick?.(row.original)}
-                      onDoubleClick={() => handleRowDoubleClick(row)}
+                      row={row as any}
+                      onEditFile={onEditFile as (item: any) => void}
+                      onShare={onShare as (item: any) => void}
+                      onDelete={onDelete as (item: any) => void}
+                      setAudioState={setAudioState}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell, 
-                            { 
-                              ...cell.getContext(), 
-                              audioState, 
-                              setAudioState,
-                              onPlayToggle: handlePlayToggle 
-                            }
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
+                      <TableRow
+                        data-state={row.getIsSelected() && "selected"}
+                        className={cn(
+                          isRowClickable(row) && "hover:bg-muted/50",
+                          isRowClickable(row) && "cursor-pointer",
+                          audioState.currentRow === row.id && "bg-muted/50"
+                        )}
+                        onMouseEnter={() => handleRowMouseEnter(row.id)}
+                        onMouseLeave={handleRowMouseLeave}
+                        onClick={() => isRowClickable(row) && onRowClick?.(row.original)}
+                        onDoubleClick={() => handleRowDoubleClick(row)}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              {
+                                ...cell.getContext(),
+                                audioState,
+                                setAudioState,
+                                onPlayToggle: handlePlayToggle
+                              }
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableRowWithContext>
                   ))
                 ) : (
                   // Existing no results row

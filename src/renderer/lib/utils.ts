@@ -64,7 +64,7 @@ export const formatDate = (date: Date) => {
   })
 }
 
-export const maxFileNameLength = 100; // Set maximum length for file name
+export const maxFileNameLength = 200; // Set maximum length for file name
 
 /**
  * Checks if a router match contains the specified nested property path in its loaderData

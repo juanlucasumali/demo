@@ -109,6 +109,9 @@ function FolderPage() {
             const itemIds = items.map(item => item.id);
             await bulkDelete(itemIds);
           }}
+          onEditFile={(item) => dialogState.editFile.onOpen({ item })}
+          onShare={(item) => dialogState.share.onOpen({ item })}
+          onDelete={(item) => dialogState.delete.onOpen({ item })}
         />
       </PageContent>
 

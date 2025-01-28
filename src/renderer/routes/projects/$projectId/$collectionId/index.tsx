@@ -94,7 +94,9 @@ function CollectionPage() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => dialogState.selectFiles.onOpen({
                 location: 'collection',
-                initialSelections: []
+                initialSelections: [],
+                projectItem: currentProject,
+                collectionId: collectionId
               })}>
                 <FileSearch className="h-4 w-4 mr-2" />
                 Choose files

@@ -8,8 +8,9 @@ import { DataTable } from "@renderer/components/data-table/data-table"
 import { DemoItem } from "@renderer/types/items"
 import { useState, useEffect } from "react"
 import { useItems } from "@renderer/hooks/use-items"
-import { ChevronLeft, Folder, ChevronRight} from "lucide-react"
+import { ChevronLeft, Folder, ChevronRight, Loader2} from "lucide-react"
 import { useFolderNavigationStore } from '@renderer/stores/folder-navigation-store'
+import { useToast } from "@renderer/hooks/use-toast"
 
 interface SelectFilesDialogProps {
   open: boolean
@@ -18,6 +19,7 @@ interface SelectFilesDialogProps {
   initialSelections?: DemoItem[]
   location: "home" | "project" | "save-items" | "collection"
   projectItem?: DemoItem
+  collectionId?: string
 }
 
 export function SelectFilesDialog({
@@ -26,14 +28,16 @@ export function SelectFilesDialog({
   onConfirm,
   initialSelections = [],
   location,
-  projectItem
+  projectItem,
+  collectionId
 }: SelectFilesDialogProps) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const { filesAndFolders, projects, currentFolder, isLoading } = useItems({ parentFolderId: currentFolderId || undefined })
+  const { filesAndFolders, projects, currentFolder, isLoading, addToProject, addToCollection } = useItems({ parentFolderId: currentFolderId || undefined })
   const [selectedItems, setSelectedItems] = useState<DemoItem[]>(initialSelections);
   const [activeTab, setActiveTab] = useState<string>("home");
   
   const { addFolder, goBack, goForward, canGoBack, canGoForward, reset, initializeHistory } = useFolderNavigationStore();
+  const { toast } = useToast();
 
   // Initialize history when dialog opens
   useEffect(() => {
@@ -73,16 +77,61 @@ export function SelectFilesDialog({
     setSelectedItems(newSelections);
   };
 
-  const handleConfirm = () => {
-    if (location === "project" && projectItem) {
-      console.log('selectedItems', selectedItems)
-      console.log('projectItem', projectItem)
-      // Now you have access to both the selected items and the project
-      // Add to the project
-      // Share to the project's sharedWith list
+  const handleConfirm = async () => {
+    try {
+      console.log('handleConfirm called with:', {
+        location,
+        projectItem,
+        collectionId,
+        selectedItems
+      });
+
+      if (location === "project" && projectItem) {
+        console.log('Adding to project:', {
+          projectId: projectItem.id,
+          itemCount: selectedItems.length
+        });
+        
+        await addToProject({ 
+          items: selectedItems, 
+          projectId: projectItem.id 
+        });
+        
+        console.log('Successfully added to project');
+      } 
+      else if (location === "collection" && projectItem?.id && collectionId) {
+        console.log('Adding to collection:', {
+          collectionId,
+          projectId: projectItem.id,
+          itemCount: selectedItems.length
+        });
+
+        await addToCollection({ 
+          items: selectedItems, 
+          collectionId: collectionId,
+          projectId: projectItem.id
+        });
+
+        console.log('Successfully added to collection');
+      } else {
+        console.log('No matching condition:', {
+          location,
+          hasProjectItem: !!projectItem,
+          hasProjectId: !!projectItem?.id,
+          hasCollectionId: !!collectionId
+        });
+      }
+      
+      onConfirm(selectedItems);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Failed to add items:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add items. Please try again.",
+        variant: "destructive",
+      });
     }
-    onConfirm(selectedItems);
-    onOpenChange(false);
   };
 
   const handleRowClick = (item: DemoItem) => {
@@ -214,8 +263,18 @@ export function SelectFilesDialog({
           <AlertDialogCancel asChild>
             <Button variant="outline">Cancel</Button>
           </AlertDialogCancel>
-          <Button onClick={handleConfirm} disabled={!canConfirm}>
-            {getButtonText()}
+          <Button 
+            onClick={handleConfirm} 
+            disabled={!canConfirm || isLoading.addToProject}
+          >
+            {isLoading.addToProject ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              getButtonText()
+            )}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

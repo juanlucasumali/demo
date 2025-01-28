@@ -61,6 +61,7 @@ interface DialogManagerProps {
     initialSelections?: DemoItem[]
     location?: 'project' | 'home' | 'save-items' | 'collection'
     projectItem?: DemoItem
+    collectionId?: string
   }
   updateItem?: UseMutateFunction<void, Error, { updatedItem: DemoItem, originalItem: DemoItem }, unknown>
   deleteItem?: UseMutateFunction<void, Error, string, unknown>
@@ -168,6 +169,7 @@ export function DialogManager({
         initialSelections={selectFiles.initialSelections}
         location={selectFiles.location || 'home'}
         projectItem={selectFiles.projectItem}
+        collectionId={selectFiles.collectionId}
       />
 
       {createCollection.projectId && (

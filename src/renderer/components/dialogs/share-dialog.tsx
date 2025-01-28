@@ -20,8 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { cn } from "@renderer/lib/utils";
 import { useItems } from "@renderer/hooks/use-items";
 import { useEffect } from "react";
-import { useShare } from "@renderer/hooks/use-share";
-import { shareItems } from "@renderer/services/items-service";
 
 interface ShareDialogProps {
   open: boolean;

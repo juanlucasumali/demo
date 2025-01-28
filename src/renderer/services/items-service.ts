@@ -573,7 +573,6 @@ export async function updateItem(item: DemoItem, originalItem: DemoItem) {
       .from('projects')
       .update(dbItem)
       .eq('id', item.id)
-      .eq('owner_id', userId)
 
     if (error) throw error
   } else {
@@ -581,7 +580,6 @@ export async function updateItem(item: DemoItem, originalItem: DemoItem) {
       .from('files')
       .update(dbItem)
       .eq('id', item.id)
-      .eq('owner_id', userId)
 
     if (error) throw error
   }
@@ -840,7 +838,7 @@ export async function searchFriends(searchTerm?: string): Promise<UserProfile[]>
 
 export async function shareItems(
   items: DemoItem[], 
-  users: UserProfile[]
+  users: { id: string }[] | UserProfile[]
 ) {
   const currentUserId = getCurrentUserId();
   
@@ -921,4 +919,82 @@ async function getAllNestedItems(folderId: string): Promise<string[]> {
   }
 
   return itemIds;
-} 
+}
+
+export async function addToProject(items: DemoItem[], projectId: string) {
+  const fileProjectRecords = items.map(item => ({
+    file_id: item.id,
+    project_id: projectId
+  }));
+
+  const { error } = await supabase
+    .from('file_projects')
+    .upsert(fileProjectRecords, {
+      onConflict: 'file_id,project_id',
+      ignoreDuplicates: true
+    });
+
+  if (error) throw error;
+
+  // If the project has shared users, share the new files with them too
+  const { data: project } = await supabase
+    .from('projects')
+    .select('shared_items(shared_with_id)')
+    .eq('id', projectId)
+    .single();
+
+  if (project?.shared_items?.length) {
+    const sharedUsers = project.shared_items.map((share: any) => ({ id: share.shared_with_id }));
+    await shareItems(items, sharedUsers);
+  }
+}
+
+export async function addToCollection(items: DemoItem[], collectionId: string, projectId: string) {
+  console.log('addToCollection called with:', {
+    itemCount: items.length,
+    collectionId,
+    projectId
+  });
+
+  // Create file-collection relationships
+  const fileCollectionRecords = items.map(item => ({
+    file_id: item.id,
+    collection_id: collectionId
+  }));
+
+  console.log('Inserting file-collection records:', fileCollectionRecords);
+
+  const { error: collectionError } = await supabase
+    .from('file_collections')
+    .upsert(fileCollectionRecords, {
+      onConflict: 'file_id,collection_id',
+      ignoreDuplicates: true
+    });
+
+  if (collectionError) {
+    console.error('Collection error:', collectionError);
+    throw collectionError;
+  }
+
+  console.log('Successfully added to collection, now adding to project');
+
+  // Also add to project if not already there
+  const fileProjectRecords = items.map(item => ({
+    file_id: item.id,
+    project_id: projectId
+  }));
+
+  const { error: projectError } = await supabase
+    .from('file_projects')
+    .upsert(fileProjectRecords, {
+      onConflict: 'file_id,project_id',
+      ignoreDuplicates: true
+    });
+
+  if (projectError) {
+    console.error('Project error:', projectError);
+    throw projectError;
+  }
+
+  console.log('Successfully added to both collection and project');
+}

@@ -200,6 +200,37 @@ export function useItems(options?: UseItemsOptions) {
     }
   });
 
+  // Add this mutation inside useItems
+  const addToProjectMutation = useMutation({
+    mutationFn: ({ items, projectId }: { items: DemoItem[], projectId: string }) =>
+      itemsService.addToProject(items, projectId),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] });
+      if (options?.projectId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['files-and-folders', null, options.projectId]
+        });
+      }
+    }
+  });
+
+  const addToCollectionMutation = useMutation({
+    mutationFn: ({ items, collectionId, projectId }: { 
+      items: DemoItem[], 
+      collectionId: string,
+      projectId: string 
+    }) => itemsService.addToCollection(items, collectionId, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] });
+      if (options?.collectionId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['files-and-folders', null, options.projectId, options.collectionId]
+        });
+      }
+    }
+  });
+
   return {
     filesAndFolders,
     projects,
@@ -218,6 +249,8 @@ export function useItems(options?: UseItemsOptions) {
     removeCollection,
     friends: searchFriendsQuery.data || [],
     bulkDelete: bulkDeleteMutation.mutate,
+    addToProject: addToProjectMutation.mutate,
+    addToCollection: addToCollectionMutation.mutate,
     isLoading: {
       addFileOrFolder: addFileOrFolder.isPending,
       addProject: addProject.isPending,
@@ -234,7 +267,9 @@ export function useItems(options?: UseItemsOptions) {
       currentCollection: isLoadingCurrentCollection,
       removeCollection: removeCollection.isPending,
       friends: searchFriendsQuery.isLoading,
-      bulkDelete: bulkDeleteMutation.isPending
+      bulkDelete: bulkDeleteMutation.isPending,
+      addToProject: addToProjectMutation.isPending,
+      addToCollection: addToCollectionMutation.isPending
     }
   }
 } 

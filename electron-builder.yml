@@ -1,5 +1,5 @@
 appId: com.electron.app
-productName: demo
+productName: Demo
 directories:
   buildResources: build
 files:

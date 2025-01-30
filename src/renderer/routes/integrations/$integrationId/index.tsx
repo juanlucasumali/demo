@@ -59,7 +59,7 @@ function IntegrationDetail() {
       if (!profile) return
       try {
         const config = await getSyncConfiguration(profile.id)
-        if (config?.type === SyncType.FL_STUDIO) {
+        if (config?.type === SyncType.DAW) {
           setExistingConfig(config)
         }
       } catch (error) {
@@ -152,7 +152,7 @@ function IntegrationDetail() {
         setUploadProgress((progress.uploadedFiles / progress.totalFiles) * 100)
       })
 
-      await createSyncConfiguration(selectedPath, remoteFolderId, SyncType.FL_STUDIO)
+      await createSyncConfiguration(selectedPath, remoteFolderId, SyncType.DAW)
 
       toast({
         title: "Sync Initialized",
@@ -172,12 +172,12 @@ function IntegrationDetail() {
     }
   }
 
-  if (integrationId === 'fl-studio') {
+  if (integrationId === 'daw') {
     return (
       <PageMain>
         <PageHeader
-          title="FL Studio"
-          description="Set up two-way sync between FL Studio and Demo"
+          title="DAW"
+          description="Set up two-way sync between your DAW and Demo"
           icon={Radio}
         />
 
@@ -188,13 +188,13 @@ function IntegrationDetail() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Existing Configuration Found</AlertTitle>
                 <AlertDescription>
-                  You already have an FL Studio sync configuration. Proceeding will replace your current configuration for "{existingConfig.localPath}".
+                  You already have a DAW sync configuration. Proceeding will replace your current configuration for "{existingConfig.localPath}".
                 </AlertDescription>
               </Alert>
             )}
 
             <Steps currentStep={currentStep}>
-              <Step value={1} title="Select Folder" currentStep={currentStep}>
+              <Step value={1} title="Select Local Folder" currentStep={currentStep}>
                 <Card>
                   <CardHeader>
                     <CardTitle>Select Local Folder</CardTitle>

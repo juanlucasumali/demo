@@ -22,23 +22,9 @@ export const Route = createFileRoute('/integrations/')({
 })
 
 const integrations = [
-  // {
-  //   id: 'logic-pro',
-  //   name: 'Logic Pro',
-  //   icon: Music2,
-  //   connected: false,
-  //   available: false
-  // },
-  // {
-  //   id: 'ableton-live',
-  //   name: 'Ableton Live',
-  //   icon: Mic2,
-  //   connected: false,
-  //   available: false
-  // },
   {
-    id: 'fl-studio',
-    name: 'FL Studio',
+    id: 'daw',
+    name: 'DAW',
     icon: Radio,
     connected: false,
     available: true
@@ -48,7 +34,7 @@ const integrations = [
 export default function Integrations() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const [flStudioConnected, setFlStudioConnected] = useState(false)
+  const [dawConnected, setDawConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const profile = useUserStore((state) => state.profile)
 
@@ -58,8 +44,8 @@ export default function Integrations() {
 
       try {
         const config = await getSyncConfiguration(profile.id)
-        if (config?.type === SyncType.FL_STUDIO) {
-          setFlStudioConnected(true)
+        if (config?.type === SyncType.DAW) {
+          setDawConnected(true)
         }
       } catch (error) {
         console.error('Failed to check configuration:', error)
@@ -118,7 +104,7 @@ export default function Integrations() {
             // Show actual integration cards
             integrations.map((integration) => {
               const Icon = integration.icon
-              const isConnected = integration.id === 'fl-studio' && flStudioConnected
+              const isConnected = integration.id === 'daw' && dawConnected
               
               return (
                 <div

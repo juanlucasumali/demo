@@ -37,7 +37,7 @@ export function SyncCheck() {
 
         const existingConfig = await getSyncConfiguration(profile.id)
         
-        if (existingConfig?.type === SyncType.FL_STUDIO && 
+        if (existingConfig?.type === SyncType.DAW && 
             existingConfig.localPath && 
             existingConfig.remoteFolderId) {
           

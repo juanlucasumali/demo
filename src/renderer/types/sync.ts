@@ -9,7 +9,7 @@ export interface LocalItem {
   }
   
   export enum SyncType {
-    FL_STUDIO = 'fl-studio',
+    DAW = 'daw'
   }
   
   export interface SyncConfiguration {

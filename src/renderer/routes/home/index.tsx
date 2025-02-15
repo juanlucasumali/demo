@@ -56,7 +56,7 @@ function Home() {
         title="Home"
         icon={HomeIcon}
       >
-        <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file' })}>
+        <Button variant="default" onClick={() => dialogState.uploadFiles.onOpen({})}>
           Upload
         </Button>
 

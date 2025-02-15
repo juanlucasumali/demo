@@ -45,6 +45,18 @@ export function useDialogState() {
     sharedWith: null
   })
 
+  const [uploadFiles, setUploadFiles] = useState<{
+    isOpen: boolean
+    parentFolderId?: string | null
+    location?: 'project' | 'home' | 'collection'
+    projectId?: string | null
+    collectionId?: string | null
+    sharedWith: UserProfile[] | null
+  }>({
+    isOpen: false,
+    sharedWith: null
+  })
+
   const [createProject, setCreateProject] = useState<{
     isOpen: boolean
   }>({
@@ -130,6 +142,31 @@ export function useDialogState() {
           sharedWith: sharedWith || null,
         }),
       onClose: () => setCreateItem({ isOpen: false, sharedWith: null })
+    },
+    uploadFiles: {
+      ...uploadFiles,
+      onOpen: ({ 
+        parentFolderId,
+        location,
+        projectId,
+        collectionId,
+        sharedWith,
+      }: {
+        parentFolderId?: string | null
+        location?: 'project' | 'home' | 'collection'
+        projectId?: string | null
+        collectionId?: string | null
+        sharedWith?: UserProfile[] | null
+      }) =>
+        setUploadFiles({ 
+          isOpen: true, 
+          parentFolderId, 
+          location, 
+          projectId, 
+          collectionId,
+          sharedWith: sharedWith || null,
+        }),
+      onClose: () => setUploadFiles({ isOpen: false, sharedWith: null })
     },
     createProject: {
       ...createProject,

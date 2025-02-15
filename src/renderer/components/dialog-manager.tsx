@@ -11,6 +11,7 @@ import { SelectFilesDialog } from "./dialogs/select-files"
 import { UserProfile } from "@renderer/types/users"
 import { CreateCollection } from "./dialogs/create-collection"
 import { RemoveDialog } from "./dialogs/remove-dialog"
+import { UploadFiles } from "./dialogs/upload-files"
 
 interface DialogManagerProps {
   editFile: {
@@ -32,6 +33,15 @@ interface DialogManagerProps {
     isOpen: boolean
     onClose: () => void
     type?: 'file' | 'folder'
+    parentFolderId?: string | null
+    location?: 'project' | 'home' | 'collection'
+    projectId?: string | null
+    collectionId?: string | null
+    sharedWith: UserProfile[] | null
+  }
+  uploadFiles: {
+    isOpen: boolean
+    onClose: () => void
     parentFolderId?: string | null
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
@@ -87,6 +97,7 @@ export function DialogManager({
   share,
   delete: deleteDialog,
   createItem,
+  uploadFiles,
   createProject,
   request,
   saveItems,
@@ -136,6 +147,18 @@ export function DialogManager({
           projectId={createItem.projectId}
           collectionId={createItem.collectionId}
           sharedWith={createItem.sharedWith}
+        />
+      )}
+
+      {uploadFiles.isOpen && (
+        <UploadFiles
+          isOpen={uploadFiles.isOpen}
+          onClose={() => uploadFiles.onClose()}
+          location={uploadFiles.location || 'home'}
+          parentFolderId={uploadFiles.parentFolderId}
+          projectId={uploadFiles.projectId}
+          collectionId={uploadFiles.collectionId}
+          sharedWith={uploadFiles.sharedWith}
         />
       )}
 

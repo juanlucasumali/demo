@@ -86,7 +86,7 @@ function CollectionPage() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => 
-                dialogState.createItem.onOpen({ type: 'file', parentFolderId: null, location: 'collection', projectId, collectionId })
+                dialogState.uploadFiles.onOpen({ parentFolderId: null, location: 'collection', projectId, collectionId })
               }>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload file

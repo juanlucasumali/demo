@@ -61,7 +61,7 @@ function FolderPage() {
         owner={currentFolder?.owner || undefined}
         sharedWith={currentFolder?.sharedWith}
       >
-        <Button variant="default" onClick={() => dialogState.createItem.onOpen({ type: 'file', parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
+        <Button variant="default" onClick={() => dialogState.uploadFiles.onOpen({ parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
           Upload
         </Button>
 

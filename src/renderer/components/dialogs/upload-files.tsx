@@ -16,6 +16,8 @@ import { useUserStore } from "@renderer/stores/user-store";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@renderer/components/ui/progress";
 import { DropZone } from "../ui/drop-zone";
+import { X } from "lucide-react";
+import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 
 const uploadFilesSchema = z.object({
   files: z.custom<FileList>().optional()
@@ -202,7 +204,7 @@ export function UploadFiles({
                 <FormItem>
                   <FormLabel>Files</FormLabel>
                   <FormControl>
-                    <div>
+                    <div className="space-y-4">
                       <DropZone
                         onDragEnter={handleDragEnter}
                         onDragOver={handleDragEnter}
@@ -210,18 +212,7 @@ export function UploadFiles({
                         onDrop={handleDrop}
                         isDragging={isDragging}
                         onClick={() => document.getElementById('file-input')?.click()}
-                      >
-                        {selectedFiles.length > 0 ? (
-                          <div className="space-y-2">
-                            <p className="text-sm text-muted-foreground">
-                              {selectedFiles.length} file(s) selected
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Click or drag to replace
-                            </p>
-                          </div>
-                        ) : null}
-                      </DropZone>
+                      />
                       <input
                         id="file-input"
                         type="file"
@@ -229,6 +220,35 @@ export function UploadFiles({
                         onChange={handleFileChange}
                         className="hidden"
                       />
+                      
+                      {selectedFiles.length > 0 && (
+                        <div className="border rounded-md">
+                          <div className="max-h-[200px] overflow-y-auto">
+                            <Table>
+                              <TableBody>
+                                {selectedFiles.map((file, index) => (
+                                  <TableRow key={`${file.name}-${index}`}>
+                                    <TableCell className="font-medium">{file.name}</TableCell>
+                                    <TableCell>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedFiles(files => 
+                                            files.filter((_, i) => i !== index)
+                                          );
+                                        }}
+                                        className="p-1 hover:bg-muted rounded-sm"
+                                      >
+                                        <X className="h-4 w-4 text-muted-foreground" />
+                                      </button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -269,7 +289,7 @@ export function UploadFiles({
                   Uploading...
                 </>
               ) : (
-                'Upload'
+                'Start Upload'
               )}
             </Button>
           </form>

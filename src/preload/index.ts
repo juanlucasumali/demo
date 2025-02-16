@@ -3,6 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { dialog } from '@electron/remote'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 
 // Custom APIs for renderer
 const api = {
@@ -67,6 +68,9 @@ const api = {
       console.error('Failed to get file stats:', error);
       throw error;
     }
+  },
+  getTempPath: async () => {
+    return os.tmpdir();
   },
 }
 

@@ -28,6 +28,7 @@ declare global {
         mtime: Date;
         size: number;
       }>
+      getTempPath: () => Promise<string>
     }
   }
 }

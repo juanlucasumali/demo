@@ -6,6 +6,10 @@ import { b2Service } from '@renderer/services/b2-service'
 import { AudioConverterService } from '@renderer/services/audio-converter'
 import { useToast } from "@renderer/hooks/use-toast"
 import { mimeTypes } from "@renderer/lib/utils"
+import { createFolderZip, ZipProgress } from '@renderer/services/zip-service'
+import { DownloadProgress } from '@renderer/components/download-progress'
+import { useState } from 'react'
+import { getFilesAndFolders } from '@renderer/services/items-service'
 
 // For Context Menu
 import {
@@ -49,9 +53,51 @@ export function TableActions({
   const MenuSubTrigger = menuType === 'context' ? ContextMenuSubTrigger : DropdownMenuSubTrigger
   const MenuSubContent = menuType === 'context' ? ContextMenuSubContent : DropdownMenuSubContent
 
+  const [downloadProgress, setDownloadProgress] = useState<ZipProgress | null>(null)
+
   const handleAction = (action: (item: DemoItem) => void) => {
     action(row.original)
     onCloseMenu?.()
+  }
+
+  const handleFolderDownload = async (folderId: string, folderName: string) => {
+    try {
+      const items = await getFilesAndFolders(folderId)
+      
+      const handle = await window.showSaveFilePicker({
+        suggestedName: `${folderName}.zip`,
+        types: [{
+          description: 'ZIP Archive',
+          accept: {
+            'application/zip': ['.zip']
+          }
+        }]
+      })
+
+      const zipData = await createFolderZip(items, folderName, (progress) => {
+        setDownloadProgress(progress)
+      })
+
+      const writable = await handle.createWritable()
+      await writable.write(zipData)
+      await writable.close()
+
+      toast({
+        title: "Download Complete",
+        description: `Successfully downloaded ${folderName}.zip`,
+      })
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('❌ Folder download failed:', error)
+        toast({
+          variant: "destructive",
+          title: "Download Failed",
+          description: "There was an error downloading the folder.",
+        })
+      }
+    } finally {
+      setDownloadProgress(null)
+    }
   }
 
   return (
@@ -108,7 +154,7 @@ export function TableActions({
         </MenuSubContent>
       </MenuSub>
 
-      {row.original.type === "file" && row.original.filePath && (
+      {row.original.type === "file" ? (
         <MenuItem
           onClick={async (e) => {
             e.stopPropagation()
@@ -162,6 +208,12 @@ export function TableActions({
         >
           <Download className="mr-2 h-4 w-4" /> Download
         </MenuItem>
+      ) : (
+        <MenuItem 
+          onClick={() => handleFolderDownload(row.original.id!, row.original.name)}
+        >
+          <Download className="mr-2 h-4 w-4" /> Download as ZIP
+        </MenuItem>
       )}
 
       <MenuItem 
@@ -173,6 +225,13 @@ export function TableActions({
       >
         <Trash className="mr-2 h-4 w-4" /> Delete
       </MenuItem>
+
+      {downloadProgress && (
+        <DownloadProgress 
+          isOpen={!!downloadProgress}
+          progress={downloadProgress}
+        />
+      )}
     </>
   )
 }

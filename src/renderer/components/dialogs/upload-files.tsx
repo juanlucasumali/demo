@@ -4,18 +4,18 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
 import { useToast } from "@renderer/hooks/use-toast";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { FileFormat, ItemType } from "@renderer/types/items";
 import { useItems } from "@renderer/hooks/use-items";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
 import { useUserStore } from "@renderer/stores/user-store";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@renderer/components/ui/progress";
+import { DropZone } from "../ui/drop-zone";
 
 const uploadFilesSchema = z.object({
   files: z.custom<FileList>().optional()
@@ -55,6 +55,7 @@ export function UploadFiles({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processedFiles, setProcessedFiles] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const form = useForm<UploadFilesFormValues>({
     resolver: zodResolver(uploadFilesSchema),
@@ -69,6 +70,29 @@ export function UploadFiles({
       setSelectedFiles(files);
     }
   };
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      setSelectedFiles(droppedFiles);
+    }
+  }, []);
 
   const onSubmit: SubmitHandler<UploadFilesFormValues> = async () => {
     if (!currentUser) return;
@@ -164,31 +188,53 @@ export function UploadFiles({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[375px]">
+      <DialogContent className="max-w-[425px]">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
               <DialogTitle>Upload Files</DialogTitle>
             </DialogHeader>
 
-              <FormField
-                control={form.control}
-                name="files"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Files</FormLabel>
-                    <FormControl>
-                      <Input
+            <FormField
+              control={form.control}
+              name="files"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Files</FormLabel>
+                  <FormControl>
+                    <div>
+                      <DropZone
+                        onDragEnter={handleDragEnter}
+                        onDragOver={handleDragEnter}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        isDragging={isDragging}
+                        onClick={() => document.getElementById('file-input')?.click()}
+                      >
+                        {selectedFiles.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              {selectedFiles.length} file(s) selected
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Click or drag to replace
+                            </p>
+                          </div>
+                        ) : null}
+                      </DropZone>
+                      <input
+                        id="file-input"
                         type="file"
                         multiple
                         onChange={handleFileChange}
-                        className="pt-2"
+                        className="hidden"
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {location === 'home' && (
               <div>

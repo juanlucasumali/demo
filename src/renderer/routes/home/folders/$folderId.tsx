@@ -71,7 +71,7 @@ function FolderPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen({ type: 'folder', parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
+              <DropdownMenuItem onClick={() => dialogState.createFolder.onOpen({ parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
                 <User/> Create folder
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
               </DropdownMenuItem>

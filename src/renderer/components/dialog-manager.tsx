@@ -3,7 +3,7 @@ import { DemoItem } from "@renderer/types/items"
 import { DeleteDialog } from "./dialogs/delete-dialog"
 import { ShareDialog } from "./dialogs/share-dialog"
 import { EditFileDialog } from "./dialogs/edit-file"
-import { CreateItem } from "./dialogs/create-item"
+import { CreateFolder } from "./dialogs/create-folder"
 import { CreateProject } from "./dialogs/create-project"
 import { RequestDialog } from "./dialogs/request"
 import { SaveItemsDialog } from "./dialogs/save-items-dialog"
@@ -29,10 +29,9 @@ interface DialogManagerProps {
     onClose: () => void
     item?: DemoItem
   }
-  createItem: {
+  createFolder: {
     isOpen: boolean
     onClose: () => void
-    type?: 'file' | 'folder'
     parentFolderId?: string | null
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
@@ -96,7 +95,7 @@ export function DialogManager({
   editFile,
   share,
   delete: deleteDialog,
-  createItem,
+  createFolder,
   uploadFiles,
   createProject,
   request,
@@ -137,16 +136,15 @@ export function DialogManager({
         />
       )}
 
-      {createItem.type && (
-        <CreateItem
-          type={createItem.type}
-          isOpen={createItem.isOpen}
-          onClose={() => createItem.onClose()}
-          location={createItem.location || 'home'}
-          parentFolderId={createItem.parentFolderId}
-          projectId={createItem.projectId}
-          collectionId={createItem.collectionId}
-          sharedWith={createItem.sharedWith}
+      {createFolder.isOpen && (
+        <CreateFolder
+          isOpen={createFolder.isOpen}
+          onClose={() => createFolder.onClose()}
+          location={createFolder.location || 'home'}
+          parentFolderId={createFolder.parentFolderId}
+          projectId={createFolder.projectId}
+          collectionId={createFolder.collectionId}
+          sharedWith={createFolder.sharedWith}
         />
       )}
 

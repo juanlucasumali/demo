@@ -103,7 +103,7 @@ function CollectionPage() {
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => 
-                dialogState.createItem.onOpen({ type: 'folder', parentFolderId: null, location: 'collection', projectId, collectionId })
+                dialogState.createFolder.onOpen({ parentFolderId: null, location: 'collection', projectId, collectionId })
               }>
                 <Folder/>
                 Create folder

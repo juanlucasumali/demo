@@ -32,9 +32,8 @@ export function useDialogState() {
     isOpen: false
   })
 
-  const [createItem, setCreateItem] = useState<{
+  const [createFolder, setCreateFolder] = useState<{
     isOpen: boolean
-    type?: 'file' | 'folder'
     parentFolderId?: string | null
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
@@ -115,33 +114,30 @@ export function useDialogState() {
       onOpen: ({ item }: { item: DemoItem }) => setDeleteDialog({ isOpen: true, item }),
       onClose: () => setDeleteDialog({ isOpen: false })
     },
-    createItem: {
-      ...createItem,
+    createFolder: {
+      ...createFolder,
       onOpen: ({ 
-        type,
         parentFolderId,
         location,
         projectId,
         collectionId,
         sharedWith,
       }: {
-        type: 'file' | 'folder'
         parentFolderId?: string | null
         location?: 'project' | 'home' | 'collection'
         projectId?: string | null
         collectionId?: string | null
         sharedWith?: UserProfile[] | null
       }) =>
-        setCreateItem({ 
+        setCreateFolder({ 
           isOpen: true, 
-          type, 
           parentFolderId, 
           location, 
           projectId, 
           collectionId,
           sharedWith: sharedWith || null,
         }),
-      onClose: () => setCreateItem({ isOpen: false, sharedWith: null })
+      onClose: () => setCreateFolder({ isOpen: false, sharedWith: null })
     },
     uploadFiles: {
       ...uploadFiles,

@@ -70,7 +70,7 @@ export function UploadFiles({
     }
   };
 
-  const onSubmit: SubmitHandler<UploadFilesFormValues> = async (data) => {
+  const onSubmit: SubmitHandler<UploadFilesFormValues> = async () => {
     if (!currentUser) return;
       
     if (selectedFiles.length === 0) return;

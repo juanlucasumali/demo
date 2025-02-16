@@ -66,7 +66,7 @@ function Home() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => dialogState.createItem.onOpen({ type: 'folder' })}>
+              <DropdownMenuItem onClick={() => dialogState.createFolder.onOpen({})}>
                 <Folder/> Create folder
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => dialogState.createProject.onOpen()}>

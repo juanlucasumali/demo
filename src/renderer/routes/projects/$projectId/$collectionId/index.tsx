@@ -20,6 +20,7 @@ import { CollectionsSidebar } from '@renderer/components/collections/collections
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
 import React from 'react'
+import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
 
 export const Route = createFileRoute('/projects/$projectId/$collectionId/')({
   component: CollectionPage,
@@ -27,7 +28,7 @@ export const Route = createFileRoute('/projects/$projectId/$collectionId/')({
 
 function CollectionPage() {
   const { projectId, collectionId } = useParams({ from: '/projects/$projectId/$collectionId/' })
-  const { currentCollection, currentProject, filesAndFolders, isLoading, deleteItem, updateItem, bulkDelete } = useItems({ collectionId, projectId })
+  const { currentProject, filesAndFolders, isLoading, deleteItem, updateItem, bulkDelete } = useItems({ collectionId, projectId })
   const dialogState = useDialogState();
   const navigate = useNavigate();
 
@@ -40,12 +41,25 @@ function CollectionPage() {
       onRemove: (item) => dialogState.remove.onOpen({ item, location: 'collection' }),
       location: 'collection'
     }),
-    [dialogState] // Add dependencies that the column config relies on
+    [dialogState]
   );
 
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {
       navigate({ to: '/home/folders/$folderId', params: { folderId: item.id!! } })
+    }
+  };
+
+  const handleFileDrop = (files: File[]) => {
+    if (files.length > 0) {
+      dialogState.uploadFiles.onOpen({
+        initialFiles: files,
+        parentFolderId: null,
+        location: 'collection',
+        projectId,
+        collectionId,
+        sharedWith: currentProject?.sharedWith
+      });
     }
   };
 
@@ -138,22 +152,24 @@ function CollectionPage() {
           />
 
           <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
-            <DataTable
-              columns={columns}
-              data={filesAndFolders}
-              enableSelection={true}
-              viewMode="table"
-              pageSize={10}
-              isLoading={isLoading.filesAndFolders}
-              onRowClick={handleRowClick}
-              onBulkDelete={async (items) => {
-                const itemIds = items.map(item => item.id);
-                await bulkDelete(itemIds);
-              }}
-              onEditFile={(item) => dialogState.editFile.onOpen({ item })}
-              onShare={(item) => dialogState.share.onOpen({ item })}
-              onDelete={(item) => dialogState.delete.onOpen({ item })}
-            />
+            <FileDropZone onFileDrop={handleFileDrop}>
+              <DataTable
+                columns={columns}
+                data={filesAndFolders}
+                enableSelection={true}
+                viewMode="table"
+                pageSize={10}
+                isLoading={isLoading.filesAndFolders}
+                onRowClick={handleRowClick}
+                onBulkDelete={async (items) => {
+                  const itemIds = items.map(item => item.id);
+                  await bulkDelete(itemIds);
+                }}
+                onEditFile={(item) => dialogState.editFile.onOpen({ item })}
+                onShare={(item) => dialogState.share.onOpen({ item })}
+                onDelete={(item) => dialogState.delete.onOpen({ item })}
+              />
+            </FileDropZone>
           </div>
         </div>
       </PageContent>

@@ -4,8 +4,6 @@ import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
 import { Button } from '@renderer/components/ui/button'
-import { Recents } from '@renderer/components/home/recents'
-import { Activity } from '@renderer/components/home/activity'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@renderer/components/ui/dropdown-menu'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
@@ -16,6 +14,7 @@ import { ItemType } from '@renderer/types/items'
 import { DemoItem } from '@renderer/types/items'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
+import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
 
 export const Route = createFileRoute('/home/')({
   beforeLoad: async ({ context }) => {
@@ -46,6 +45,14 @@ function Home() {
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {
       navigate({ to: '/home/folders/$folderId', params: { folderId: item.id!! } })
+    }
+  };
+
+  const handleFileDrop = (files: File[]) => {
+    if (files.length > 0) {
+      dialogState.uploadFiles.onOpen({
+        initialFiles: files
+      });
     }
   };
 
@@ -88,30 +95,32 @@ function Home() {
 
       {/* Page Content */}
       <PageContent>
-        <div className='lg:grid lg:grid-cols-5 gap-4 pt-8'>
-          {/* <Recents />
-          <Activity /> */}
-        </div>
-        <SubHeader subHeader="All files"/>
-        <DataTable 
-          columns={createColumns({ 
-            enableStarToggle: true,
-            onEditFile: (item) => dialogState.editFile.onOpen({ item }) ,
-            onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (item) => dialogState.delete.onOpen({ item }),
-            onToggleStar: (id, isStarred, type) => toggleStar({ id, isStarred, type })
-          })} 
-          data={filesAndFolders}
-          onRowClick={handleRowClick}
-          isLoading={isLoading.filesAndFolders}
-          onBulkDelete={async (items) => {
-            const itemIds = items.map(item => item.id);
-            await bulkDelete(itemIds);
-          }}
-          onEditFile={(item) => dialogState.editFile.onOpen({ item })}
-          onShare={(item) => dialogState.share.onOpen({ item })}
-          onDelete={(item) => dialogState.delete.onOpen({ item })}
-        />
+        <FileDropZone onFileDrop={handleFileDrop}>
+          <div className='lg:grid lg:grid-cols-5 gap-4 pt-8'>
+            {/* <Recents />
+            <Activity /> */}
+          </div>
+          <SubHeader subHeader="All files"/>
+          <DataTable 
+            columns={createColumns({ 
+              enableStarToggle: true,
+              onEditFile: (item) => dialogState.editFile.onOpen({ item }),
+              onShare: (item) => dialogState.share.onOpen({ item }),
+              onDelete: (item) => dialogState.delete.onOpen({ item }),
+              onToggleStar: (id, isStarred, type) => toggleStar({ id, isStarred, type })
+            })} 
+            data={filesAndFolders}
+            onRowClick={handleRowClick}
+            isLoading={isLoading.filesAndFolders}
+            onBulkDelete={async (items) => {
+              const itemIds = items.map(item => item.id);
+              await bulkDelete(itemIds);
+            }}
+            onEditFile={(item) => dialogState.editFile.onOpen({ item })}
+            onShare={(item) => dialogState.share.onOpen({ item })}
+            onDelete={(item) => dialogState.delete.onOpen({ item })}
+          />
+        </FileDropZone>
       </PageContent>
       <DialogManager
         {...dialogState}

@@ -40,6 +40,7 @@ interface UploadFilesProps {
   parentFolderId?: string | null;
   collectionId?: string | null;
   sharedWith: UserProfile[] | null;
+  initialFiles?: File[];
 }
 
 export function UploadFiles({
@@ -50,13 +51,14 @@ export function UploadFiles({
   parentFolderId = null,
   collectionId = null,
   sharedWith,
+  initialFiles = [],
 }: UploadFilesProps) {
   const { toast } = useToast();
   const { addFileOrFolder } = useItems();
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
     sharedWith || []
   );
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>(initialFiles);
   const [searchTerm, setSearchTerm] = useState("");
   const { friends, isLoading } = useItems({ searchTerm });  
   const currentUser = useUserStore((state) => state.profile);
@@ -181,7 +183,9 @@ export function UploadFiles({
     if (selectedFiles.length === 0) return;
 
     setIsUploading(true);
-    
+    setSuccessfulUploads(0);
+    let successCount = 0;
+
     // Initialize progress for all files
     const initialProgress = selectedFiles.reduce((acc, file) => {
       acc[file.name] = {
@@ -235,7 +239,8 @@ export function UploadFiles({
               fileContent
             }, {
               onSuccess: () => {
-                setSuccessfulUploads(prev => prev + 1);
+                successCount++;
+                setSuccessfulUploads(successCount);
                 setFileProgress(prev => ({
                   ...prev,
                   [file.name]: { 
@@ -265,7 +270,7 @@ export function UploadFiles({
 
       toast({
         title: "Upload Complete",
-        description: `Successfully uploaded ${successfulUploads} of ${selectedFiles.length} files`,
+        description: `Successfully uploaded ${successCount} of ${selectedFiles.length} files`,
         variant: "default",
       });
     } catch (error) {

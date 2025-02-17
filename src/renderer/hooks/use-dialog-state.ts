@@ -51,6 +51,7 @@ export function useDialogState() {
     projectId?: string | null
     collectionId?: string | null
     sharedWith: UserProfile[] | null
+    initialFiles?: File[]
   }>({
     isOpen: false,
     sharedWith: null
@@ -147,12 +148,14 @@ export function useDialogState() {
         projectId,
         collectionId,
         sharedWith,
+        initialFiles,
       }: {
         parentFolderId?: string | null
         location?: 'project' | 'home' | 'collection'
         projectId?: string | null
         collectionId?: string | null
         sharedWith?: UserProfile[] | null
+        initialFiles?: File[]
       }) =>
         setUploadFiles({ 
           isOpen: true, 
@@ -161,6 +164,7 @@ export function useDialogState() {
           projectId, 
           collectionId,
           sharedWith: sharedWith || null,
+          initialFiles,
         }),
       onClose: () => setUploadFiles({ isOpen: false, sharedWith: null })
     },

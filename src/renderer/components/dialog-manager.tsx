@@ -46,6 +46,7 @@ interface DialogManagerProps {
     projectId?: string | null
     collectionId?: string | null
     sharedWith: UserProfile[] | null
+    initialFiles?: File[]
   }
   createProject: {
     isOpen: boolean
@@ -157,6 +158,7 @@ export function DialogManager({
           projectId={uploadFiles.projectId}
           collectionId={uploadFiles.collectionId}
           sharedWith={uploadFiles.sharedWith}
+          initialFiles={uploadFiles.initialFiles}
         />
       )}
 

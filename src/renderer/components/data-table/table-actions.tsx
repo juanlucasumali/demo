@@ -1,7 +1,7 @@
 import { Row } from "@tanstack/react-table"
 import { DemoItem, FileFormat } from "@renderer/types/items"
 import { AudioState } from "./data-table"
-import { Edit, Share, RefreshCcw, Download, Trash, Loader2 } from "lucide-react"
+import { Edit, Share, RefreshCcw, Download, Trash } from "lucide-react"
 import { b2Service } from '@renderer/services/b2-service'
 import { AudioConverterService } from '@renderer/services/audio-converter'
 import { useToast } from "@renderer/hooks/use-toast"
@@ -212,7 +212,7 @@ export function TableActions({
         <MenuItem 
           onClick={() => handleFolderDownload(row.original.id!, row.original.name)}
         >
-          <Download className="mr-2 h-4 w-4" /> Download as ZIP
+          <Download className="mr-2 h-4 w-4" /> Download
         </MenuItem>
       )}
 

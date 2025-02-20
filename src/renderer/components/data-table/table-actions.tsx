@@ -74,6 +74,11 @@ export function TableActions({
         }]
       })
 
+      toast({
+        title: "Downloading",
+        description: "Creating zip file, please wait...",
+      })
+
       const zipData = await createFolderZip(items, folderName, (progress) => {
         setDownloadProgress(progress)
       })

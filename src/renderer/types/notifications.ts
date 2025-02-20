@@ -1,29 +1,24 @@
 import { DemoItem } from "./items";
 import { UserProfile } from "./users";
 
+export enum NotificationType {
+    REQUEST = "request",
+    SHARE = "share"
+}
+
 export interface DemoNotification {
     id: string;
     from: UserProfile;
     createdAt: Date;
     type: NotificationType;
 
-    // ITEM_REQUEST
+    // For REQUEST type
     itemsRequested: DemoItem[] | null;
     description: string | null;
 
-    // SINGLE_ITEM_SHARE
-    itemShared: DemoItem | null;
-
-    // MULTI_ITEM_SHARE
-    itemsShared: DemoItem[] | null;
-
-    // PROJECT_SHARE
-    projectShared: DemoItem | null;
-}
-
-export enum NotificationType {
-    ITEM_REQUEST = "item_request",
-    SINGLE_ITEM_SHARE = "single_item_share",
-    MULTI_ITEM_SHARE = "multi_item_share",
-    PROJECT_SHARE = "project_share",
+    // For SHARE type
+    sharedItem: {
+        item: DemoItem;
+        message?: string;
+    } | null;
 }

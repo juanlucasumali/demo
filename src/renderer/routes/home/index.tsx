@@ -15,6 +15,8 @@ import { DemoItem } from '@renderer/types/items'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
 import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
+import { useEffect } from 'react'
+import { useNotifications } from '@renderer/hooks/use-notifications'
 
 export const Route = createFileRoute('/home/')({
   beforeLoad: async ({ context }) => {
@@ -41,6 +43,13 @@ function Home() {
   } = useItems();
   const dialogState = useDialogState();
   const navigate = useNavigate();
+  const { data: notifications = [], isLoading: isLoadingNotifications } = useNotifications();
+
+  useEffect(() => {
+    if (!isLoadingNotifications && notifications.length > 0) {
+      dialogState.notifications.onOpen();
+    }
+  }, [isLoadingNotifications, notifications.length]);
 
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {

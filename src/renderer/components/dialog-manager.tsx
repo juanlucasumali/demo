@@ -12,6 +12,7 @@ import { UserProfile } from "@renderer/types/users"
 import { CreateCollection } from "./dialogs/create-collection"
 import { RemoveDialog } from "./dialogs/remove-dialog"
 import { UploadFiles } from "./dialogs/upload-files"
+import { NotificationsDialog } from "./dialogs/notifications-dialog"
 
 interface DialogManagerProps {
   editFile: {
@@ -90,6 +91,10 @@ interface DialogManagerProps {
     item?: DemoItem
     location?: 'folder' | 'project' | 'collection'
   }
+  notifications: {
+    isOpen: boolean
+    onClose: () => void
+  }
 }
 
 export function DialogManager({
@@ -106,7 +111,8 @@ export function DialogManager({
   deleteItem,
   isLoading,
   createCollection,
-  remove
+  remove,
+  notifications
 }: DialogManagerProps) {
   return (
     <>
@@ -214,6 +220,11 @@ export function DialogManager({
           location={remove.location}
         />
       )}
+
+      <NotificationsDialog
+        open={notifications.isOpen}
+        onOpenChange={() => notifications.onClose()}
+      />
     </>
   )
 } 

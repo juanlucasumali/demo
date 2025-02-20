@@ -4,9 +4,10 @@ import { File, Folder, Box, HelpCircle } from "lucide-react"
 import { Switch } from "@renderer/components/ui/switch"
 import { Button } from "@renderer/components/ui/button"
 import { ScrollArea } from "@renderer/components/ui/scroll-area"
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNowStrict } from 'date-fns'
 import { ItemType } from "@renderer/types/items"
 import { DemoNotification, NotificationType } from "@renderer/types/notifications"
+import { Link } from "@tanstack/react-router"
 
 interface NotificationsDialogProps {
   open: boolean
@@ -43,22 +44,29 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
     return (
       <>
         <div className="flex items-center gap-2">
-            {typeIcon}
+          {typeIcon}
           <span>
-            <span className="font-medium">@{notification.from?.username}</span>
-            {notification.type === NotificationType.REQUEST ? ' requested ' : ' shared '}
-            {notification.type === NotificationType.REQUEST ? (
-              notification.itemsRequested?.map(item => (
-                <span key={item.id} className="font-medium">{item.name}</span>
-              ))
-            ) : notification.sharedItem ? (
-              <span className="font-medium">{notification.sharedItem.item.name}</span>
-            ) : null}
+            <Link 
+              to={`/profiles/${notification.from?.id}` as any}
+              className="font-semibold hover:text-muted-foreground"
+            >
+              @{notification.from?.username}
+            </Link>
+            <span className="font-normal">
+              {notification.type === NotificationType.REQUEST ? (
+                ` requested a ${notification.requestType?.toLowerCase()}`
+              ) : (
+                ' shared '
+              )}
+            </span>
+            {notification.type === NotificationType.SHARE && notification.sharedItem && (
+              <span className="font-normal">{notification.sharedItem.item.name}</span>
+            )}
           </span>
         </div>
         {(notification.description || notification.sharedItem?.message) && (
           <p className="text-sm text-muted-foreground mt-1">
-            "{notification.description || notification.sharedItem?.message}"
+            {notification.description || notification.sharedItem?.message}
           </p>
         )}
       </>
@@ -71,7 +79,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
         <div className="p-6 space-y-4">
           <h2 className="text-2xl font-semibold tracking-tight">Notifications</h2>
           <p className="text-muted-foreground">
-            You have {notifications.length} unread messages.
+            You have {notifications.length} unread notifications.
           </p>
         </div>
 
@@ -84,8 +92,8 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
                   <div className="text-sm">
                     {getNotificationContent(notification)}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(notification.createdAt))}
+                  <p className="text-xs text-muted-foreground">
+                    {formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true })}
                   </p>
                 </div>
               </div>

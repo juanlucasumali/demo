@@ -1,6 +1,6 @@
 import { dummyDemoItems } from "@renderer/components/home/dummy-data"
 import { ItemType } from "@renderer/types/items"
-import { DemoNotification, NotificationType } from "@renderer/types/notifications"
+import { DemoNotification, NotificationType, RequestType } from "@renderer/types/notifications"
 
 const dummyUsers = [
   {
@@ -53,23 +53,30 @@ const getRecentTimestamp = (hoursAgo: number) => {
 }
 
 export const dummyNotifications: DemoNotification[] = [
-  // Recent requests (last hour)
   {
     id: "notification1",
     from: dummyUsers[2],
     createdAt: getRecentTimestamp(0.5),
     type: NotificationType.REQUEST,
-    itemsRequested: [{ ...dummyDemoItems[0], name: "vocals_final.wav" }],
+    requestType: RequestType.FILE,
     description: "Need the final vocal stem for mixing",
+    sharedItem: null
+  },
+  {
+    id: "notification2",
+    from: dummyUsers[1],
+    createdAt: getRecentTimestamp(2),
+    type: NotificationType.REQUEST,
+    requestType: RequestType.PROJECT,
+    description: "Could you share the project files for the new track?",
     sharedItem: null
   },
   // Recent shares
   {
-    id: "notification2",
+    id: "notification3",
     from: dummyUsers[0],
     createdAt: getRecentTimestamp(1),
     type: NotificationType.SHARE,
-    itemsRequested: null,
     description: null,
     sharedItem: {
       item: {
@@ -82,24 +89,20 @@ export const dummyNotifications: DemoNotification[] = [
   },
   // More requests
   {
-    id: "notification3",
+    id: "notification4",
     from: dummyUsers[1],
     createdAt: getRecentTimestamp(2),
     type: NotificationType.REQUEST,
-    itemsRequested: [
-      { ...dummyDemoItems[0], name: "guitar_solo.wav" },
-      { ...dummyDemoItems[0], name: "guitar_rhythm.wav" }
-    ],
+    requestType: RequestType.FILE,
     description: "Need both guitar tracks for the bridge section",
     sharedItem: null
   },
   // Project share
   {
-    id: "notification4",
+    id: "notification5",
     from: dummyUsers[3],
     createdAt: getRecentTimestamp(3),
     type: NotificationType.SHARE,
-    itemsRequested: null,
     description: null,
     sharedItem: {
       item: {
@@ -112,11 +115,10 @@ export const dummyNotifications: DemoNotification[] = [
   },
   // Folder share
   {
-    id: "notification5",
+    id: "notification6",
     from: dummyUsers[4],
     createdAt: getRecentTimestamp(4),
     type: NotificationType.SHARE,
-    itemsRequested: null,
     description: null,
     sharedItem: {
       item: {
@@ -129,21 +131,20 @@ export const dummyNotifications: DemoNotification[] = [
   },
   // Another request
   {
-    id: "notification6",
+    id: "notification7",
     from: dummyUsers[2],
     createdAt: getRecentTimestamp(5),
     type: NotificationType.REQUEST,
-    itemsRequested: [{ ...dummyDemoItems[1], name: "Backing Vocals", type: ItemType.FOLDER }],
+    requestType: RequestType.FOLDER,
     description: "Can you share the backing vocals folder?",
     sharedItem: null
   },
   // More notifications with varied types and timestamps
   {
-    id: "notification7",
+    id: "notification8",
     from: dummyUsers[0],
     createdAt: getRecentTimestamp(6),
     type: NotificationType.SHARE,
-    itemsRequested: null,
     description: null,
     sharedItem: {
       item: {
@@ -155,11 +156,11 @@ export const dummyNotifications: DemoNotification[] = [
     }
   },
   {
-    id: "notification8",
+    id: "notification9",
     from: dummyUsers[1],
     createdAt: getRecentTimestamp(8),
     type: NotificationType.REQUEST,
-    itemsRequested: [{ ...dummyDemoItems[2], name: "Remix Project", type: ItemType.PROJECT }],
+    requestType: RequestType.PROJECT,
     description: "Can you share the remix project files?",
     sharedItem: null
   }

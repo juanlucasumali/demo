@@ -6,6 +6,12 @@ export enum NotificationType {
     SHARE = "share"
 }
 
+export enum RequestType {
+    FILE = "file",
+    FOLDER = "folder",
+    PROJECT = "project"
+}
+
 export interface DemoNotification {
     id: string;
     from: UserProfile;
@@ -13,7 +19,7 @@ export interface DemoNotification {
     type: NotificationType;
 
     // For REQUEST type
-    itemsRequested: DemoItem[] | null;
+    requestType?: RequestType;
     description: string | null;
 
     // For SHARE type

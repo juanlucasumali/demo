@@ -12,14 +12,15 @@ interface UseItemsOptions {
 
 export function useItems(options?: UseItemsOptions) {
   const queryClient = useQueryClient()
-  const queryKey = ['files-and-folders', options?.parentFolderId, options?.projectId];
+  const queryKey = ['files-and-folders', options?.parentFolderId, options?.projectId, options?.searchTerm];
 
   const { data: filesAndFolders = [], isLoading } = useQuery({
-    queryKey: ['files-and-folders', options?.parentFolderId, options?.projectId, options?.collectionId],
+    queryKey: ['files-and-folders', options?.parentFolderId, options?.projectId, options?.collectionId, options?.searchTerm],
     queryFn: () => itemsService.getFilesAndFolders(
       options?.parentFolderId, 
       options?.projectId,
-      options?.collectionId
+      options?.collectionId,
+      options?.searchTerm
     ),
   });
 

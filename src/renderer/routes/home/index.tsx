@@ -15,7 +15,7 @@ import { DemoItem } from '@renderer/types/items'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
 import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNotifications } from '@renderer/hooks/use-notifications'
 
 export const Route = createFileRoute('/home/')({
@@ -33,6 +33,8 @@ export const Route = createFileRoute('/home/')({
 })
 
 function Home() {
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const { 
     filesAndFolders, 
     isLoading, 
@@ -40,7 +42,9 @@ function Home() {
     updateItem,
     deleteItem,
     toggleStar
-  } = useItems();
+  } = useItems({
+    searchTerm: searchTerm || undefined
+  });
   const dialogState = useDialogState();
   const navigate = useNavigate();
   const { data: notifications = [], isLoading: isLoadingNotifications } = useNotifications();
@@ -128,6 +132,7 @@ function Home() {
             onEditFile={(item) => dialogState.editFile.onOpen({ item })}
             onShare={(item) => dialogState.share.onOpen({ item })}
             onDelete={(item) => dialogState.delete.onOpen({ item })}
+            onSearch={setSearchTerm}
           />
         </FileDropZone>
       </PageContent>

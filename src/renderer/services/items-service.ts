@@ -115,7 +115,8 @@ export async function getFilesWithSharing(
     parentFolderId?: string | null,
     projectId?: string | null,
     collectionId?: string | null,
-    includeNested?: boolean
+    includeNested?: boolean,
+    searchTerm?: string
   }
 ): Promise<DemoItem[]> {
   const { data, error } = await supabase
@@ -124,7 +125,8 @@ export async function getFilesWithSharing(
       p_parent_folder_id: filters?.parentFolderId,
       p_project_id: filters?.projectId,
       p_collection_id: filters?.collectionId,
-      p_include_nested: filters?.includeNested || false
+      p_include_nested: filters?.includeNested || false,
+      p_search_term: filters?.searchTerm
     });
 
   if (error) {
@@ -165,15 +167,16 @@ async function getItemsWithSharing(
 export async function getFilesAndFolders(
   parentFolderId?: string | null,
   projectId?: string | null,
-  collectionId?: string | null
+  collectionId?: string | null,
+  searchTerm?: string
 ): Promise<DemoItem[]> {
   const userId = getCurrentUserId();
   
-  // If no parentFolderId is provided, we want root items
   const filters = {
     parentFolderId: parentFolderId === undefined ? null : parentFolderId,
     projectId,
-    collectionId
+    collectionId,
+    searchTerm
   };
   
   return getItemsWithSharing('files', userId, filters);

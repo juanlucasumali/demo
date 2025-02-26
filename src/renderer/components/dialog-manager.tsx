@@ -94,6 +94,7 @@ interface DialogManagerProps {
   notifications: {
     isOpen: boolean
     onClose: () => void
+    onSearch?: (term: string) => void
   }
 }
 
@@ -224,6 +225,7 @@ export function DialogManager({
       <NotificationsDialog
         open={notifications.isOpen}
         onOpenChange={() => notifications.onClose()}
+        onSearch={notifications.onSearch}
       />
     </>
   )

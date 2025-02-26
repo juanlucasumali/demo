@@ -53,7 +53,7 @@ export const dummyDemoItems: DemoItem[] = [
     sharedWith: []
   },
   {
-    id: "project-1",
+    id: "de1cec55-a8fb-4b85-9293-9affc1e7ad58",
     projectIds: [],
     parentFolderIds: [],
     collectionIds: [],

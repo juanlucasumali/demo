@@ -62,6 +62,7 @@ interface DataTableProps<DemoItem> {
   onShare?: (item: DemoItem) => void
   onDelete?: (item: DemoItem) => void
   onSearch?: (term: string) => void
+  searchTerm?: string;
 }
 
 export type AudioState = {
@@ -94,6 +95,7 @@ export function DataTable<DemoItem>({
   onShare,
   onDelete,
   onSearch,
+  searchTerm = "",
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -341,10 +343,15 @@ export function DataTable<DemoItem>({
     }
   };
 
+  // Set initial filter value when searchTerm changes
+  React.useEffect(() => {
+    table.getColumn("name")?.setFilterValue(searchTerm);
+  }, [searchTerm]);
+
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     table.getColumn("name")?.setFilterValue(value);
-    onSearch?.(value); // Add this
+    onSearch?.(value);
   };
 
   return (

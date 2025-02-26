@@ -133,6 +133,7 @@ function Home() {
             onShare={(item) => dialogState.share.onOpen({ item })}
             onDelete={(item) => dialogState.delete.onOpen({ item })}
             onSearch={setSearchTerm}
+            searchTerm={searchTerm}
           />
         </FileDropZone>
       </PageContent>
@@ -141,6 +142,10 @@ function Home() {
         updateItem={updateItem}
         deleteItem={deleteItem}
         isLoading={isLoading}
+        notifications={{
+          ...dialogState.notifications,
+          onSearch: setSearchTerm
+        }}
       />
     </PageMain>
   )

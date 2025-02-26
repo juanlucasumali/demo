@@ -81,7 +81,7 @@ export const dummyNotifications: DemoNotification[] = [
     sharedItem: {
       item: {
         ...dummyDemoItems[0],
-        name: "final_mix_v2.wav",
+        name: "hell.mp3",
         type: ItemType.FILE
       },
       message: "Updated mix with new effects"

@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@renderer/components/ui/dialog"
 import { useNotifications } from "@renderer/hooks/use-notifications"
-import { File, Folder, Box, HelpCircle } from "lucide-react"
+import { File, Folder, Box, HelpCircle, X } from "lucide-react"
 import { Switch } from "@renderer/components/ui/switch"
 import { Button } from "@renderer/components/ui/button"
 import { ScrollArea } from "@renderer/components/ui/scroll-area"
@@ -8,14 +8,17 @@ import { formatDistanceToNowStrict } from 'date-fns'
 import { ItemType } from "@renderer/types/items"
 import { DemoNotification, NotificationType } from "@renderer/types/notifications"
 import { Link } from "@tanstack/react-router"
+import { useState } from "react"
 
 interface NotificationsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSearch?: (term: string) => void
 }
 
-export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogProps) {
-  const { data: notifications = [], isLoading } = useNotifications()
+export function NotificationsDialog({ open, onOpenChange, onSearch }: NotificationsDialogProps) {
+  const { data: notifications = [], isLoading, removeNotification } = useNotifications()
+  const [hoveredNotificationId, setHoveredNotificationId] = useState<string | null>(null);
 
   if (isLoading || notifications.length === 0) {
     return null;
@@ -41,6 +44,15 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
         getItemIcon(notification.sharedItem.item.type) :
         <File className="h-4 w-4" />
 
+    const handleFileClick = (name: string, type: ItemType, itemId?: string) => {
+      if (type === ItemType.FILE || type === ItemType.FOLDER) {
+        onOpenChange(false);
+        onSearch?.(name);
+      } else if (type === ItemType.PROJECT && itemId) {
+        onOpenChange(false);
+      }
+    };
+
     return (
       <>
         <div className="flex items-center gap-2">
@@ -60,7 +72,22 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
               )}
             </span>
             {notification.type === NotificationType.SHARE && notification.sharedItem && (
-              <span className="font-normal">{notification.sharedItem.item.name}</span>
+              notification.sharedItem.item.type === ItemType.PROJECT ? (
+                <Link
+                  to={`/projects/${notification.sharedItem.item.id}` as any}
+                  className="font-normal hover:text-muted-foreground"
+                  onClick={() => onOpenChange(false)}
+                >
+                  {notification.sharedItem.item.name}
+                </Link>
+              ) : (
+                <span 
+                  onClick={() => handleFileClick(notification.sharedItem!.item.name, notification.sharedItem!.item.type)}
+                  className="font-normal hover:text-muted-foreground cursor-pointer"
+                >
+                  {notification.sharedItem.item.name}
+                </span>
+              )
             )}
           </span>
         </div>
@@ -72,6 +99,10 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
       </>
     )
   }
+
+  const sortedNotifications = [...notifications].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,8 +116,13 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
 
         <ScrollArea className="h-[300px] px-6">
           <div className="space-y-4">
-            {notifications.map((notification) => (
-              <div key={notification.id} className="flex items-start gap-3">
+            {sortedNotifications.map((notification) => (
+              <div 
+                key={notification.id} 
+                className="flex items-start gap-3 relative group"
+                onMouseEnter={() => setHoveredNotificationId(notification.id)}
+                onMouseLeave={() => setHoveredNotificationId(null)}
+              >
                 <div className="h-2 w-2 mt-2 rounded-full bg-blue-500" />
                 <div className="space-y-1 flex-1">
                   <div className="text-sm">
@@ -96,6 +132,14 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
                     {formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true })}
                   </p>
                 </div>
+                {hoveredNotificationId === notification.id && (
+                  <button
+                    onClick={() => removeNotification(notification.id)}
+                    className="absolute top-0 right-0 p-1 rounded-full hover:bg-muted"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
               </div>
             ))}
           </div>

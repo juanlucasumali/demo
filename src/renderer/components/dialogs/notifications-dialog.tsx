@@ -121,7 +121,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
             {sortedNotifications.map((notification) => (
               <div 
                 key={notification.id} 
-                className="flex items-start gap-3 relative group"
+                className="flex items-start gap-3 relative group p-2 rounded-lg transition-colors hover:bg-muted"
                 onMouseEnter={() => setHoveredNotificationId(notification.id)}
                 onMouseLeave={() => setHoveredNotificationId(null)}
               >
@@ -137,7 +137,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
                 {hoveredNotificationId === notification.id && (
                   <button
                     onClick={() => removeNotification(notification.id)}
-                    className="absolute top-0 right-0 p-1 rounded-full hover:bg-muted"
+                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-accent"
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
                   </button>
@@ -154,6 +154,8 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
               <Switch 
                 checked={showOnStartup} 
                 onCheckedChange={toggleShowOnStartup}
+                className="focus-visible:ring-0 focus:ring-0"
+                data-focus-visible="false"
               />
             </div>
             <Button variant="outline" onClick={() => onOpenChange(false)}>

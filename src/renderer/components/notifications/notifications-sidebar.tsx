@@ -164,6 +164,8 @@ export function NotificationsSidebar() {
           <Switch 
             checked={showOnStartup}
             onCheckedChange={toggleShowOnStartup}
+            className="focus-visible:ring-0 focus:ring-0"
+            data-focus-visible="false"
           />
         </div>
       </div>

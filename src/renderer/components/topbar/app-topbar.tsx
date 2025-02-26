@@ -7,6 +7,7 @@ import { Box, ChevronLeft, ChevronRight, Home, User } from 'lucide-react'
 import { useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useNavigationStore } from '@renderer/stores/navigation-store'
+import { NotificationsBell } from '../notifications/notifications-bell'
 
 interface AppTopbarProps {
   children?: React.ReactNode
@@ -100,6 +101,7 @@ export function AppTopbar({}: AppTopbarProps) {
           </Breadcrumb> */}
         </div>
         <div className='ml-auto flex items-center gap-2 pr-3'>
+          <NotificationsBell />
           <ThemeSwitch />
           <ProfileDropdown />
         </div>

@@ -17,6 +17,7 @@ import { DialogManager } from '@renderer/components/dialog-manager'
 import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
 import { useEffect, useState } from 'react'
 import { useNotifications } from '@renderer/hooks/use-notifications'
+import { useNotificationsStore } from '@renderer/stores/notifications-store'
 
 export const Route = createFileRoute('/home/')({
   beforeLoad: async ({ context }) => {
@@ -34,6 +35,7 @@ export const Route = createFileRoute('/home/')({
 
 function Home() {
   const [searchTerm, setSearchTerm] = useState('');
+  const { selectedItem, clearSelectedItem } = useNotificationsStore();
   
   const { 
     filesAndFolders, 
@@ -48,12 +50,21 @@ function Home() {
   const dialogState = useDialogState();
   const navigate = useNavigate();
   const { data: notifications = [], isLoading: isLoadingNotifications } = useNotifications();
+  const showOnStartup = useNotificationsStore(state => state.showOnStartup);
 
   useEffect(() => {
-    if (!isLoadingNotifications && notifications.length > 0) {
+    if (!isLoadingNotifications && notifications.length > 0 && showOnStartup) {
       dialogState.notifications.onOpen();
     }
-  }, [isLoadingNotifications, notifications.length]);
+  }, [isLoadingNotifications, notifications.length, showOnStartup]);
+
+  // Effect to handle selected item from notifications
+  useEffect(() => {
+    if (selectedItem && (selectedItem.type === ItemType.FILE || selectedItem.type === ItemType.FOLDER)) {
+      setSearchTerm(selectedItem.name);
+      clearSelectedItem(); // Clean up after using
+    }
+  }, [selectedItem, clearSelectedItem]);
 
   const handleRowClick = (item: DemoItem) => {
     if (item.type === ItemType.FOLDER) {

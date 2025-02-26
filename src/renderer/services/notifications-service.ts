@@ -82,10 +82,11 @@ export const dummyNotifications: DemoNotification[] = [
       item: {
         ...dummyDemoItems[0],
         name: "hell.mp3",
-        type: ItemType.FILE
+        type: ItemType.FILE,
       },
       message: "Updated mix with new effects"
-    }
+    },
+    requestType: null
   },
   // More requests
   {
@@ -111,7 +112,8 @@ export const dummyNotifications: DemoNotification[] = [
         type: ItemType.PROJECT
       },
       message: "New project structure ready for review"
-    }
+    },
+    requestType: null
   },
   // Folder share
   {
@@ -127,7 +129,8 @@ export const dummyNotifications: DemoNotification[] = [
         type: ItemType.FOLDER
       },
       message: "All bass tracks from today's session"
-    }
+    },
+    requestType: null
   },
   // Another request
   {
@@ -153,7 +156,8 @@ export const dummyNotifications: DemoNotification[] = [
         type: ItemType.FILE
       },
       message: "Processed synth with new plugins"
-    }
+    },
+    requestType: null
   },
   {
     id: "notification9",

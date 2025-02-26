@@ -19,12 +19,12 @@ export interface DemoNotification {
     type: NotificationType;
 
     // For REQUEST type
-    requestType?: RequestType;
+    requestType: RequestType | null;
     description: string | null;
 
     // For SHARE type
     sharedItem: {
         item: DemoItem;
-        message?: string;
+        message: string | null;
     } | null;
 }

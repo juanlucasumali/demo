@@ -42,7 +42,7 @@ $$;
 
 ALTER FUNCTION "public"."check_email_exists"("email" "text") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid" DEFAULT NULL::"uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_collection_id" "uuid" DEFAULT NULL::"uuid", "p_include_nested" boolean DEFAULT false) RETURNS TABLE("id" "uuid", "owner_id" "uuid", "type" "text", "name" "text", "description" "text", "icon_url" "text", "tags" "text", "format" "text", "size" bigint, "duration" integer, "file_path" "text", "created_at" timestamp with time zone, "last_modified" timestamp with time zone, "last_opened" timestamp with time zone, "owner_data" "jsonb", "shared_with" "jsonb", "is_starred" boolean, "file_projects" "uuid"[], "file_collections" "uuid"[], "file_folders" "uuid"[])
+CREATE OR REPLACE FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid" DEFAULT NULL::"uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_collection_id" "uuid" DEFAULT NULL::"uuid", "p_include_nested" boolean DEFAULT false, "p_search_term" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "owner_id" "uuid", "type" "text", "name" "text", "description" "text", "icon_url" "text", "tags" "text", "format" "text", "size" bigint, "duration" integer, "file_path" "text", "created_at" timestamp with time zone, "last_modified" timestamp with time zone, "last_opened" timestamp with time zone, "owner_data" "jsonb", "shared_with" "jsonb", "is_starred" boolean, "file_projects" "uuid"[], "file_collections" "uuid"[], "file_folders" "uuid"[])
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 DECLARE
@@ -150,8 +150,10 @@ BEGIN
         )
       )
       AND
-      -- Parent folder filter with corrected root-level logic
+      -- Modified search condition
       CASE 
+        WHEN p_search_term IS NOT NULL THEN 
+          f.name ILIKE '%' || p_search_term || '%'
         WHEN p_parent_folder_id IS NULL THEN 
           NOT EXISTS (
             SELECT 1 
@@ -190,6 +192,72 @@ BEGIN
           AND fc.collection_id = p_collection_id
         )
       )
+  ),
+  folder_access_paths AS (
+    -- Get all ancestor folders for each file
+    WITH RECURSIVE folder_ancestors AS (
+      -- Base case: direct parent folders
+      SELECT 
+        ff.file_id,
+        ff.folder_id,
+        ARRAY[ff.folder_id] as path,
+        ARRAY[]::uuid[] as shared_users
+      FROM file_folders ff
+      
+      UNION ALL
+      
+      -- Recursive case: parent folders of parent folders
+      SELECT
+        fa.file_id,
+        ff.folder_id,
+        fa.path || ff.folder_id,
+        (
+          SELECT array_agg(DISTINCT si.shared_with_id)
+          FROM shared_items si
+          WHERE si.file_id = fa.folder_id
+          OR si.file_id = ANY(fa.path)
+        ) as shared_users
+      FROM folder_ancestors fa
+      JOIN file_folders ff ON ff.file_id = fa.folder_id
+      WHERE NOT ff.folder_id = ANY(fa.path) -- Prevent cycles
+    )
+    SELECT DISTINCT ON (file_id, shared_with_id)
+      fa.file_id,
+      u.id as shared_with_id,
+      u.name,
+      u.email,
+      u.avatar,
+      u.username
+    FROM folder_ancestors fa
+    CROSS JOIN LATERAL unnest(fa.shared_users) as shared_user_id
+    JOIN users u ON u.id = shared_user_id
+  ),
+  all_shared_users AS (
+    -- Combine direct file shares and inherited folder shares
+    SELECT DISTINCT ON (f.id, u.id)
+      f.id as file_id,
+      u.id,
+      u.name,
+      u.email,
+      u.avatar,
+      u.username,
+      'direct' as access_type
+    FROM filtered_files f
+    JOIN shared_items si ON si.file_id = f.id
+    JOIN users u ON u.id = si.shared_with_id
+    
+    UNION
+    
+    SELECT DISTINCT ON (f.id, fap.shared_with_id)
+      f.id as file_id,
+      fap.shared_with_id as id,
+      fap.name,
+      fap.email,
+      fap.avatar,
+      fap.username,
+      'inherited' as access_type
+    FROM filtered_files f
+    JOIN folder_access_paths fap ON fap.file_id = f.id
   )
   SELECT 
     f.id,
@@ -216,13 +284,13 @@ BEGIN
     COALESCE(
       jsonb_agg(
         DISTINCT jsonb_build_object(
-          'id', shared_user.id,
-          'name', shared_user.name,
-          'email', shared_user.email,
-          'avatar', shared_user.avatar,
-          'username', shared_user.username
+          'id', asu.id,
+          'name', asu.name,
+          'email', asu.email,
+          'avatar', asu.avatar,
+          'username', asu.username
         )
-      ) FILTER (WHERE shared_user.id IS NOT NULL),
+      ) FILTER (WHERE asu.id IS NOT NULL),
       '[]'::jsonb
     ) as shared_with,
     EXISTS(
@@ -241,8 +309,7 @@ BEGIN
     ) as file_folders
   FROM filtered_files f
   INNER JOIN users u ON f.owner_id = u.id
-  LEFT JOIN shared_items si ON f.id = si.file_id
-  LEFT JOIN users shared_user ON si.shared_with_id = shared_user.id
+  LEFT JOIN all_shared_users asu ON f.id = asu.file_id
   GROUP BY 
     f.id, f.owner_id, f.type, f.name, f.description, f.icon_url, 
     f.tags, f.format, f.size, f.duration, f.file_path, f.created_at, 
@@ -251,7 +318,7 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) OWNER TO "postgres";
+ALTER FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean, "p_search_term" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."migrate_existing_relationships"() RETURNS "void"
     LANGUAGE "plpgsql"
@@ -377,16 +444,17 @@ CREATE TABLE IF NOT EXISTS "public"."highlights" (
 ALTER TABLE "public"."highlights" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."notifications" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "from_user_id" "uuid" NOT NULL,
-    "to_user_id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "type" "text" NOT NULL,
-    "description" "text",
-    "item_id" "uuid",
-    "project_id" "uuid",
-    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    "read_at" timestamp with time zone,
-    CONSTRAINT "notifications_type_check" CHECK (("type" = ANY (ARRAY['item_request'::"text", 'single_item_share'::"text", 'multi_item_share'::"text", 'project_share'::"text"])))
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "from_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "is_read" boolean DEFAULT false NOT NULL,
+    "request_description" "text",
+    "request_type" "text",
+    "shared_item_id" "uuid",
+    "shared_message" "text",
+    "shared_project_id" "uuid" DEFAULT "gen_random_uuid"(),
+    "to_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL
 );
 
 ALTER TABLE "public"."notifications" OWNER TO "postgres";
@@ -552,8 +620,6 @@ CREATE INDEX "idx_starred_items_project_id" ON "public"."starred_items" USING "b
 
 CREATE INDEX "idx_starred_items_user_id" ON "public"."starred_items" USING "btree" ("user_id");
 
-CREATE INDEX "notifications_to_user_id_idx" ON "public"."notifications" USING "btree" ("to_user_id");
-
 ALTER TABLE ONLY "public"."collections"
     ADD CONSTRAINT "collections_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
@@ -591,16 +657,16 @@ ALTER TABLE ONLY "public"."highlights"
     ADD CONSTRAINT "highlights_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."notifications"
-    ADD CONSTRAINT "notifications_from_user_id_fkey" FOREIGN KEY ("from_user_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "notifications_from_id_fkey" FOREIGN KEY ("from_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."notifications"
-    ADD CONSTRAINT "notifications_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "notifications_shared_item_id_fkey" FOREIGN KEY ("shared_item_id") REFERENCES "public"."files"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."notifications"
-    ADD CONSTRAINT "notifications_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "notifications_shared_project_id_fkey" FOREIGN KEY ("shared_project_id") REFERENCES "public"."projects"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."notifications"
-    ADD CONSTRAINT "notifications_to_user_id_fkey" FOREIGN KEY ("to_user_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT "notifications_to_id_fkey" FOREIGN KEY ("to_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON UPDATE CASCADE ON DELETE CASCADE;
@@ -669,9 +735,9 @@ GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_email_exists"("email" "text") TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean) TO "service_role";
+GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean, "p_search_term" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean, "p_search_term" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_filtered_files"("p_user_id" "uuid", "p_parent_folder_id" "uuid", "p_project_id" "uuid", "p_collection_id" "uuid", "p_include_nested" boolean, "p_search_term" "text") TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."migrate_existing_relationships"() TO "anon";
 GRANT ALL ON FUNCTION "public"."migrate_existing_relationships"() TO "authenticated";

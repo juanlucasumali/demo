@@ -24,7 +24,7 @@ interface NotificationsState {
 
 export const useNotificationsStore = create<NotificationsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       isOpen: false,
       selectedItem: null,
       showOnStartup: true,

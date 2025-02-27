@@ -6,7 +6,6 @@ import { useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { ItemType } from "@renderer/types/items"
 import { DemoNotification, NotificationType } from "@renderer/types/notifications"
-import { Sidebar, SidebarContent, SidebarHeader } from "../ui/sidebar"
 import { useNotificationsStore } from "@renderer/stores/notifications-store"
 import { Button } from "../ui/button"
 import { Switch } from "@renderer/components/ui/switch"
@@ -45,7 +44,7 @@ export function NotificationsSidebar() {
     const typeIcon = notification.type === NotificationType.REQUEST ? 
       <HelpCircle className="h-4 w-4" /> :
       notification.sharedItem ? 
-        getItemIcon(notification.sharedItem.item.type) :
+        getItemIcon(notification.sharedItem.type) :
         <File className="h-4 w-4" />
 
     return (
@@ -67,35 +66,35 @@ export function NotificationsSidebar() {
               )}
             </span>
             {notification.type === NotificationType.SHARE && notification.sharedItem && (
-              notification.sharedItem.item.type === ItemType.PROJECT ? (
+              notification.sharedItem.type === ItemType.PROJECT ? (
                 <Link
-                  to={`/projects/${notification.sharedItem.item.id}` as any}
+                  to={`/projects/${notification.sharedItem.id}` as any}
                   className="font-normal hover:text-muted-foreground"
                   onClick={() => handleItemClick(
-                    notification.sharedItem!.item.name,
-                    notification.sharedItem!.item.type,
-                    notification.sharedItem!.item.id
+                    notification.sharedItem!.name,
+                    notification.sharedItem!.type,
+                    notification.sharedItem!.id
                   )}
                 >
-                  {notification.sharedItem.item.name}
+                  {notification.sharedItem.name}
                 </Link>
               ) : (
                 <span 
                   onClick={() => handleItemClick(
-                    notification.sharedItem!.item.name,
-                    notification.sharedItem!.item.type
+                    notification.sharedItem!.name,
+                    notification.sharedItem!.type
                   )}
                   className="font-normal hover:text-muted-foreground cursor-pointer"
                 >
-                  {notification.sharedItem.item.name}
+                  {notification.sharedItem.name}
                 </span>
               )
             )}
           </span>
         </div>
-        {(notification.description || notification.sharedItem?.message) && (
+        {(notification.requestDescription || notification.sharedMessage) && (
           <p className="text-sm text-muted-foreground mt-1">
-            {notification.description || notification.sharedItem?.message}
+            {notification.requestDescription || notification.sharedMessage}
           </p>
         )}
       </>
@@ -137,7 +136,7 @@ export function NotificationsSidebar() {
               onMouseEnter={() => setHoveredNotificationId(notification.id)}
               onMouseLeave={() => setHoveredNotificationId(null)}
             >
-              <div className="h-2 w-2 mt-2 rounded-full bg-blue-500" />
+              {!notification.isRead && <div className="h-2 w-2 mt-2 rounded-full bg-blue-500" />}
               <div className="space-y-1 flex-1">
                 <div className="text-sm">
                   {getNotificationContent(notification)}

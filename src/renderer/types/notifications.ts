@@ -14,17 +14,17 @@ export enum RequestType {
 
 export interface DemoNotification {
     id: string;
-    from: UserProfile;
     createdAt: Date;
+    from: UserProfile;
+    isRead: boolean;
+
     type: NotificationType;
 
     // For REQUEST type
     requestType: RequestType | null;
-    description: string | null;
+    requestDescription: string | null;
 
     // For SHARE type
-    sharedItem: {
-        item: DemoItem;
-        message: string | null;
-    } | null;
+    sharedItem: DemoItem | null;
+    sharedMessage: string | null;
 }

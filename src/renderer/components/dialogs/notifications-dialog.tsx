@@ -43,7 +43,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
     const typeIcon = notification.type === NotificationType.REQUEST ? 
       <HelpCircle className="h-4 w-4" /> :
       notification.sharedItem ? 
-        getItemIcon(notification.sharedItem.item.type) :
+        getItemIcon(notification.sharedItem.type) :
         <File className="h-4 w-4" />
 
     const handleFileClick = (name: string, type: ItemType, itemId?: string) => {
@@ -74,28 +74,28 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
               )}
             </span>
             {notification.type === NotificationType.SHARE && notification.sharedItem && (
-              notification.sharedItem.item.type === ItemType.PROJECT ? (
+              notification.sharedItem.type === ItemType.PROJECT ? (
                 <Link
-                  to={`/projects/${notification.sharedItem.item.id}` as any}
+                  to={`/projects/${notification.sharedItem.id}` as any}
                   className="font-normal hover:text-muted-foreground"
                   onClick={() => onOpenChange(false)}
                 >
-                  {notification.sharedItem.item.name}
+                  {notification.sharedItem.name}
                 </Link>
               ) : (
                 <span 
-                  onClick={() => handleFileClick(notification.sharedItem!.item.name, notification.sharedItem!.item.type)}
+                  onClick={() => handleFileClick(notification.sharedItem!.name, notification.sharedItem!.type)}
                   className="font-normal hover:text-muted-foreground cursor-pointer"
                 >
-                  {notification.sharedItem.item.name}
+                  {notification.sharedItem.name}
                 </span>
               )
             )}
           </span>
         </div>
-        {(notification.description || notification.sharedItem?.message) && (
+        {(notification.requestDescription || notification.sharedMessage) && (
           <p className="text-sm text-muted-foreground mt-1">
-            {notification.description || notification.sharedItem?.message}
+            {notification.requestDescription || notification.sharedMessage}
           </p>
         )}
       </>

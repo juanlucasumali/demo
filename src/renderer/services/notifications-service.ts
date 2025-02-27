@@ -59,8 +59,10 @@ export const dummyNotifications: DemoNotification[] = [
     createdAt: getRecentTimestamp(0.5),
     type: NotificationType.REQUEST,
     requestType: RequestType.FILE,
-    description: "Need the final vocal stem for mixing",
-    sharedItem: null
+    requestDescription: "Need the final vocal stem for mixing",
+    sharedItem: null,
+    isRead: false,
+    sharedMessage: null
   },
   {
     id: "notification2",
@@ -68,8 +70,10 @@ export const dummyNotifications: DemoNotification[] = [
     createdAt: getRecentTimestamp(2),
     type: NotificationType.REQUEST,
     requestType: RequestType.PROJECT,
-    description: "Could you share the project files for the new track?",
-    sharedItem: null
+    requestDescription: "Could you share the project files for the new track?",
+    sharedItem: null,
+    isRead: false,
+    sharedMessage: null
   },
   // Recent shares
   {
@@ -77,16 +81,15 @@ export const dummyNotifications: DemoNotification[] = [
     from: dummyUsers[0],
     createdAt: getRecentTimestamp(1),
     type: NotificationType.SHARE,
-    description: null,
     sharedItem: {
-      item: {
-        ...dummyDemoItems[0],
-        name: "hell.mp3",
-        type: ItemType.FILE,
-      },
-      message: "Updated mix with new effects"
+      ...dummyDemoItems[0],
+      name: "hell.mp3",
+      type: ItemType.FILE,
     },
-    requestType: null
+    sharedMessage: "Updated mix with new effects",
+    requestType: null,
+    isRead: false,
+    requestDescription: null
   },
   // More requests
   {
@@ -95,8 +98,10 @@ export const dummyNotifications: DemoNotification[] = [
     createdAt: getRecentTimestamp(2),
     type: NotificationType.REQUEST,
     requestType: RequestType.FILE,
-    description: "Need both guitar tracks for the bridge section",
-    sharedItem: null
+    requestDescription: "Need both guitar tracks for the bridge section",
+    sharedItem: null,
+    isRead: false,
+    sharedMessage: null
   },
   // Project share
   {
@@ -104,16 +109,15 @@ export const dummyNotifications: DemoNotification[] = [
     from: dummyUsers[3],
     createdAt: getRecentTimestamp(3),
     type: NotificationType.SHARE,
-    description: null,
     sharedItem: {
-      item: {
-        ...dummyDemoItems[2],
-        name: "Summer Album 2024",
-        type: ItemType.PROJECT
-      },
-      message: "New project structure ready for review"
+      ...dummyDemoItems[2],
+      name: "Summer Album 2024",
+      type: ItemType.PROJECT
     },
-    requestType: null
+    sharedMessage: "New project structure ready for review",
+    requestType: null,
+    isRead: false,
+    requestDescription: null
   },
   // Folder share
   {
@@ -121,16 +125,15 @@ export const dummyNotifications: DemoNotification[] = [
     from: dummyUsers[4],
     createdAt: getRecentTimestamp(4),
     type: NotificationType.SHARE,
-    description: null,
     sharedItem: {
-      item: {
-        ...dummyDemoItems[1],
+      ...dummyDemoItems[1],
         name: "Bass Recordings",
         type: ItemType.FOLDER
-      },
-      message: "All bass tracks from today's session"
     },
-    requestType: null
+    sharedMessage: "All bass tracks from today's session",
+    requestType: null,
+    isRead: false,
+    requestDescription: null
   },
   // Another request
   {
@@ -139,8 +142,10 @@ export const dummyNotifications: DemoNotification[] = [
     createdAt: getRecentTimestamp(5),
     type: NotificationType.REQUEST,
     requestType: RequestType.FOLDER,
-    description: "Can you share the backing vocals folder?",
-    sharedItem: null
+    requestDescription: "Can you share the backing vocals folder?",
+    sharedItem: null,
+    isRead: false,
+    sharedMessage: null
   },
   // More notifications with varied types and timestamps
   {
@@ -148,16 +153,15 @@ export const dummyNotifications: DemoNotification[] = [
     from: dummyUsers[0],
     createdAt: getRecentTimestamp(6),
     type: NotificationType.SHARE,
-    description: null,
     sharedItem: {
-      item: {
-        ...dummyDemoItems[0],
-        name: "synth_lead_processed.wav",
-        type: ItemType.FILE
-      },
-      message: "Processed synth with new plugins"
+      ...dummyDemoItems[0],
+      name: "synth_lead_processed.wav",
+      type: ItemType.FILE
     },
-    requestType: null
+    sharedMessage: "Processed synth with new plugins",
+    requestType: null,
+    isRead: false,
+    requestDescription: null
   },
   {
     id: "notification9",
@@ -165,8 +169,10 @@ export const dummyNotifications: DemoNotification[] = [
     createdAt: getRecentTimestamp(8),
     type: NotificationType.REQUEST,
     requestType: RequestType.PROJECT,
-    description: "Can you share the remix project files?",
-    sharedItem: null
+    requestDescription: "Can you share the remix project files?",
+    sharedItem: null,
+    isRead: false,
+    sharedMessage: null
   }
 ]
 

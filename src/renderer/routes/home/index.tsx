@@ -35,8 +35,7 @@ export const Route = createFileRoute('/home/')({
 
 function Home() {
   const [searchTerm, setSearchTerm] = useState('');
-  const { selectedItem, clearSelectedItem } = useNotificationsStore();
-  
+  const { selectedItem, clearSelectedItem, showOnStartup, isInitialLoad, setInitialLoadComplete } = useNotificationsStore();
   const { 
     filesAndFolders, 
     isLoading, 
@@ -49,14 +48,15 @@ function Home() {
   });
   const dialogState = useDialogState();
   const navigate = useNavigate();
-  const { data: notifications = [], isLoading: isLoadingNotifications } = useNotifications();
-  const showOnStartup = useNotificationsStore(state => state.showOnStartup);
+  const { notifications, isLoading: isLoadingNotifications } = useNotifications();
+  const { unreadNotifications } = useNotifications();
 
   useEffect(() => {
-    if (!isLoadingNotifications && notifications.length > 0 && showOnStartup) {
+    if (isInitialLoad && !isLoadingNotifications && unreadNotifications.length > 0 && showOnStartup) {
       dialogState.notifications.onOpen();
+      setInitialLoadComplete(); // Mark initial load as complete
     }
-  }, [isLoadingNotifications, notifications.length, showOnStartup]);
+  }, [isLoadingNotifications, unreadNotifications.length, showOnStartup, isInitialLoad]);
 
   // Effect to handle selected item from notifications
   useEffect(() => {

@@ -23,7 +23,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
         <div
           data-state={isOpen ? "expanded" : "collapsed"}
           className={cn(
-            "duration-200 fixed inset-y-0 right-0 z-50 hidden w-[var(--notifications-width)] transition-[right,width] ease-linear md:flex",
+            "duration-200 fixed inset-y-0 right-0 z-50 flex w-[var(--notifications-width)] transition-[right,width] ease-linear",
             "data-[state=collapsed]:right-[calc(var(--notifications-width)*-1)]",
           )}
         >

@@ -18,11 +18,11 @@ interface NotificationsDialogProps {
 }
 
 export function NotificationsDialog({ open, onOpenChange, onSearch }: NotificationsDialogProps) {
-  const { data: notifications = [], isLoading, removeNotification } = useNotifications()
+  const { unreadNotifications, deleteNotification } = useNotifications()
   const [hoveredNotificationId, setHoveredNotificationId] = useState<string | null>(null);
   const { showOnStartup, toggleShowOnStartup } = useNotificationsStore()
 
-  if (isLoading || notifications.length === 0) {
+  if (unreadNotifications.length === 0) {
     return null;
   }
 
@@ -102,7 +102,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
     )
   }
 
-  const sortedNotifications = [...notifications].sort((a, b) => 
+  const sortedNotifications = [...unreadNotifications].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 
@@ -112,7 +112,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
         <div className="p-6 space-y-4">
           <h2 className="text-2xl font-semibold tracking-tight">Notifications</h2>
           <p className="text-muted-foreground">
-            You have {notifications.length} unread notifications.
+            You have {unreadNotifications.length} unread notifications.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
                 </div>
                 {hoveredNotificationId === notification.id && (
                   <button
-                    onClick={() => removeNotification(notification.id)}
+                    onClick={() => deleteNotification(notification.id)}
                     className="absolute top-2 right-2 p-1 rounded-full hover:bg-accent"
                   >
                     <X className="h-4 w-4 text-muted-foreground" />

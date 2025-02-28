@@ -4,20 +4,29 @@ import { useNotifications } from '@renderer/hooks/use-notifications';
 import { useNotificationsStore } from '@renderer/stores/notifications-store';
 
 export function NotificationsBell() {
-  const { data: notifications = [] } = useNotifications();
-  const { toggle } = useNotificationsStore();
+  const { unreadNotifications, markMultipleAsRead } = useNotifications();
+  const { toggle, setVisuallyUnreadIds } = useNotificationsStore();
+
+  const handleClick = () => {
+    if (unreadNotifications.length > 0) {
+      const unreadIds = unreadNotifications.map(n => n.id);
+      setVisuallyUnreadIds(unreadIds);
+      markMultipleAsRead(unreadIds);
+    }
+    toggle();
+  };
 
   return (
     <Button 
       variant="ghost" 
       size="icon" 
-      className="relative h-8 w-8"
-      onClick={toggle}
+      className="relative"
+      onClick={handleClick}
     >
-      <Bell className="h-4 w-4" />
-      {notifications.length > 0 && (
-        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-medium text-white">
-          {notifications.length > 99 ? '99+' : notifications.length}
+      <Bell className="h-5 w-5" />
+      {unreadNotifications.length > 0 && (
+        <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-blue-500 text-[10px] font-medium text-white flex items-center justify-center">
+          {unreadNotifications.length}
         </span>
       )}
     </Button>

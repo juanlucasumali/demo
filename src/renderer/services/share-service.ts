@@ -2,6 +2,7 @@ import { supabase } from '@renderer/lib/supabase'
 import { DemoItem, ItemType } from '@renderer/types/items'
 import { UserProfile } from '@renderer/types/users'
 import { useUserStore } from '@renderer/stores/user-store'
+import { createShareNotification } from './notifications-service'
 
 // Helper function to get current user ID
 const getCurrentUserId = () => {
@@ -38,29 +39,47 @@ const insertShareRecords = async (records: any[], type: 'file' | 'project') => {
 export async function shareItems(items: DemoItem[], users: UserProfile[]) {
   const currentUserId = getCurrentUserId()
   
-  // Split items into files and projects
-  const fileItems = items.filter(item => item.type === ItemType.FILE)
-  const projectItems = items.filter(item => item.type === ItemType.PROJECT)
+  try {
+    // Split items into files and projects
+    const fileItems = items.filter(item => item.type === ItemType.FILE)
+    const projectItems = items.filter(item => item.type === ItemType.PROJECT)
 
-  // Create share records
-  const fileShares = fileItems.flatMap(item => 
-    createShareRecords(item.id, 'file', users, currentUserId)
-  )
+    // Create share records
+    const fileShares = fileItems.flatMap(item => 
+      createShareRecords(item.id, 'file', users, currentUserId)
+    )
 
-  const projectShares = projectItems.flatMap(item => 
-    createShareRecords(item.id, 'project', users, currentUserId)
-  )
+    const projectShares = projectItems.flatMap(item => 
+      createShareRecords(item.id, 'project', users, currentUserId)
+    )
 
-  // Insert share records
-  const promises: Promise<void>[] = []
-  if (fileShares.length > 0) {
-    promises.push(insertShareRecords(fileShares, 'file'))
+    // Insert share records
+    const promises: Promise<void>[] = []
+    if (fileShares.length > 0) {
+      promises.push(insertShareRecords(fileShares, 'file'))
+    }
+    if (projectShares.length > 0) {
+      promises.push(insertShareRecords(projectShares, 'project'))
+    }
+
+    await Promise.all(promises)
+
+    // Create notifications for each shared item and user
+    const notificationPromises = items.flatMap(item =>
+      users.map(user =>
+        createShareNotification(
+          currentUserId,
+          user.id,
+          item.id,
+        )
+      )
+    )
+
+    await Promise.all(notificationPromises)
+  } catch (error) {
+    console.error('Error in shareItems:', error)
+    throw new Error('Failed to share items and create notifications')
   }
-  if (projectShares.length > 0) {
-    promises.push(insertShareRecords(projectShares, 'project'))
-  }
-
-  await Promise.all(promises)
 }
 
 export async function shareNewItem(
@@ -71,6 +90,24 @@ export async function shareNewItem(
   if (!users || users.length === 0) return
 
   const currentUserId = getCurrentUserId()
-  const shareRecords = createShareRecords(itemId, itemType, users, currentUserId)
-  await insertShareRecords(shareRecords, itemType)
+  
+  try {
+    // Create and insert share records
+    const shareRecords = createShareRecords(itemId, itemType, users, currentUserId)
+    await insertShareRecords(shareRecords, itemType)
+
+    // Create notifications for each user
+    const notificationPromises = users.map(user =>
+      createShareNotification(
+        currentUserId,
+        user.id,
+        itemId,
+      )
+    )
+
+    await Promise.all(notificationPromises)
+  } catch (error) {
+    console.error('Error in shareNewItem:', error)
+    throw new Error('Failed to share item and create notifications')
+  }
 } 

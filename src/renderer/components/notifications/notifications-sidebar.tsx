@@ -1,7 +1,7 @@
 import { ScrollArea } from "@renderer/components/ui/scroll-area"
 import { useNotifications } from "@renderer/hooks/use-notifications"
 import { formatDistanceToNowStrict } from 'date-fns'
-import { Box, File, Folder, HelpCircle, X } from "lucide-react"
+import { Box, File, Folder, HelpCircle, X, Mail } from "lucide-react"
 import { useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { ItemType } from "@renderer/types/items"
@@ -9,11 +9,19 @@ import { DemoNotification, NotificationType } from "@renderer/types/notification
 import { useNotificationsStore } from "@renderer/stores/notifications-store"
 import { Button } from "../ui/button"
 import { Switch } from "@renderer/components/ui/switch"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@renderer/components/ui/tooltip"
 
 export function NotificationsSidebar() {
-  const { data: notifications = [], isLoading, removeNotification } = useNotifications()
+  const { notifications, deleteNotification, markAsUnread } = useNotifications()
   const [hoveredNotificationId, setHoveredNotificationId] = useState<string | null>(null)
-  const { close, showOnStartup, toggleShowOnStartup, setSelectedItem } = useNotificationsStore()
+  const { 
+    close, 
+    showOnStartup, 
+    toggleShowOnStartup, 
+    setSelectedItem,
+    visuallyUnreadIds,
+    clearVisuallyUnreadIds
+  } = useNotificationsStore()
   const navigate = useNavigate()
 
   const getItemIcon = (type: ItemType) => {
@@ -51,7 +59,7 @@ export function NotificationsSidebar() {
       <>
         <div className="flex items-center gap-2">
           {typeIcon}
-          <span>
+          <span className="flex-1">
             <Link 
               to={`/profiles/${notification.from?.id}` as any}
               className="font-semibold hover:text-muted-foreground"
@@ -93,7 +101,7 @@ export function NotificationsSidebar() {
           </span>
         </div>
         {(notification.requestDescription || notification.sharedMessage) && (
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1 ml-6">
             {notification.requestDescription || notification.sharedMessage}
           </p>
         )}
@@ -105,8 +113,14 @@ export function NotificationsSidebar() {
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 
-  if (isLoading) {
-    return null
+  const handleClose = () => {
+    clearVisuallyUnreadIds()
+    close()
+  }
+
+  const handleMarkAsUnread = (notificationId: string) => {
+    markAsUnread(notificationId);
+    // Don't close the sidebar or do anything else
   }
 
   return (
@@ -115,14 +129,14 @@ export function NotificationsSidebar() {
         <div>
           <h2 className="text-lg font-semibold">Notifications</h2>
           <p className="text-sm text-muted-foreground">
-            You have {notifications.length} unread notifications
+            You have {notifications.length} notifications
           </p>
         </div>
         <Button
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={close}
+          onClick={handleClose}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -132,27 +146,53 @@ export function NotificationsSidebar() {
           {sortedNotifications.map((notification) => (
             <div 
               key={notification.id} 
-              className="flex items-start gap-3 relative group p-2 rounded-lg transition-colors hover:bg-muted"
+              className="group relative p-2 rounded-lg transition-colors hover:bg-muted"
               onMouseEnter={() => setHoveredNotificationId(notification.id)}
               onMouseLeave={() => setHoveredNotificationId(null)}
             >
-              {!notification.isRead && <div className="h-2 w-2 mt-2 rounded-full bg-blue-500" />}
-              <div className="space-y-1 flex-1">
-                <div className="text-sm">
-                  {getNotificationContent(notification)}
+              <div className="flex items-start gap-3">
+                <div className="flex-none pt-1">
+                  {(!notification.isRead || visuallyUnreadIds.includes(notification.id)) && (
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true })}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm pr-8">
+                    {getNotificationContent(notification)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true })}
+                  </p>
+                </div>
+                {hoveredNotificationId === notification.id && (
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    {notification.isRead && !visuallyUnreadIds.includes(notification.id) && (
+                      <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => handleMarkAsUnread(notification.id)}
+                            className="p-1 rounded-full hover:bg-accent"
+                          >
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Mark as unread</TooltipContent>
+                      </Tooltip>
+                    )}
+                    <Tooltip delayDuration={100}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => deleteNotification(notification.id)}
+                          className="p-1 rounded-full hover:bg-accent"
+                        >
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Remove</TooltipContent>
+                    </Tooltip>
+                  </div>
+                )}
               </div>
-              {hoveredNotificationId === notification.id && (
-                <button
-                  onClick={() => removeNotification(notification.id)}
-                  className="absolute top-2 right-2 p-1 rounded-full hover:bg-accent"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </button>
-              )}
             </div>
           ))}
         </div>

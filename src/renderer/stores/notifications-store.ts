@@ -12,6 +12,8 @@ interface NotificationsState {
   isOpen: boolean;
   selectedItem: SelectedItem | null;
   showOnStartup: boolean;
+  visuallyUnreadIds: string[];  // Store IDs of notifications that should show blue dot
+  isInitialLoad: boolean;  // Add this to track initial load
   
   // Actions
   open: () => void;
@@ -20,6 +22,9 @@ interface NotificationsState {
   setSelectedItem: (item: SelectedItem | null) => void;
   clearSelectedItem: () => void;
   toggleShowOnStartup: () => void;
+  setVisuallyUnreadIds: (ids: string[]) => void;
+  clearVisuallyUnreadIds: () => void;
+  setInitialLoadComplete: () => void;  // Add this action
 }
 
 export const useNotificationsStore = create<NotificationsState>()(
@@ -28,6 +33,8 @@ export const useNotificationsStore = create<NotificationsState>()(
       isOpen: false,
       selectedItem: null,
       showOnStartup: true,
+      visuallyUnreadIds: [],
+      isInitialLoad: true,  // Start as true
 
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),
@@ -35,11 +42,15 @@ export const useNotificationsStore = create<NotificationsState>()(
       setSelectedItem: (item) => set({ selectedItem: item }),
       clearSelectedItem: () => set({ selectedItem: null }),
       toggleShowOnStartup: () => set((state) => ({ showOnStartup: !state.showOnStartup })),
+      setVisuallyUnreadIds: (ids) => set({ visuallyUnreadIds: ids }),
+      clearVisuallyUnreadIds: () => set({ visuallyUnreadIds: [] }),
+      setInitialLoadComplete: () => set({ isInitialLoad: false }),
     }),
     {
       name: 'notifications-storage',
       partialize: (state) => ({
         showOnStartup: state.showOnStartup,
+        visuallyUnreadIds: state.visuallyUnreadIds, // Persist the visually unread IDs
       }),
     }
   )

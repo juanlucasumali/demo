@@ -16,6 +16,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { cn } from "@renderer/lib/utils";
 import { useItems } from "@renderer/hooks/use-items";
+import { useShare } from "@renderer/hooks/use-share";
 
 interface BulkShareDialogProps {
   open: boolean;
@@ -39,7 +40,8 @@ export function BulkShareDialog({
     }
   }, [open]);
 
-  const { friends, shareItems, isLoading } = useItems({ searchTerm });
+  const { friends, isLoading } = useItems({ searchTerm });
+  const { shareItems, isSharing } = useShare();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,9 +164,9 @@ export function BulkShareDialog({
             <div className="flex justify-end pt-2">
               <Button 
                 type="submit"
-                disabled={selectedUsers.length === 0 || isLoading.shareItems}
+                disabled={selectedUsers.length === 0 || isSharing}
               >
-                {isLoading.shareItems ? (
+                {isSharing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Sharing...

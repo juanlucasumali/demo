@@ -19,6 +19,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { cn } from "@renderer/lib/utils";
 import { useItems } from "@renderer/hooks/use-items";
+import { useShare } from "@renderer/hooks/use-share";
 import { useEffect } from "react";
 
 interface ShareDialogProps {
@@ -39,44 +40,82 @@ export function ShareDialog({
   const [selectedItems, setSelectedItems] = React.useState<DemoItem[]>(
     initialItem ? [initialItem] : []
   );
+  const { shareItems, unshareItems, isSharing } = useShare();
+  const [originalUsers, setOriginalUsers] = React.useState<UserProfile[]>([]);
 
   useEffect(() => {
     if (open) {
       setSelectedItems(initialItem ? [initialItem] : []);
-      setSelectedUsers(initialItem?.sharedWith || []);
+      const initialUsers = initialItem?.sharedWith || [];
+      setSelectedUsers(initialUsers);
+      setOriginalUsers(initialUsers);
     }
   }, [open, initialItem]);
 
-  // Use the friends query
-  const { friends, shareItems, isLoading } = useItems({ searchTerm });
+  // Replace useItems with just what we need
+  const { friends, isLoading } = useItems({ searchTerm });
 
   const handleConfirmSelection = (items: DemoItem[]) => {
     setSelectedItems(items);
+  };
+
+  const handleRemoveUser = async (userId: string) => {
+    const userToRemove = selectedUsers.find(u => u.id === userId);
+    if (!userToRemove) return;
+
+    try {
+      await unshareItems({ 
+        items: selectedItems, 
+        users: [userToRemove]
+      });
+
+      setSelectedUsers(prev => prev.filter(u => u.id !== userId));
+      setOriginalUsers(prev => prev.filter(u => u.id !== userId));
+
+      toast({
+        title: "Success",
+        description: `Removed ${userToRemove.name} from shared items.`,
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove user from shared items.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      await shareItems({ 
-        items: selectedItems, 
-        users: selectedUsers 
-      });
+      // Get new users that weren't in the original list
+      const newUsers = selectedUsers.filter(
+        user => !originalUsers.find(ou => ou.id === user.id)
+      );
+
+      if (newUsers.length > 0) {
+        await shareItems({ 
+          items: selectedItems, 
+          users: newUsers
+        });
+      }
 
       toast({
         title: "Success!",
-        description: `Shared ${selectedItems.length} items with ${selectedUsers.length} users.`,
+        description: `Updated sharing settings.`,
         variant: "default",
       });
 
-      // Reset form
       setSelectedItems([]);
       setSelectedUsers([]);
+      setOriginalUsers([]);
       onOpenChange(false);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to share items. Please try again.",
+        description: "Failed to update sharing settings. Please try again.",
         variant: "destructive",
       });
     }
@@ -124,6 +163,7 @@ export function ShareDialog({
                   setSelectedUsers={setSelectedUsers}
                   onSearch={setSearchTerm}
                   isLoading={isLoading.friends}
+                  onRemove={handleRemoveUser}
                 />
               </div>
 
@@ -230,15 +270,15 @@ export function ShareDialog({
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={selectedItems.length === 0 || selectedUsers.length === 0 || isLoading.shareItems}
+                  disabled={selectedItems.length === 0 || selectedUsers.length === 0 || isSharing}
                 >
-                  {isLoading.shareItems ? (
+                  {isSharing ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
+                      Confirming...
                     </>
                   ) : (
-                    'Send'
+                    'Confirm'
                   )}
                 </Button>
               </div>

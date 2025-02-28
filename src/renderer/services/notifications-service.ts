@@ -12,7 +12,8 @@ export async function getNotifications(): Promise<DemoNotification[]> {
     .select(`
       *,
       from:from_id(id, username, name, avatar),
-      shared_item:shared_item_id(*)
+      shared_item:shared_item_id(*),
+      shared_project:shared_project_id(*)
     `)
     .eq('to_id', user.id)
     .order('created_at', { ascending: false })
@@ -28,7 +29,9 @@ export async function getNotifications(): Promise<DemoNotification[]> {
     type: notification.type as NotificationType,
     requestType: notification.request_type,
     requestDescription: notification.request_description,
-    sharedItem: notification.shared_item as DemoItem | null,
+    sharedItem: notification.shared_project 
+      ? { ...notification.shared_project, type: 'project' }
+      : notification.shared_item as DemoItem | null,
     sharedMessage: notification.shared_message
   }))
 }
@@ -36,7 +39,8 @@ export async function getNotifications(): Promise<DemoNotification[]> {
 export async function createShareNotification(
   fromUserId: string,
   toUserId: string,
-  sharedItemId: string,
+  itemId: string,
+  itemType?: 'file' | 'folder' | 'project',
   sharedMessage?: string
 ): Promise<void> {
   try {
@@ -46,9 +50,9 @@ export async function createShareNotification(
         type: NotificationType.SHARE,
         from_id: fromUserId,
         to_id: toUserId,
-        shared_item_id: sharedItemId,
+        shared_item_id: itemType !== 'project' ? itemId : null,
+        shared_project_id: itemType === 'project' ? itemId : null,
         shared_message: sharedMessage || null,
-        shared_project_id: null,
         request_type: null,
         request_description: null,
         is_read: false
@@ -105,4 +109,27 @@ export async function markNotificationAsUnread(notificationId: string) {
     .eq('id', notificationId)
 
   if (error) throw error
+}
+
+export async function deleteShareNotifications(
+  itemId: string,
+  userIds: string[],
+  itemType: 'file' | 'folder' | 'project'
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .in('to_id', userIds)
+      .eq(itemType === 'project' ? 'shared_project_id' : 'shared_item_id', itemId)
+      .eq('type', NotificationType.SHARE);
+
+    if (error) {
+      console.error('Error deleting share notifications:', error);
+      throw new Error('Failed to delete share notifications');
+    }
+  } catch (error) {
+    console.error('Error in deleteShareNotifications:', error);
+    throw new Error('Failed to delete share notifications');
+  }
 } 

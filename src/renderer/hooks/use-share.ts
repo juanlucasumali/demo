@@ -16,8 +16,20 @@ export function useShare() {
     }
   })
 
+  const unshareItems = useMutation({
+    mutationFn: ({ items, users }: { items: DemoItem[], users: UserProfile[] }) =>
+      shareService.unshareItems(items, users),
+    onSuccess: () => {
+      // Invalidate queries that might be affected by unsharing
+      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    }
+  })
+
   return {
     shareItems: shareItems.mutate,
-    isSharing: shareItems.isPending
+    unshareItems: unshareItems.mutate,
+    isSharing: shareItems.isPending,
+    isUnsharing: unshareItems.isPending
   }
 } 

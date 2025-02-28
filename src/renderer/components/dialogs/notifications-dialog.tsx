@@ -21,6 +21,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
   const { unreadNotifications, deleteNotification } = useNotifications()
   const [hoveredNotificationId, setHoveredNotificationId] = useState<string | null>(null);
   const { showOnStartup, toggleShowOnStartup } = useNotificationsStore()
+  console.log(unreadNotifications)
 
   if (unreadNotifications.length === 0) {
     return null;

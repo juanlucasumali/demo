@@ -839,91 +839,6 @@ export async function searchFriends(searchTerm?: string): Promise<UserProfile[]>
   return Promise.all(data.map(user => processUserProfile(user)));
 }
 
-export async function shareItems(
-  items: DemoItem[], 
-  users: { id: string }[] | UserProfile[]
-) {
-  const currentUserId = getCurrentUserId();
-  
-  // Split items into files and projects
-  const fileItems = items.filter(item => item.type === ItemType.FILE || item.type === ItemType.FOLDER);
-  const projectItems = items.filter(item => item.type === ItemType.PROJECT);
-
-  // Create share records for files
-  if (fileItems.length > 0) {
-    const fileShares = fileItems.flatMap(item =>
-      users.map(user => ({
-        file_id: item.id,
-        project_id: null,
-        shared_with_id: user.id,
-        shared_by_id: currentUserId
-      }))
-    );
-
-    const { error: fileError } = await supabase
-      .from('shared_items')
-      .upsert(fileShares, {
-        onConflict: 'file_id,shared_with_id',
-        ignoreDuplicates: true
-      });
-
-    if (fileError) throw fileError;
-  }
-
-  // Create share records for projects
-  if (projectItems.length > 0) {
-    const projectShares = projectItems.flatMap(item =>
-      users.map(user => ({
-        file_id: null,
-        project_id: item.id,
-        shared_with_id: user.id,
-        shared_by_id: currentUserId
-      }))
-    );
-
-    const { error: projectError } = await supabase
-      .from('shared_items')
-      .upsert(projectShares, {
-        onConflict: 'project_id,shared_with_id',
-        ignoreDuplicates: true
-      });
-
-    if (projectError) throw projectError;
-  }
-}
-
-async function getAllNestedItems(folderId: string): Promise<string[]> {
-  const itemIds: string[] = [];
-  
-  // Get immediate children
-  const { data: children } = await supabase
-    .from('file_folders')
-    .select(`
-      file:file_id (
-        id,
-        type
-      )
-    `)
-    .eq('folder_id', folderId);
-
-  if (!children) return itemIds;
-
-  // Process each child
-  for (const child of children as any[]) {
-    if (!child.file) continue;
-    
-    itemIds.push(child.file.id);
-    
-    // If it's a folder, recursively get its children
-    if (child.file.type === 'folder') {
-      const nestedItems = await getAllNestedItems(child.file.id);
-      itemIds.push(...nestedItems);
-    }
-  }
-
-  return itemIds;
-}
-
 export async function addToProject(items: DemoItem[], projectId: string) {
   const fileProjectRecords = items.map(item => ({
     file_id: item.id,
@@ -938,18 +853,6 @@ export async function addToProject(items: DemoItem[], projectId: string) {
     });
 
   if (error) throw error;
-
-  // If the project has shared users, share the new files with them too
-  const { data: project } = await supabase
-    .from('projects')
-    .select('shared_items(shared_with_id)')
-    .eq('id', projectId)
-    .single();
-
-  if (project?.shared_items?.length) {
-    const sharedUsers = project.shared_items.map((share: any) => ({ id: share.shared_with_id }));
-    await shareItems(items, sharedUsers);
-  }
 }
 
 export async function addToCollection(items: DemoItem[], collectionId: string, projectId: string) {

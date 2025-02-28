@@ -24,11 +24,13 @@ export function useNotifications() {
       fromUserId: string, 
       toUserId: string, 
       sharedItemId: string, 
-      sharedMessage?: string 
+      sharedMessage?: string,
+      itemType: 'file' | 'folder' | 'project'
     }) => notificationsService.createShareNotification(
       params.fromUserId,
       params.toUserId,
       params.sharedItemId,
+      params.itemType,
       params.sharedMessage
     ),
     onSuccess: () => {
@@ -114,6 +116,27 @@ export function useNotifications() {
     }
   });
 
+  // Add this mutation
+  const addRequestNotification = useMutation({
+    mutationFn: (params: { 
+      fromUserId: string, 
+      toUserId: string, 
+      requestType: 'file' | 'folder' | 'project',
+      requestDescription: string 
+    }) => notificationsService.createRequestNotification(
+      params.fromUserId,
+      params.toUserId,
+      params.requestType,
+      params.requestDescription
+    ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error) => {
+      console.error('Error adding request notification:', error);
+    }
+  });
+
   return {
     // Data and loading states
     notifications: allNotifications,
@@ -128,11 +151,13 @@ export function useNotifications() {
     markAsRead: markAsRead.mutate,
     markMultipleAsRead: markMultipleAsRead.mutate,
     markAsUnread: markAsUnread.mutate,
+    addRequestNotification: addRequestNotification.mutate,
 
     // Loading states for mutations
     isAddingNotification: addNotification.isPending,
     isDeletingNotification: deleteNotification.isPending,
     isMarkingAsRead: markAsRead.isPending,
-    isMarkingAsUnread: markAsUnread.isPending
+    isMarkingAsUnread: markAsUnread.isPending,
+    isAddingRequestNotification: addRequestNotification.isPending,
   };
 } 

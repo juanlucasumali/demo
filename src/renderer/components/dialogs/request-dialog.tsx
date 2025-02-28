@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { z } from "zod";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../ui/button";
 import {
@@ -21,19 +21,22 @@ import {
   FormMessage,
 } from "../ui/form";
 import { useToast } from "@renderer/hooks/use-toast";
-import { Box, File, Folder, Link } from "lucide-react";
+import { Box, File, Folder } from "lucide-react";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { Textarea } from "@renderer/components/ui/textarea";
 import { UserProfile } from "@renderer/types/users";
 import { useItems } from "@renderer/hooks/use-items";
+import { useUserStore } from "@renderer/stores/user-store";
+import { useNotifications } from "@renderer/hooks/use-notifications";
 
-const shareFileSchema = z.object({
-    description: z
+const requestSchema = z.object({
+  description: z
     .string()
+    .min(1, { message: "Description is required." })
     .max(200, { message: "Description must not exceed 200 characters." }),
 });
 
-type ShareFileFormValues = z.infer<typeof shareFileSchema>;
+type RequestFormValues = z.infer<typeof requestSchema>;
 
 interface RequestDialogProps {
   setRequest: React.Dispatch<React.SetStateAction<boolean>>;
@@ -45,63 +48,61 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const { friends, isLoading } = useItems({ searchTerm });
-
-  const [selectedType, setSelectedType] = React.useState("file");
-
-  const handleSelect = (type) => {
-      setSelectedType(type);
-  };
-
-  // State for multi-select user sharing
+  const [selectedType, setSelectedType] = React.useState<'file' | 'folder' | 'project'>('file');
   const [selectedUsers, setSelectedUsers] = React.useState<UserProfile[]>([]);
+  const { user } = useUserStore();
+  const { addRequestNotification } = useNotifications();
 
-  // React Hook Form setup
-  const form = useForm<ShareFileFormValues>({
-    resolver: zodResolver(shareFileSchema),
-    // defaultValues: { file: undefined },
+  const form = useForm<RequestFormValues>({
+    resolver: zodResolver(requestSchema),
+    defaultValues: {
+      description: '',
+    },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-    //   form.setValue("file", file, { shouldValidate: true });
-    }
+  const handleSelect = (type: 'file' | 'folder' | 'project') => {
+    setSelectedType(type);
   };
 
-  // On Submit
-  const onSubmit: SubmitHandler<ShareFileFormValues> = (data) => {
-    // const newItem = {
-    //   id: `i${Date.now()}`,
-    //   createdAt: new Date(),
-    //   lastModified: new Date(),
-    //   lastOpened: new Date(),
-    //   name: data.file?.name,
-    //   isStarred: false,
-    //   tags: null,
-    //   parentFolderId: null,
-    //   filePath: data.file?.name,
-    //   type: "file",
-    //   duration: 1,
-    //   format: (data.file?.name.split(".").pop() as FileFormat) || "mp3",
-    //   size: data.file?.size ?? 0,
-    //   ownerId: "current-user-id",
-    //   ownerAvatar: null,
-    //   ownerUsername: "current-user",
-    //   sharedWith: null,
-    //   projectId: null,
-    // };
+  const onSubmit = async (data: RequestFormValues) => {
+    if (!user || selectedUsers.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one user to send the request to.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // addItem(newItem);
+    try {
+      // Create request notification for each selected user
+      await Promise.all(
+        selectedUsers.map(selectedUser =>
+          addRequestNotification({
+            fromUserId: user.id,
+            toUserId: selectedUser.id,
+            requestType: selectedType,
+            requestDescription: data.description
+          })
+        )
+      );
 
-    toast({
-      title: "Success!",
-      description: "File shared successfully.",
-      variant: "default",
-    });
+      toast({
+        title: "Success!",
+        description: "Request sent successfully.",
+        variant: "default",
+      });
 
-    form.reset();
-    setSelectedUsers([]);
-    setRequest(false);
+      form.reset();
+      setSelectedUsers([]);
+      setRequest(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -115,46 +116,39 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
             </DialogHeader>
                 
             <div className="flex gap-x-4 justify-center pb-2">
-                <Button
-                    variant={selectedType === "file" ? "default" : "outline"}
-                    className={`aspect-square w-full h-20 flex flex-col`}
-                    onClick={(event) => {
-                        event.preventDefault();
-                        handleSelect("file");
-                    }}
-                >
-                    <File className="!h-5 !w-5" />
-                    File
-                </Button>
+              <Button
+                type="button"
+                variant={selectedType === "file" ? "default" : "outline"}
+                className="aspect-square w-full h-20 flex flex-col"
+                onClick={() => handleSelect("file")}
+              >
+                <File className="!h-5 !w-5" />
+                File
+              </Button>
 
-                <Button
-                    variant={selectedType === "folder" ? "default" : "outline"}
-                    className={`aspect-square w-full h-20 flex flex-col`}
-                    onClick={(event) => {
-                        event.preventDefault();
-                        handleSelect("folder");
-                    }}
-                >
-                    <Folder className="!h-5 !w-5" />
-                    Folder
-                </Button>
+              <Button
+                type="button"
+                variant={selectedType === "folder" ? "default" : "outline"}
+                className="aspect-square w-full h-20 flex flex-col"
+                onClick={() => handleSelect("folder")}
+              >
+                <Folder className="!h-5 !w-5" />
+                Folder
+              </Button>
 
-                <Button
-                    variant={selectedType === "project" ? "default" : "outline"}
-                    className={`aspect-square w-full h-20 flex flex-col`}
-                    onClick={(event) => {
-                        event.preventDefault();
-                        handleSelect("project");
-                    }}
-                >
-                    <Box className="!h-5 !w-5" />
-                    Project
-                </Button>
+              <Button
+                type="button"
+                variant={selectedType === "project" ? "default" : "outline"}
+                className="aspect-square w-full h-20 flex flex-col"
+                onClick={() => handleSelect("project")}
+              >
+                <Box className="!h-5 !w-5" />
+                Project
+              </Button>
             </div>
                 
             <div>
               <FormLabel>Request from</FormLabel>
-              {/* Use the new FriendsSearch component here */}
               <FriendsSearch
                 friendsList={friends}
                 selectedUsers={selectedUsers}
@@ -165,33 +159,33 @@ export function RequestDialog({ setRequest, request, handleDialogClose }: Reques
               />
             </div>
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="description">Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        id="description"
-                        placeholder="Information regarding your request"
-                        className="resize-none"
-                        rows={2}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Information regarding your request"
+                      className="resize-none"
+                      rows={2}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <div className="flex justify-between pt-2">
-                <Button variant="outline" type="button">
-                  <Link className="mr-2 h-4 w-4" />
-                  Copy Link
-                </Button>
-                <Button type="submit">Send</Button>
-              </div>
+            <div className="flex justify-end pt-2">
+              <Button 
+                type="submit"
+                disabled={selectedUsers.length === 0}
+              >
+                Send Request
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>

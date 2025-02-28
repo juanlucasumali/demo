@@ -132,4 +132,35 @@ export async function deleteShareNotifications(
     console.error('Error in deleteShareNotifications:', error);
     throw new Error('Failed to delete share notifications');
   }
+}
+
+export async function createRequestNotification(
+  fromUserId: string,
+  toUserId: string,
+  requestType: 'file' | 'folder' | 'project',
+  requestDescription: string
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        type: NotificationType.REQUEST,
+        from_id: fromUserId,
+        to_id: toUserId,
+        request_type: requestType,
+        request_description: requestDescription,
+        shared_item_id: null,
+        shared_project_id: null,
+        shared_message: null,
+        is_read: false
+      });
+
+    if (error) {
+      console.error('Error creating request notification:', error);
+      throw new Error('Failed to create request notification');
+    }
+  } catch (error) {
+    console.error('Error in createRequestNotification:', error);
+    throw new Error('Failed to create request notification');
+  }
 } 

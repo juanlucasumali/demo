@@ -330,7 +330,7 @@ export function UploadFiles({
                                     <TableRow key={`${file.name}-${index}`}>
                                       <TableCell className="w-full">
                                         <div className="flex items-center justify-between">
-                                          <span className="font-medium truncate max-w-[200px]">{file.name}</span>
+                                          <span className="font-medium">{file.name}</span>
                                           <div className="flex items-center gap-2">
                                             {fileProgress[file.name]?.status === 'completed' && (
                                               <FileCheck className="h-4 w-4 text-green-500" />

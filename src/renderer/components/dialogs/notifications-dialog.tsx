@@ -1,7 +1,6 @@
 import { Dialog, DialogContent } from "@renderer/components/ui/dialog"
 import { useNotifications } from "@renderer/hooks/use-notifications"
 import { File, Folder, Box, HelpCircle, X } from "lucide-react"
-import { Switch } from "@renderer/components/ui/switch"
 import { Button } from "@renderer/components/ui/button"
 import { ScrollArea } from "@renderer/components/ui/scroll-area"
 import { formatDistanceToNowStrict } from 'date-fns'
@@ -9,7 +8,6 @@ import { ItemType } from "@renderer/types/items"
 import { DemoNotification, NotificationType } from "@renderer/types/notifications"
 import { Link } from "@tanstack/react-router"
 import { useState } from "react"
-import { useNotificationsStore } from '@renderer/stores/notifications-store'
 
 interface NotificationsDialogProps {
   open: boolean
@@ -20,7 +18,6 @@ interface NotificationsDialogProps {
 export function NotificationsDialog({ open, onOpenChange, onSearch }: NotificationsDialogProps) {
   const { unreadNotifications, deleteNotification } = useNotifications()
   const [hoveredNotificationId, setHoveredNotificationId] = useState<string | null>(null);
-  const { showOnStartup, toggleShowOnStartup } = useNotificationsStore()
   console.log(unreadNotifications)
 
   if (unreadNotifications.length === 0) {
@@ -42,10 +39,10 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
 
   const getNotificationContent = (notification: DemoNotification) => {
     const typeIcon = notification.type === NotificationType.REQUEST ? 
-      <HelpCircle className="h-4 w-4" /> :
+      <HelpCircle className="h-4 w-4 flex-shrink-0" /> :
       notification.sharedItem ? 
         getItemIcon(notification.sharedItem.type) :
-        <File className="h-4 w-4" />
+        <File className="h-4 w-4 flex-shrink-0" />
 
     const handleFileClick = (name: string, type: ItemType, itemId?: string) => {
       if (type === ItemType.FILE || type === ItemType.FOLDER) {
@@ -60,7 +57,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
       <>
         <div className="flex items-center gap-2">
           {typeIcon}
-          <span>
+          <span className="min-w-0 break-words">
             <Link 
               to={`/profiles/${notification.from?.id}` as any}
               className="font-semibold hover:text-muted-foreground"
@@ -78,7 +75,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
               notification.sharedItem.type === ItemType.PROJECT ? (
                 <Link
                   to={`/projects/${notification.sharedItem.id}` as any}
-                  className="font-normal hover:text-muted-foreground"
+                  className="font-normal hover:text-muted-foreground break-all"
                   onClick={() => onOpenChange(false)}
                 >
                   {notification.sharedItem.name}
@@ -86,7 +83,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
               ) : (
                 <span 
                   onClick={() => handleFileClick(notification.sharedItem!.name, notification.sharedItem!.type)}
-                  className="font-normal hover:text-muted-foreground cursor-pointer"
+                  className="font-normal hover:text-muted-foreground cursor-pointer break-all"
                 >
                   {notification.sharedItem.name}
                 </span>
@@ -95,7 +92,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
           </span>
         </div>
         {(notification.requestDescription || notification.sharedMessage) && (
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1 ml-6 break-words">
             {notification.requestDescription || notification.sharedMessage}
           </p>
         )}
@@ -117,48 +114,47 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
           </p>
         </div>
 
-        <ScrollArea className="h-[300px] px-6">
-          <div className="space-y-4">
+        <ScrollArea 
+          className="px-6" 
+          style={{ 
+            height: `${Math.min(unreadNotifications.length * 80, 300)}px`
+          }}
+        >
+          <div className="space-y-4 pr-2">
             {sortedNotifications.map((notification) => (
               <div 
                 key={notification.id} 
-                className="flex items-start gap-3 relative group p-2 rounded-lg transition-colors hover:bg-muted"
+                className="grid grid-cols-[auto,1fr,auto] gap-3 p-2 rounded-lg transition-colors hover:bg-muted relative"
                 onMouseEnter={() => setHoveredNotificationId(notification.id)}
                 onMouseLeave={() => setHoveredNotificationId(null)}
               >
-                <div className="h-2 w-2 mt-2 rounded-full bg-blue-500" />
-                <div className="space-y-1 flex-1">
-                  <div className="text-sm">
+                <div className="pt-2">
+                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <div className="text-sm break-words">
                     {getNotificationContent(notification)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true })}
                   </p>
                 </div>
-                {hoveredNotificationId === notification.id && (
-                  <button
-                    onClick={() => deleteNotification(notification.id)}
-                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-accent"
-                  >
-                    <X className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                )}
+                <div className="w-8">
+                  {hoveredNotificationId === notification.id && (
+                    <button
+                      onClick={() => deleteNotification(notification.id)}
+                      className="p-1 rounded-full hover:bg-accent"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </ScrollArea>
-
         <div className="p-6 border-t">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">Show on startup</span>
-              <Switch 
-                checked={showOnStartup} 
-                onCheckedChange={toggleShowOnStartup}
-                className="focus-visible:ring-0 focus:ring-0"
-                data-focus-visible="false"
-              />
-            </div>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Done
             </Button>

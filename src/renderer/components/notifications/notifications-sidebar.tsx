@@ -59,7 +59,7 @@ export function NotificationsSidebar() {
       <>
         <div className="flex items-center gap-2">
           {typeIcon}
-          <span className="flex-1">
+          <span className="flex-1 break-words">
             <Link 
               to={`/profiles/${notification.from?.id}` as any}
               className="font-semibold hover:text-muted-foreground"
@@ -73,11 +73,12 @@ export function NotificationsSidebar() {
                 ' shared '
               )}
             </span>
+            <br />
             {notification.type === NotificationType.SHARE && notification.sharedItem && (
               notification.sharedItem.type === ItemType.PROJECT ? (
                 <Link
                   to={`/projects/${notification.sharedItem.id}` as any}
-                  className="font-normal hover:text-muted-foreground"
+                  className="font-normal hover:text-muted-foreground break-all"
                   onClick={() => handleItemClick(
                     notification.sharedItem!.name,
                     notification.sharedItem!.type,
@@ -92,7 +93,7 @@ export function NotificationsSidebar() {
                     notification.sharedItem!.name,
                     notification.sharedItem!.type
                   )}
-                  className="font-normal hover:text-muted-foreground cursor-pointer"
+                  className="font-normal hover:text-muted-foreground cursor-pointer break-all"
                 >
                   {notification.sharedItem.name}
                 </span>
@@ -101,7 +102,7 @@ export function NotificationsSidebar() {
           </span>
         </div>
         {(notification.requestDescription || notification.sharedMessage) && (
-          <p className="text-sm text-muted-foreground mt-1 ml-6">
+          <p className="text-sm text-muted-foreground mt-1 ml-6 break-words">
             {notification.requestDescription || notification.sharedMessage}
           </p>
         )}
@@ -150,48 +151,52 @@ export function NotificationsSidebar() {
               onMouseEnter={() => setHoveredNotificationId(notification.id)}
               onMouseLeave={() => setHoveredNotificationId(null)}
             >
-              <div className="flex items-start gap-3">
-                <div className="flex-none pt-1">
-                  {(!notification.isRead || visuallyUnreadIds.includes(notification.id)) && (
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm pr-8">
-                    {getNotificationContent(notification)}
+              <div className="grid grid-cols-[1fr,48px] gap-2">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex-none pt-1">
+                    {(!notification.isRead || visuallyUnreadIds.includes(notification.id)) && (
+                      <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true })}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm break-words">
+                      {getNotificationContent(notification)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true })}
+                    </p>
+                  </div>
                 </div>
-                {hoveredNotificationId === notification.id && (
-                  <div className="absolute top-2 right-2 flex gap-1">
-                    {notification.isRead && !visuallyUnreadIds.includes(notification.id) && (
+                <div className="flex items-start gap-1 pt-1 justify-end">
+                  {hoveredNotificationId === notification.id && (
+                    <>
+                      {notification.isRead && !visuallyUnreadIds.includes(notification.id) && (
+                        <Tooltip delayDuration={100}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => handleMarkAsUnread(notification.id)}
+                              className="p-1 rounded-full hover:bg-accent"
+                            >
+                              <Mail className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Mark as unread</TooltipContent>
+                        </Tooltip>
+                      )}
                       <Tooltip delayDuration={100}>
                         <TooltipTrigger asChild>
                           <button
-                            onClick={() => handleMarkAsUnread(notification.id)}
+                            onClick={() => deleteNotification(notification.id)}
                             className="p-1 rounded-full hover:bg-accent"
                           >
-                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <X className="h-4 w-4 text-muted-foreground" />
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent>Mark as unread</TooltipContent>
+                        <TooltipContent>Remove</TooltipContent>
                       </Tooltip>
-                    )}
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => deleteNotification(notification.id)}
-                          className="p-1 rounded-full hover:bg-accent"
-                        >
-                          <X className="h-4 w-4 text-muted-foreground" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Remove</TooltipContent>
-                    </Tooltip>
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           ))}

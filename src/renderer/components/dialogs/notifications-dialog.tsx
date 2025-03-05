@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@renderer/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog"
 import { useNotifications } from "@renderer/hooks/use-notifications"
 import { File, Folder, Box, HelpCircle, X } from "lucide-react"
 import { Button } from "@renderer/components/ui/button"
@@ -18,7 +18,6 @@ interface NotificationsDialogProps {
 export function NotificationsDialog({ open, onOpenChange, onSearch }: NotificationsDialogProps) {
   const { unreadNotifications, deleteNotification } = useNotifications()
   const [hoveredNotificationId, setHoveredNotificationId] = useState<string | null>(null);
-  console.log(unreadNotifications)
 
   if (unreadNotifications.length === 0) {
     return null;
@@ -107,12 +106,12 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md p-0">
-        <div className="p-6 space-y-4">
-          <h2 className="text-2xl font-semibold tracking-tight">Notifications</h2>
-          <p className="text-muted-foreground">
+        <DialogHeader className="p-6 space-y-4">
+          <DialogTitle>Notifications</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             You have {unreadNotifications.length} unread notifications.
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
         <ScrollArea 
           className="px-6" 

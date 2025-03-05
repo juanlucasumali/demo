@@ -15,7 +15,7 @@ import { DemoItem } from '@renderer/types/items'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
 import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNotifications } from '@renderer/hooks/use-notifications'
 import { useNotificationsStore } from '@renderer/stores/notifications-store'
 
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/home/')({
 })
 
 function Home() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchTerm, setSearchTerm } = useNotificationsStore();
   const { selectedItem, clearSelectedItem, showOnStartup, isInitialLoad, setInitialLoadComplete } = useNotificationsStore();
   const { 
     filesAndFolders, 
@@ -48,7 +48,7 @@ function Home() {
   });
   const dialogState = useDialogState();
   const navigate = useNavigate();
-  const { notifications, isLoading: isLoadingNotifications } = useNotifications();
+  const { isLoading: isLoadingNotifications } = useNotifications();
   const { unreadNotifications } = useNotifications();
 
   useEffect(() => {

@@ -12,8 +12,9 @@ interface NotificationsState {
   isOpen: boolean;
   selectedItem: SelectedItem | null;
   showOnStartup: boolean;
-  visuallyUnreadIds: string[];  // Store IDs of notifications that should show blue dot
-  isInitialLoad: boolean;  // Add this to track initial load
+  visuallyUnreadIds: string[];
+  isInitialLoad: boolean;
+  searchTerm: string;  // Add search state
   
   // Actions
   open: () => void;
@@ -24,7 +25,9 @@ interface NotificationsState {
   toggleShowOnStartup: () => void;
   setVisuallyUnreadIds: (ids: string[]) => void;
   clearVisuallyUnreadIds: () => void;
-  setInitialLoadComplete: () => void;  // Add this action
+  setInitialLoadComplete: () => void;
+  setSearchTerm: (term: string) => void;  // Add search action
+  clearSearch: () => void;  // Add clear search action
 }
 
 export const useNotificationsStore = create<NotificationsState>()(
@@ -34,7 +37,8 @@ export const useNotificationsStore = create<NotificationsState>()(
       selectedItem: null,
       showOnStartup: true,
       visuallyUnreadIds: [],
-      isInitialLoad: true,  // Start as true
+      isInitialLoad: true,
+      searchTerm: '',  // Initialize search term
 
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),
@@ -45,12 +49,15 @@ export const useNotificationsStore = create<NotificationsState>()(
       setVisuallyUnreadIds: (ids) => set({ visuallyUnreadIds: ids }),
       clearVisuallyUnreadIds: () => set({ visuallyUnreadIds: [] }),
       setInitialLoadComplete: () => set({ isInitialLoad: false }),
+      setSearchTerm: (term) => set({ searchTerm: term }),  // Add search setter
+      clearSearch: () => set({ searchTerm: '' }),  // Add clear search
     }),
     {
       name: 'notifications-storage',
       partialize: (state) => ({
         showOnStartup: state.showOnStartup,
-        visuallyUnreadIds: state.visuallyUnreadIds, // Persist the visually unread IDs
+        visuallyUnreadIds: state.visuallyUnreadIds,
+        // Don't persist searchTerm as it should reset on page refresh
       }),
     }
   )

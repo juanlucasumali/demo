@@ -158,6 +158,7 @@ export function ShareDialog({
               <div>
                 <DialogTitle className="text-sm mb-2">Share with</DialogTitle>
                 <FriendsSearch
+                  owner={initialItem?.owner || undefined}
                   friendsList={friends}
                   selectedUsers={selectedUsers}
                   setSelectedUsers={setSelectedUsers}

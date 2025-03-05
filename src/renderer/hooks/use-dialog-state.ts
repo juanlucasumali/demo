@@ -38,10 +38,12 @@ export function useDialogState() {
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
     collectionId?: string | null
-    sharedWith: UserProfile[] | null
+    parentFolder?: DemoItem | null
+    parentProject?: DemoItem | null
   }>({ 
     isOpen: false,
-    sharedWith: null
+    parentFolder: null,
+    parentProject: null
   })
 
   const [uploadFiles, setUploadFiles] = useState<{
@@ -50,11 +52,13 @@ export function useDialogState() {
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
     collectionId?: string | null
-    sharedWith: UserProfile[] | null
+    parentFolder?: DemoItem | null
+    parentProject?: DemoItem | null
     initialFiles?: File[]
   }>({
     isOpen: false,
-    sharedWith: null
+    parentFolder: null,
+    parentProject: null
   })
 
   const [createProject, setCreateProject] = useState<{
@@ -128,13 +132,15 @@ export function useDialogState() {
         location,
         projectId,
         collectionId,
-        sharedWith,
+        parentFolder,
+        parentProject,
       }: {
         parentFolderId?: string | null
         location?: 'project' | 'home' | 'collection'
         projectId?: string | null
         collectionId?: string | null
-        sharedWith?: UserProfile[] | null
+        parentFolder?: DemoItem | null
+        parentProject?: DemoItem | null
       }) =>
         setCreateFolder({ 
           isOpen: true, 
@@ -142,9 +148,14 @@ export function useDialogState() {
           location, 
           projectId, 
           collectionId,
-          sharedWith: sharedWith || null,
+          parentFolder: parentFolder || null,
+          parentProject: parentProject || null,
         }),
-      onClose: () => setCreateFolder({ isOpen: false, sharedWith: null })
+      onClose: () => setCreateFolder({ 
+        isOpen: false, 
+        parentFolder: null,
+        parentProject: null 
+      })
     },
     uploadFiles: {
       ...uploadFiles,
@@ -153,14 +164,16 @@ export function useDialogState() {
         location,
         projectId,
         collectionId,
-        sharedWith,
+        parentFolder,
+        parentProject,
         initialFiles,
       }: {
         parentFolderId?: string | null
         location?: 'project' | 'home' | 'collection'
         projectId?: string | null
         collectionId?: string | null
-        sharedWith?: UserProfile[] | null
+        parentFolder?: DemoItem | null
+        parentProject?: DemoItem | null
         initialFiles?: File[]
       }) =>
         setUploadFiles({ 
@@ -169,10 +182,15 @@ export function useDialogState() {
           location, 
           projectId, 
           collectionId,
-          sharedWith: sharedWith || null,
+          parentFolder: parentFolder || null,
+          parentProject: parentProject || null,
           initialFiles,
         }),
-      onClose: () => setUploadFiles({ isOpen: false, sharedWith: null })
+      onClose: () => setUploadFiles({ 
+        isOpen: false, 
+        parentFolder: null,
+        parentProject: null 
+      })
     },
     createProject: {
       ...createProject,

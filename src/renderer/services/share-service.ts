@@ -72,16 +72,18 @@ export async function shareItems(items: DemoItem[], users: UserProfile[]) {
 
     await Promise.all(promises)
 
-    // Create notifications for each shared item and user
+    // Filter out notifications where sender and receiver are the same
     const notificationPromises = items.flatMap(item =>
-      users.map(user =>
-        createShareNotification(
-          currentUserId,
-          user.id,
-          item.id,
-          item.type === ItemType.PROJECT ? 'project' : 'file'
+      users
+        .filter(user => user.id !== currentUserId) // Filter out self-notifications
+        .map(user =>
+          createShareNotification(
+            currentUserId,
+            user.id,
+            item.id,
+            item.type === ItemType.PROJECT ? 'project' : 'file'
+          )
         )
-      )
     )
 
     await Promise.all(notificationPromises)
@@ -105,15 +107,17 @@ export async function shareNewItem(
     const shareRecords = createShareRecords(itemId, itemType, users, currentUserId)
     await insertShareRecords(shareRecords, itemType)
 
-    // Create notifications for each user
-    const notificationPromises = users.map(user =>
-      createShareNotification(
-        currentUserId,
-        user.id,
-        itemId,
-        itemType
+    // Filter out notifications where sender and receiver are the same
+    const notificationPromises = users
+      .filter(user => user.id !== currentUserId) // Filter out self-notifications
+      .map(user =>
+        createShareNotification(
+          currentUserId,
+          user.id,
+          itemId,
+          itemType
+        )
       )
-    )
 
     await Promise.all(notificationPromises)
   } catch (error) {

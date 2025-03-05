@@ -19,6 +19,7 @@ import { DropZone } from "../ui/drop-zone";
 import { X } from "lucide-react";
 import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 import { FileCheck, AlertCircle } from "lucide-react";
+import { DemoItem } from "@renderer/types/items";
 
 interface FileUploadProgress {
   id: string;
@@ -39,7 +40,8 @@ interface UploadFilesProps {
   projectId?: string | null;
   parentFolderId?: string | null;
   collectionId?: string | null;
-  sharedWith: UserProfile[] | null;
+  parentFolder?: DemoItem | null;
+  parentProject?: DemoItem | null;
   initialFiles?: File[];
 }
 
@@ -50,13 +52,16 @@ export function UploadFiles({
   projectId = null,
   parentFolderId = null,
   collectionId = null,
-  sharedWith,
+  parentFolder = null,
+  parentProject = null,
   initialFiles = [],
 }: UploadFilesProps) {
   const { toast } = useToast();
   const { addFileOrFolder } = useItems();
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
-    sharedWith || []
+    location === 'project' || location === 'collection'
+      ? parentProject?.sharedWith || []
+      : parentFolder?.sharedWith || []
   );
   const [selectedFiles, setSelectedFiles] = useState<File[]>(initialFiles);
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,6 +71,10 @@ export function UploadFiles({
   const [isDragging, setIsDragging] = useState(false);
   const [fileProgress, setFileProgress] = useState<Record<string, FileUploadProgress>>({});
   const [successfulUploads, setSuccessfulUploads] = useState(0);
+
+  console.log("selectedUsers", selectedUsers)
+  console.log("parentProject", parentProject)
+  console.log("parentFolder", parentFolder)
 
   const form = useForm<UploadFilesFormValues>({
     resolver: zodResolver(uploadFilesSchema),
@@ -137,9 +146,17 @@ export function UploadFiles({
     try {
       const fileContent = await file.arrayBuffer();
       await new Promise<void>((resolve, reject) => {
+        const combinedSharedWith = [
+          ...selectedUsers,
+          ...(location === 'project' || location === 'collection' ? parentProject?.owner ? [parentProject.owner] : [] : []),
+          ...(parentFolder?.owner ? [parentFolder.owner] : [])
+        ].filter((user, index, self) => 
+          index === self.findIndex((u) => u.id === user.id)
+        );
+
         addFileOrFolder({ 
           item: newItem, 
-          sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined,
+          sharedWith: combinedSharedWith.length > 0 ? combinedSharedWith : undefined,
           fileContent
         }, {
           onSuccess: () => {
@@ -233,9 +250,17 @@ export function UploadFiles({
         try {
           const fileContent = await file.arrayBuffer();
           await new Promise<void>((resolve, reject) => {
+            const combinedSharedWith = [
+              ...selectedUsers,
+              ...(location === 'project' || location === 'collection' ? parentProject?.owner ? [parentProject.owner] : [] : []),
+              ...(parentFolder?.owner ? [parentFolder.owner] : [])
+            ].filter((user, index, self) => 
+              index === self.findIndex((u) => u.id === user.id)
+            );
+
             addFileOrFolder({ 
               item: newItem, 
-              sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined,
+              sharedWith: combinedSharedWith.length > 0 ? combinedSharedWith : undefined,
               fileContent
             }, {
               onSuccess: () => {
@@ -393,10 +418,11 @@ export function UploadFiles({
               )}
             />
 
-            {location === 'home' && (
+            {(location === 'home' || location === 'project') && (
               <div>
                 <FormLabel>Share with</FormLabel>
                 <FriendsSearch
+                  owner={location === 'project' ? parentProject?.owner || undefined : parentFolder?.owner || undefined}
                   friendsList={friends}
                   selectedUsers={selectedUsers}
                   setSelectedUsers={setSelectedUsers}

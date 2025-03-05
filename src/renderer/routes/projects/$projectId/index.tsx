@@ -101,7 +101,7 @@ function ProjectPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => dialogState.createFolder.onOpen({ parentFolderId: null, location: 'project', projectId, sharedWith: currentProject?.sharedWith })}>
+              <DropdownMenuItem onClick={() => dialogState.uploadFiles.onOpen({ parentFolderId: null, location: 'project', projectId, parentProject: currentProject })}>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload file
                 <DropdownMenuShortcut>⇧⌘U</DropdownMenuShortcut>
@@ -115,7 +115,7 @@ function ProjectPage() {
                 Choose files
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => dialogState.createFolder.onOpen({ parentFolderId: null, location: 'project', projectId, sharedWith: currentProject?.sharedWith })}>
+              <DropdownMenuItem onClick={() => dialogState.createFolder.onOpen({ parentFolderId: null, location: 'project', projectId, parentProject: currentProject })}>
                 <Folder/>
                 Create folder
                 <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>

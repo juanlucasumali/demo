@@ -32,7 +32,13 @@ export function DataTableGridView<TData>({
         const isSelected = row.getIsSelected()
         const owner = row.getValue("owner") as UserProfile
         const sharedWith = row.getValue("sharedWith") as UserProfile[] | null
-        const hasCollaborators = !row.getValue("icon") && sharedWith && sharedWith.length > 0
+        
+        // Filter out owner from sharedWith if present
+        const filteredSharedWith = sharedWith?.filter(user => user.id !== owner?.id) ?? []
+        
+        // Don't show anything if there's only owner or if sharedWith only contains owner
+        const hasCollaborators = !row.getValue("icon") && filteredSharedWith.length > 0
+        
         const itemId = row.getValue("id") as string
         const isStarred = row.getValue("isStarred") as boolean
 
@@ -83,10 +89,11 @@ export function DataTableGridView<TData>({
                       alt="Folder Icon" 
                       className="w-full h-full object-cover relative z-[2] pointer-events-none" 
                     />
-                    {(owner || hasCollaborators) && (
+                    {hasCollaborators && (
                       <div className="absolute top-0 right-0 w-full h-full">
                         <AvatarGroup
-                          users={sharedWith || []}
+                          owner={owner}
+                          users={filteredSharedWith}
                           size="sm"
                           variant="grid"
                         />

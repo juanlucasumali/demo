@@ -58,7 +58,7 @@ function CollectionPage() {
         location: 'collection',
         projectId,
         collectionId,
-        sharedWith: currentProject?.sharedWith
+        parentProject: currentProject
       });
     }
   };
@@ -100,7 +100,7 @@ function CollectionPage() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => 
-                dialogState.uploadFiles.onOpen({ parentFolderId: null, location: 'collection', projectId, collectionId })
+                dialogState.uploadFiles.onOpen({ parentFolderId: null, location: 'collection', projectId, collectionId, parentProject: currentProject })
               }>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload file
@@ -117,7 +117,7 @@ function CollectionPage() {
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => 
-                dialogState.createFolder.onOpen({ parentFolderId: null, location: 'collection', projectId, collectionId })
+                dialogState.createFolder.onOpen({ parentFolderId: null, location: 'collection', projectId, collectionId, parentProject: currentProject })
               }>
                 <Folder/>
                 Create folder

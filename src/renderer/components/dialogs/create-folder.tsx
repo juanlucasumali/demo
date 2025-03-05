@@ -17,6 +17,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { maxFileNameLength } from "@renderer/lib/utils";
 import { useUserStore } from "@renderer/stores/user-store";
 import { Loader2 } from "lucide-react";
+import { DemoItem } from "@renderer/types/items";
 
 const createFolderSchema = z.object({
   name: z
@@ -38,25 +39,29 @@ interface CreateFolderProps {
   isOpen: boolean;
   onClose: () => void;
   location?: 'project' | 'home' | 'collection';
-  projectId?: string | null;
   parentFolderId?: string | null;
+  projectId?: string | null;
   collectionId?: string | null;
-  sharedWith: UserProfile[] | null;
+  parentFolder?: DemoItem | null;
+  parentProject?: DemoItem | null;
 }
 
 export function CreateFolder({
   isOpen,
   onClose,
   location = 'home',
-  projectId = null,
   parentFolderId = null,
+  projectId = null,
   collectionId = null,
-  sharedWith,
+  parentFolder = null,
+  parentProject = null,
 }: CreateFolderProps) {
   const { toast } = useToast();
   const { addFileOrFolder } = useItems();
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
-    sharedWith || []
+    location === 'project' || location === 'collection'
+      ? parentProject?.sharedWith || []
+      : parentFolder?.sharedWith || []
   );
   const [searchTerm, setSearchTerm] = useState("");
   const { friends, isLoading } = useItems({ searchTerm });  
@@ -86,6 +91,16 @@ export function CreateFolder({
       variant: "default",
     });
 
+    const combinedSharedWith = (location === 'project' || location === 'collection') && parentProject?.owner
+      ? [...selectedUsers, parentProject.owner].filter((user, index, self) => 
+          index === self.findIndex((u) => u.id === user.id)
+        )
+      : parentFolder?.owner
+        ? [...selectedUsers, parentFolder.owner].filter((user, index, self) => 
+            index === self.findIndex((u) => u.id === user.id)
+          )
+        : selectedUsers;
+
     const newItem = {
       createdAt: new Date(),
       lastModified: new Date(),
@@ -98,7 +113,7 @@ export function CreateFolder({
       duration: null,
       format: null,
       owner: currentUser,
-      sharedWith: selectedUsers,
+      sharedWith: combinedSharedWith,
       tags: data.tags,
       projectIds: location === 'project' || location === 'collection' ? [projectId!] : [],
       size: null,
@@ -110,7 +125,7 @@ export function CreateFolder({
     await new Promise<void>((resolve, reject) => {
       addFileOrFolder({ 
         item: newItem, 
-        sharedWith: selectedUsers.length > 0 ? selectedUsers : undefined 
+        sharedWith: combinedSharedWith.length > 0 ? combinedSharedWith : undefined 
       }, {
         onSuccess: () => {
           toast({
@@ -190,10 +205,11 @@ export function CreateFolder({
               )}
             />
 
-            {location === 'home' && (
+            {(location === 'home' || location === 'project') && (
               <div>
                 <FormLabel>Share with</FormLabel>
                 <FriendsSearch
+                  owner={location === 'project' ? parentProject?.owner || undefined : parentFolder?.owner || undefined}
                   friendsList={friends}
                   selectedUsers={selectedUsers}
                   setSelectedUsers={setSelectedUsers}

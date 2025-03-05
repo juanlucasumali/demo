@@ -37,7 +37,8 @@ interface DialogManagerProps {
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
     collectionId?: string | null
-    sharedWith: UserProfile[] | null
+    parentFolder?: DemoItem | null
+    parentProject?: DemoItem | null
   }
   uploadFiles: {
     isOpen: boolean
@@ -46,7 +47,8 @@ interface DialogManagerProps {
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
     collectionId?: string | null
-    sharedWith: UserProfile[] | null
+    parentFolder?: DemoItem | null
+    parentProject?: DemoItem | null
     initialFiles?: File[]
   }
   createProject: {
@@ -152,7 +154,8 @@ export function DialogManager({
           parentFolderId={createFolder.parentFolderId}
           projectId={createFolder.projectId}
           collectionId={createFolder.collectionId}
-          sharedWith={createFolder.sharedWith}
+          parentFolder={createFolder.parentFolder}
+          parentProject={createFolder.parentProject}
         />
       )}
 
@@ -164,7 +167,8 @@ export function DialogManager({
           parentFolderId={uploadFiles.parentFolderId}
           projectId={uploadFiles.projectId}
           collectionId={uploadFiles.collectionId}
-          sharedWith={uploadFiles.sharedWith}
+          parentFolder={uploadFiles.parentFolder}
+          parentProject={uploadFiles.parentProject}
           initialFiles={uploadFiles.initialFiles}
         />
       )}

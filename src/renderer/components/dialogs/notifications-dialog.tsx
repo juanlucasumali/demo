@@ -26,13 +26,13 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
   const getItemIcon = (type: ItemType) => {
     switch (type) {
       case ItemType.FILE:
-        return <File className="h-4 w-4" />
+        return <File className="h-4 w-4 flex-shrink-0" />
       case ItemType.FOLDER:
-        return <Folder className="h-4 w-4" />
+        return <Folder className="h-4 w-4 flex-shrink-0" />
       case ItemType.PROJECT:
-        return <Box className="h-4 w-4" />
+        return <Box className="h-4 w-4 flex-shrink-0" />
       default:
-        return <File className="h-4 w-4" />
+        return <File className="h-4 w-4 flex-shrink-0" />
     }
   }
 
@@ -123,14 +123,14 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
             {sortedNotifications.map((notification) => (
               <div 
                 key={notification.id} 
-                className="grid grid-cols-[auto,1fr,auto] gap-3 p-2 rounded-lg transition-colors hover:bg-muted relative"
+                className="grid grid-cols-[auto,1fr,auto] items-start gap-3 p-2 rounded-lg transition-colors hover:bg-muted relative"
                 onMouseEnter={() => setHoveredNotificationId(notification.id)}
                 onMouseLeave={() => setHoveredNotificationId(null)}
               >
-                <div className="pt-2">
+                <div className="pt-2 flex-shrink-0">
                   <div className="h-2 w-2 rounded-full bg-blue-500" />
                 </div>
-                <div className="space-y-1 min-w-0">
+                <div className="space-y-1 min-w-0 overflow-hidden">
                   <div className="text-sm break-words">
                     {getNotificationContent(notification)}
                   </div>
@@ -138,7 +138,7 @@ export function NotificationsDialog({ open, onOpenChange, onSearch }: Notificati
                     {formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true })}
                   </p>
                 </div>
-                <div className="w-8">
+                <div className="w-8 flex-shrink-0">
                   {hoveredNotificationId === notification.id && (
                     <button
                       onClick={() => deleteNotification(notification.id)}

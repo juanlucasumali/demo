@@ -4,25 +4,17 @@ import { Button } from "@renderer/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
 } from "@renderer/components/ui/dropdown-menu"
 import { ColumnDef, CellContext } from "@tanstack/react-table"
-import { Edit, File, Folder, MoreHorizontal, RefreshCcw, Share, Star, Trash, Download, Play, Pause, Loader2, MinusCircle } from "lucide-react"
+import { File, Folder, MoreHorizontal, Play, Pause, Loader2, Star } from "lucide-react"
 import { DataTableColumnHeader } from "./data-column-header"
-import { DemoItem, FileFormat, ItemType } from "@renderer/types/items"
-import { formatDuration, isAudioFile, mimeTypes } from "@renderer/lib/utils"
+import { DemoItem, ItemType } from "@renderer/types/items"
+import { formatDuration, isAudioFile } from "@renderer/lib/utils"
 import TagBadge from "@renderer/components/tag-badge"
 import { Checkbox } from "@renderer/components/ui/checkbox"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
-import { b2Service } from '@renderer/services/b2-service'
-import { AudioConverterService } from '@renderer/services/audio-converter'
 import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
-import { useToast } from "@renderer/hooks/use-toast"
 import { AudioState } from "./data-table"
 import { TableActions } from "./table-actions"
 
@@ -56,7 +48,6 @@ interface ColumnOptions {
 }
 
 export const createColumns = ({
-  location,
   enableStarToggle = true,
   enableTags = true,
   enableActions = true,
@@ -67,9 +58,7 @@ export const createColumns = ({
   onShare,
   onDelete,
   onToggleStar,
-  onRemove
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
-  const { toast } = useToast();
   const baseColumns: ColumnDef<DemoItem>[] = [
     // Selection column
     {
@@ -243,8 +232,19 @@ export const createColumns = ({
     ),
     cell: ({ row }) => {
       const friends = row.original.sharedWith ?? [];
+      const owner = row.original.owner;
       
-      return <AvatarGroup users={friends} size="md" />;
+      // Filter out owner from friends list if present
+      const filteredFriends = friends.filter(friend => friend.id !== owner?.id);
+      
+      // Don't render anything if:
+      // 1. There are no friends and no owner, or
+      // 2. There's only an owner and no other friends
+      if (filteredFriends.length === 0) {
+        return null;
+      }
+
+      return <AvatarGroup owner={owner || undefined} users={filteredFriends} size="md" />;
     }
   },
 

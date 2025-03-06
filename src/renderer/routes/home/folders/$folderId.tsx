@@ -58,7 +58,7 @@ function FolderPage() {
       dialogState.uploadFiles.onOpen({
         initialFiles: files,
         parentFolderId: folderId,
-        location: 'home',
+        location: 'folder',
         parentFolder: currentFolder
       });
     }
@@ -75,7 +75,7 @@ function FolderPage() {
       >
         <Button variant="default" onClick={() => dialogState.uploadFiles.onOpen({ 
           parentFolderId: folderId, 
-          location: 'home', 
+          location: 'folder', 
           parentFolder: currentFolder 
         })}>
           Upload

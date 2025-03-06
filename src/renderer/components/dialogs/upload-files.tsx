@@ -20,7 +20,6 @@ import { X } from "lucide-react";
 import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 import { FileCheck, AlertCircle } from "lucide-react";
 import { DemoItem } from "@renderer/types/items";
-import { supabase } from "@renderer/lib/supabase";
 
 interface FileUploadProgress {
   id: string;
@@ -37,7 +36,7 @@ type UploadFilesFormValues = z.infer<typeof uploadFilesSchema>;
 interface UploadFilesProps {
   isOpen: boolean;
   onClose: () => void;
-  location?: 'project' | 'home' | 'collection';
+  location: 'project' | 'home' | 'collection' | 'folder';
   projectId?: string | null;
   parentFolderId?: string | null;
   collectionId?: string | null;
@@ -49,7 +48,7 @@ interface UploadFilesProps {
 export function UploadFiles({
   isOpen,
   onClose,
-  location = 'home',
+  location,
   projectId = null,
   parentFolderId = null,
   collectionId = null,
@@ -354,9 +353,12 @@ export function UploadFiles({
       return;
     }
 
-    const hasDuplicates = await checkForDuplicates();
-    if (hasDuplicates) {
-      return;
+    // Only check for duplicates if we're not in the home location
+    if (location !== 'home') {
+      const hasDuplicates = await checkForDuplicates();
+      if (hasDuplicates) {
+        return;
+      }
     }
     
     await proceedWithUpload();
@@ -468,7 +470,7 @@ export function UploadFiles({
             )}
           />
 
-          {(location === 'home' || location === 'project') && (
+          {(location === 'home' || location === 'folder' || location === 'project') && (
             <div>
               <FormLabel>Share with</FormLabel>
               <FriendsSearch
@@ -505,32 +507,34 @@ export function UploadFiles({
     return (
       <>
         <DialogHeader className="mb-4">
-          <DialogTitle className="text-base font-large">We found duplicate files</DialogTitle>
+          <DialogTitle className="text-base font-large">Duplicate files</DialogTitle>
+          <DialogDescription>
+            The following files already exist in this location:
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-x-4 gap-y-4 justify-center pb-2 flex-wrap px-0">
-          {duplicateFiles.map((file) => (
-            <Button
-              key={file}
-              type="button"
-              variant="outline"
-              className={`aspect-square w-[calc(25%-0.75rem)] min-w-[100px] h-20 flex flex-col ${
-                selectedDuplicateFile === file ? "border-primary" : "border-2"
-              }`}
-              onClick={() => {setSelectedDuplicateFile(file)}}
-            >
-              <File className="!h-5 !w-5" />
-              {file.length > 15 ? `${file.substring(0, 12)}...` : file}
-            </Button>
-          ))}
+        <div className="border rounded-md">
+          <div className="max-h-[200px] overflow-y-auto scrollbar-none">
+            <Table>
+              <TableBody>
+                {duplicateFiles.map((file) => (
+                  <TableRow key={file}>
+                    <TableCell className="w-full">
+                      <div className="flex items-center">
+                        <File className="h-4 w-4 mr-2" />
+                        <span className="font-medium truncate max-w-[200px]">{file}</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
             
-        <div>
-          <DialogDescription>What would you like to do?</DialogDescription>
-          <div className="flex gap-2 mt-6">
-            <Button className="mr-2" onClick={() => handleDuplicateAction('keep')}>Keep</Button>
-            <Button onClick={() => handleDuplicateAction('delete')}>Delete</Button>
-          </div>
+        <div className="flex justify-center gap-2 mt-6">
+          <Button onClick={() => handleDuplicateAction('keep')}>Keep all items</Button>
+          <Button onClick={() => handleDuplicateAction('delete')}>Replace existing items</Button>
         </div>
       </>
     );

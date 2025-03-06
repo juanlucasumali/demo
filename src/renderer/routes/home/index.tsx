@@ -75,7 +75,8 @@ function Home() {
   const handleFileDrop = (files: File[]) => {
     if (files.length > 0) {
       dialogState.uploadFiles.onOpen({
-        initialFiles: files
+        initialFiles: files,
+        location: 'home'
       });
     }
   };
@@ -87,7 +88,7 @@ function Home() {
         title="Home"
         icon={HomeIcon}
       >
-        <Button variant="default" onClick={() => dialogState.uploadFiles.onOpen({})}>
+        <Button variant="default" onClick={() => dialogState.uploadFiles.onOpen({ location: 'home' })}>
           Upload
         </Button>
 

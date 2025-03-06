@@ -44,7 +44,7 @@ interface DialogManagerProps {
     isOpen: boolean
     onClose: () => void
     parentFolderId?: string | null
-    location?: 'project' | 'home' | 'collection'
+    location: 'project' | 'home' | 'collection' | 'folder'
     projectId?: string | null
     collectionId?: string | null
     parentFolder?: DemoItem | null
@@ -163,7 +163,7 @@ export function DialogManager({
         <UploadFiles
           isOpen={uploadFiles.isOpen}
           onClose={() => uploadFiles.onClose()}
-          location={uploadFiles.location || 'home'}
+          location={uploadFiles.location}
           parentFolderId={uploadFiles.parentFolderId}
           projectId={uploadFiles.projectId}
           collectionId={uploadFiles.collectionId}

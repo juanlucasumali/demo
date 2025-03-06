@@ -49,7 +49,7 @@ export function useDialogState() {
   const [uploadFiles, setUploadFiles] = useState<{
     isOpen: boolean
     parentFolderId?: string | null
-    location?: 'project' | 'home' | 'collection'
+    location: 'project' | 'home' | 'collection' | 'folder'
     projectId?: string | null
     collectionId?: string | null
     parentFolder?: DemoItem | null
@@ -58,7 +58,8 @@ export function useDialogState() {
   }>({
     isOpen: false,
     parentFolder: null,
-    parentProject: null
+    parentProject: null,
+    location: 'home'
   })
 
   const [createProject, setCreateProject] = useState<{
@@ -169,7 +170,7 @@ export function useDialogState() {
         initialFiles,
       }: {
         parentFolderId?: string | null
-        location?: 'project' | 'home' | 'collection'
+        location: 'project' | 'home' | 'collection' | 'folder'
         projectId?: string | null
         collectionId?: string | null
         parentFolder?: DemoItem | null
@@ -189,7 +190,8 @@ export function useDialogState() {
       onClose: () => setUploadFiles({ 
         isOpen: false, 
         parentFolder: null,
-        parentProject: null 
+        parentProject: null,
+        location: 'home'
       })
     },
     createProject: {

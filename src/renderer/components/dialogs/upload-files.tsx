@@ -4,7 +4,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@renderer/components/ui/dialog";
 import { useToast } from "@renderer/hooks/use-toast";
 import { FriendsSearch } from "@renderer/components/friends-search";
 import { UserProfile } from "@renderer/types/users";
@@ -13,7 +13,7 @@ import { FileFormat, ItemType } from "@renderer/types/items";
 import { useItems } from "@renderer/hooks/use-items";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
 import { useUserStore } from "@renderer/stores/user-store";
-import { Loader2 } from "lucide-react";
+import { File, Loader2 } from "lucide-react";
 import { Progress } from "@renderer/components/ui/progress";
 import { DropZone } from "../ui/drop-zone";
 import { X } from "lucide-react";
@@ -71,6 +71,10 @@ export function UploadFiles({
   const [isDragging, setIsDragging] = useState(false);
   const [fileProgress, setFileProgress] = useState<Record<string, FileUploadProgress>>({});
   const [successfulUploads, setSuccessfulUploads] = useState(0);
+
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateFiles, setDuplicateFiles] = useState<string[]>(["file1.mp3", "file2.mp3", "file3.mp3"]);
+  const [selectedDuplicateFile, setSelectedDuplicateFile] = useState<string>('file1.mp3');
 
   console.log("selectedUsers", selectedUsers)
   console.log("parentProject", parentProject)
@@ -311,143 +315,184 @@ export function UploadFiles({
     }
   };
 
+  const renderUploadDialogContent = () => {
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Upload Files</DialogTitle>
+          </DialogHeader>
+
+          <FormField
+            control={form.control}
+            name="files"
+            render={() => (
+              <FormItem>
+                <FormLabel>Files</FormLabel>
+                <FormControl>
+                  <div className="space-y-4">
+                    <DropZone
+                      onDragEnter={handleDragEnter}
+                      onDragOver={handleDragEnter}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      isDragging={isDragging}
+                      onClick={() => document.getElementById('file-input')?.click()}
+                    />
+                    <input
+                      id="file-input"
+                      type="file"
+                      multiple
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    
+                    {selectedFiles.length > 0 && (
+                      <div className="space-y-2">
+                        <FormLabel>Upload List</FormLabel>
+                        <div className="border rounded-md">
+                          <div className="max-h-[200px] overflow-y-auto scrollbar-none">
+                            <Table>
+                              <TableBody>
+                                {selectedFiles.map((file, index) => (
+                                  <TableRow key={`${file.name}-${index}`}>
+                                    <TableCell className="w-full">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-medium">{file.name}</span>
+                                        <div className="flex items-center gap-2">
+                                          {fileProgress[file.name]?.status === 'completed' && (
+                                            <FileCheck className="h-4 w-4 text-green-500" />
+                                          )}
+                                          {fileProgress[file.name]?.status === 'error' && (
+                                            <div className="flex items-center gap-2">
+                                              <AlertCircle className="h-4 w-4 text-red-500" />
+                                              <Button 
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 px-2"
+                                                onClick={() => handleRetry(file)}
+                                                disabled={isUploading}
+                                              >
+                                                Retry
+                                              </Button>
+                                            </div>
+                                          )}
+                                          {fileProgress[file.name]?.status === 'uploading' && (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                          )}
+                                          {!isUploading && !fileProgress[file.name]?.status && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedFiles(files => 
+                                                  files.filter((_, i) => i !== index)
+                                                );
+                                              }}
+                                              className="p-1 hover:bg-muted rounded-sm"
+                                            >
+                                              <X className="h-4 w-4 text-muted-foreground" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {isUploading && (
+                      <div className="space-y-2">
+                        <Progress value={(successfulUploads / selectedFiles.length) * 100} />
+                        <p className="text-sm text-muted-foreground">
+                          Uploading: {successfulUploads} / {selectedFiles.length} files
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {(location === 'home' || location === 'project') && (
+            <div>
+              <FormLabel>Share with</FormLabel>
+              <FriendsSearch
+                owner={location === 'project' ? parentProject?.owner || undefined : parentFolder?.owner || undefined}
+                friendsList={friends}
+                selectedUsers={selectedUsers}
+                setSelectedUsers={setSelectedUsers}
+                onSearch={setSearchTerm}
+                isLoading={isLoading.friends}
+              />
+            </div>
+          )}
+
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading...
+              </> 
+            ) : (
+              'Start Upload'
+            )}
+          </Button>
+        </form>
+      </Form>
+    );
+  }
+
+  const renderDuplicateDialogContent = () => {
+    return (
+      <>
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-base font-large">We found duplicate files</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex gap-x-4 gap-y-4 justify-center pb-2 flex-wrap px-0">
+          {duplicateFiles.map((file) => (
+            <Button
+              key={file}
+              type="button"
+              variant="outline"
+              className={`aspect-square w-[calc(25%-0.75rem)] min-w-[100px] h-20 flex flex-col ${
+                selectedDuplicateFile === file ? "border-primary" : "border-2"
+              }`}
+              onClick={() => {/*{handleSelectDuplicate(file)}*/}}
+            >
+              <File className="!h-5 !w-5" />
+              {file.length > 15 ? `${file.substring(0, 12)}...` : file}
+            </Button>
+          ))}
+        </div>
+            
+        <div>
+          <DialogDescription>What would you like to do?</DialogDescription>
+          <div className="flex gap-2 mt-6">
+            <Button className="mr-2" onClick={() => {/*handleDuplicateAction('keep')*/}}>Keep</Button>
+            <Button onClick={() => {/*handleDuplicateAction('delete')*/}}>Delete</Button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[425px]" onPointerDownOutside={(e) => e.preventDefault()}>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <DialogHeader>
-              <DialogTitle>Upload Files</DialogTitle>
-            </DialogHeader>
-
-            <FormField
-              control={form.control}
-              name="files"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Files</FormLabel>
-                  <FormControl>
-                    <div className="space-y-4">
-                      <DropZone
-                        onDragEnter={handleDragEnter}
-                        onDragOver={handleDragEnter}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        isDragging={isDragging}
-                        onClick={() => document.getElementById('file-input')?.click()}
-                      />
-                      <input
-                        id="file-input"
-                        type="file"
-                        multiple
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                      
-                      {selectedFiles.length > 0 && (
-                        <div className="space-y-2">
-                          <FormLabel>Upload List</FormLabel>
-                          <div className="border rounded-md">
-                            <div className="max-h-[200px] overflow-y-auto scrollbar-none">
-                              <Table>
-                                <TableBody>
-                                  {selectedFiles.map((file, index) => (
-                                    <TableRow key={`${file.name}-${index}`}>
-                                      <TableCell className="w-full">
-                                        <div className="flex items-center justify-between">
-                                          <span className="font-medium">{file.name}</span>
-                                          <div className="flex items-center gap-2">
-                                            {fileProgress[file.name]?.status === 'completed' && (
-                                              <FileCheck className="h-4 w-4 text-green-500" />
-                                            )}
-                                            {fileProgress[file.name]?.status === 'error' && (
-                                              <div className="flex items-center gap-2">
-                                                <AlertCircle className="h-4 w-4 text-red-500" />
-                                                <Button 
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-6 px-2"
-                                                  onClick={() => handleRetry(file)}
-                                                  disabled={isUploading}
-                                                >
-                                                  Retry
-                                                </Button>
-                                              </div>
-                                            )}
-                                            {fileProgress[file.name]?.status === 'uploading' && (
-                                              <Loader2 className="h-4 w-4 animate-spin" />
-                                            )}
-                                            {!isUploading && !fileProgress[file.name]?.status && (
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setSelectedFiles(files => 
-                                                    files.filter((_, i) => i !== index)
-                                                  );
-                                                }}
-                                                className="p-1 hover:bg-muted rounded-sm"
-                                              >
-                                                <X className="h-4 w-4 text-muted-foreground" />
-                                              </button>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {isUploading && (
-                        <div className="space-y-2">
-                          <Progress value={(successfulUploads / selectedFiles.length) * 100} />
-                          <p className="text-sm text-muted-foreground">
-                            Uploading: {successfulUploads} / {selectedFiles.length} files
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {(location === 'home' || location === 'project') && (
-              <div>
-                <FormLabel>Share with</FormLabel>
-                <FriendsSearch
-                  owner={location === 'project' ? parentProject?.owner || undefined : parentFolder?.owner || undefined}
-                  friendsList={friends}
-                  selectedUsers={selectedUsers}
-                  setSelectedUsers={setSelectedUsers}
-                  onSearch={setSearchTerm}
-                  isLoading={isLoading.friends}
-                />
-              </div>
-            )}
-
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </> 
-              ) : (
-                'Start Upload'
-              )}
-            </Button>
-          </form>
-        </Form>
+        {showDuplicateDialog ? renderDuplicateDialogContent() : renderUploadDialogContent()}
       </DialogContent>
     </Dialog>
   );

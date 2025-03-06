@@ -199,7 +199,34 @@ export function UploadFiles({
     }
   };
 
-  const onSubmit: SubmitHandler<UploadFilesFormValues> = async () => {
+  // DUPLICATE HANDLING
+
+  const handleDuplicateAction = (action: 'keep' | 'delete') => {
+    console.log(`${action} file: ${selectedDuplicateFile}`);
+    setShowDuplicateDialog(false);
+    // Continue with upload process after handling duplicates
+    proceedWithUpload();
+  };
+
+  const handleSelectDuplicate = (filename: string) => {
+    setSelectedDuplicateFile(filename);
+  };
+
+  const checkForDuplicates = () => {
+    // This is arbitrary true/false for now as requested
+    const hasDuplicates = true;
+    
+    if (hasDuplicates) {
+      // For demo purposes, use the selected files as "duplicates"
+      setDuplicateFiles(selectedFiles.map(file => file.name));
+      setSelectedDuplicateFile(selectedFiles[0]?.name || '');
+      setShowDuplicateDialog(true);
+      return true;
+    }
+    return false;
+  };
+
+  const proceedWithUpload = async () => {
     if (!currentUser) return;
     if (selectedFiles.length === 0) return;
 
@@ -313,6 +340,17 @@ export function UploadFiles({
       setIsUploading(false);
       setSuccessfulUploads(0);
     }
+  };
+
+  const onSubmit: SubmitHandler<UploadFilesFormValues> = async () => {
+    if (checkForDuplicates()) {
+      // If duplicates found, the duplicate dialog will be shown
+      // The actual upload will happen after handling duplicates
+      return;
+    }
+    
+    // If no duplicates, proceed with upload
+    await proceedWithUpload();
   };
 
   const renderUploadDialogContent = () => {
@@ -470,7 +508,7 @@ export function UploadFiles({
               className={`aspect-square w-[calc(25%-0.75rem)] min-w-[100px] h-20 flex flex-col ${
                 selectedDuplicateFile === file ? "border-primary" : "border-2"
               }`}
-              onClick={() => {/*{handleSelectDuplicate(file)}*/}}
+              onClick={() => {handleSelectDuplicate(file)}}
             >
               <File className="!h-5 !w-5" />
               {file.length > 15 ? `${file.substring(0, 12)}...` : file}
@@ -481,8 +519,8 @@ export function UploadFiles({
         <div>
           <DialogDescription>What would you like to do?</DialogDescription>
           <div className="flex gap-2 mt-6">
-            <Button className="mr-2" onClick={() => {/*handleDuplicateAction('keep')*/}}>Keep</Button>
-            <Button onClick={() => {/*handleDuplicateAction('delete')*/}}>Delete</Button>
+            <Button className="mr-2" onClick={() => handleDuplicateAction('keep')}>Keep</Button>
+            <Button onClick={() => handleDuplicateAction('delete')}>Delete</Button>
           </div>
         </div>
       </>

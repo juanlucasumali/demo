@@ -20,6 +20,7 @@ import { X } from "lucide-react";
 import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 import { FileCheck, AlertCircle } from "lucide-react";
 import { DemoItem } from "@renderer/types/items";
+import { supabase } from "@renderer/lib/supabase";
 
 interface FileUploadProgress {
   id: string;
@@ -199,31 +200,66 @@ export function UploadFiles({
     }
   };
 
-  // DUPLICATE HANDLING
+  // DUPLICATE HANDLING LOGIC
 
-  const handleDuplicateAction = (action: 'keep' | 'delete') => {
-    console.log(`${action} file: ${selectedDuplicateFile}`);
-    setShowDuplicateDialog(false);
-    // Continue with upload process after handling duplicates
-    proceedWithUpload();
-  };
-
-  const handleSelectDuplicate = (filename: string) => {
-    setSelectedDuplicateFile(filename);
-  };
-
-  const checkForDuplicates = () => {
-    // This is arbitrary true/false for now as requested
-    const hasDuplicates = true;
-    
-    if (hasDuplicates) {
-      // For demo purposes, use the selected files as "duplicates"
-      setDuplicateFiles(selectedFiles.map(file => file.name));
-      setSelectedDuplicateFile(selectedFiles[0]?.name || '');
-      setShowDuplicateDialog(true);
-      return true;
+  const handleDuplicateAction = async (action: 'keep' | 'delete') => {
+    // If delete, remove the duplicate files from the selected files OTHERWISE keep them
+    if (action === 'delete') {
+      setSelectedFiles(prev => 
+        prev.filter(file => !duplicateFiles.includes(file.name))
+      );
     }
-    return false;
+    
+    // Afterwards, switch back to the upload dialog and proceed with upload
+    setShowDuplicateDialog(false);
+    if (action === 'keep' || (action === 'delete' && selectedFiles.length > duplicateFiles.length)) {
+      await proceedWithUpload();
+    }
+  };
+
+  // TODO: Fix supabase query to get all files owned by the current user with a matching name
+  // AND make this secure with access conditions somehow? Not sure how supabase works
+  const checkForDuplicates = async () => {
+    console.log("Checking for duplicates");
+    setShowDuplicateDialog(true);
+    const duplicates = selectedFiles.map(file => file.name);
+    setDuplicateFiles(duplicates);
+    setSelectedDuplicateFile(duplicates[0]);
+    return true;
+
+    // if (!currentUser || selectedFiles.length === 0) return false;
+    
+    // try {
+    //   // Get all items that are files owned by the current user
+    //   const { data: userFiles, error } = await supabase
+    //     .from('items')
+    //     .select('name')
+    //     .eq('owner_id', currentUser.id)
+    //     .eq('type', ItemType.FILE)
+    //     .in('name', selectedFiles.map(file => file.name));
+      
+    //   if (error) {
+    //     console.error('Error fetching user files:', error);
+    //     return false;
+    //   }
+      
+    //   // Check if any of the selected files have the same name as existing files
+    //   const duplicates = selectedFiles
+    //     .filter(file => userFiles.some(userFile => userFile.name === file.name))
+    //     .map(file => file.name);
+      
+    //   if (duplicates.length > 0) {
+    //     setDuplicateFiles(duplicates);
+    //     setSelectedDuplicateFile(duplicates[0]);
+    //     setShowDuplicateDialog(true);
+    //     return true;
+    //   }
+      
+    //   return false;
+    // } catch (error) {
+    //   console.error('Error checking for duplicates:', error);
+    //   return false;
+    // }
   };
 
   const proceedWithUpload = async () => {
@@ -343,13 +379,20 @@ export function UploadFiles({
   };
 
   const onSubmit: SubmitHandler<UploadFilesFormValues> = async () => {
-    if (checkForDuplicates()) {
-      // If duplicates found, the duplicate dialog will be shown
-      // The actual upload will happen after handling duplicates
+    if (selectedFiles.length === 0) {
+      toast({
+        title: "No files selected",
+        description: "Please select at least one file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const hasDuplicates = await checkForDuplicates();
+    if (hasDuplicates) {
       return;
     }
     
-    // If no duplicates, proceed with upload
     await proceedWithUpload();
   };
 
@@ -508,7 +551,7 @@ export function UploadFiles({
               className={`aspect-square w-[calc(25%-0.75rem)] min-w-[100px] h-20 flex flex-col ${
                 selectedDuplicateFile === file ? "border-primary" : "border-2"
               }`}
-              onClick={() => {handleSelectDuplicate(file)}}
+              onClick={() => {setSelectedDuplicateFile(file)}}
             >
               <File className="!h-5 !w-5" />
               {file.length > 15 ? `${file.substring(0, 12)}...` : file}

@@ -226,40 +226,6 @@ export function UploadFiles({
     setDuplicateFiles(duplicates);
     setSelectedDuplicateFile(duplicates[0]);
     return true;
-
-    // if (!currentUser || selectedFiles.length === 0) return false;
-    
-    // try {
-    //   // Get all items that are files owned by the current user
-    //   const { data: userFiles, error } = await supabase
-    //     .from('items')
-    //     .select('name')
-    //     .eq('owner_id', currentUser.id)
-    //     .eq('type', ItemType.FILE)
-    //     .in('name', selectedFiles.map(file => file.name));
-      
-    //   if (error) {
-    //     console.error('Error fetching user files:', error);
-    //     return false;
-    //   }
-      
-    //   // Check if any of the selected files have the same name as existing files
-    //   const duplicates = selectedFiles
-    //     .filter(file => userFiles.some(userFile => userFile.name === file.name))
-    //     .map(file => file.name);
-      
-    //   if (duplicates.length > 0) {
-    //     setDuplicateFiles(duplicates);
-    //     setSelectedDuplicateFile(duplicates[0]);
-    //     setShowDuplicateDialog(true);
-    //     return true;
-    //   }
-      
-    //   return false;
-    // } catch (error) {
-    //   console.error('Error checking for duplicates:', error);
-    //   return false;
-    // }
   };
 
   const proceedWithUpload = async () => {

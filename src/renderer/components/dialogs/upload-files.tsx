@@ -20,6 +20,7 @@ import { X } from "lucide-react";
 import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 import { FileCheck, AlertCircle } from "lucide-react";
 import { DemoItem } from "@renderer/types/items";
+import { checkForDuplicates, generateUniqueFileName, getCurrentUserId, getFilesWithSharing } from '@renderer/services/items-service';
 
 interface FileUploadProgress {
   id: string;
@@ -57,7 +58,7 @@ export function UploadFiles({
   initialFiles = [],
 }: UploadFilesProps) {
   const { toast } = useToast();
-  const { addFileOrFolder } = useItems();
+  const { addFileOrFolder, deleteItem } = useItems();
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
     location === 'project' || location === 'collection'
       ? parentProject?.sharedWith || []
@@ -73,12 +74,7 @@ export function UploadFiles({
   const [successfulUploads, setSuccessfulUploads] = useState(0);
 
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [duplicateFiles, setDuplicateFiles] = useState<string[]>(["file1.mp3", "file2.mp3", "file3.mp3"]);
-  const [selectedDuplicateFile, setSelectedDuplicateFile] = useState<string>('file1.mp3');
-
-  console.log("selectedUsers", selectedUsers)
-  console.log("parentProject", parentProject)
-  console.log("parentFolder", parentFolder)
+  const [duplicateFiles, setDuplicateFiles] = useState<string[]>([]);
 
   const form = useForm<UploadFilesFormValues>({
     resolver: zodResolver(uploadFilesSchema),
@@ -199,137 +195,219 @@ export function UploadFiles({
     }
   };
 
-  // DUPLICATE HANDLING LOGIC
-
-  const handleDuplicateAction = async (action: 'keep' | 'delete') => {
-    // If delete, remove the duplicate files from the selected files OTHERWISE keep them
-    if (action === 'delete') {
-      setSelectedFiles(prev => 
-        prev.filter(file => !duplicateFiles.includes(file.name))
-      );
+  const checkForDuplicatesInUpload = async () => {
+    if (location === 'home') return false;
+    
+    const duplicateResults = await checkForDuplicates(
+      selectedFiles, 
+      location,
+      {
+        parentFolderId,
+        projectId,
+        collectionId
+      }
+    );
+    
+    if (duplicateResults.length > 0) {
+      setShowDuplicateDialog(true);
+      setDuplicateFiles(duplicateResults.map(d => d.fileName));
+      return true;
     }
     
-    // Afterwards, switch back to the upload dialog and proceed with upload
-    setShowDuplicateDialog(false);
-    if (action === 'keep' || (action === 'delete' && selectedFiles.length > duplicateFiles.length)) {
-      await proceedWithUpload();
+    return false;
+  };
+
+  const handleDuplicateAction = async (action: 'keep' | 'delete') => {
+    if (action === 'keep') {
+      const duplicateResults = await checkForDuplicates(
+        selectedFiles,
+        location,
+        {
+          parentFolderId,
+          projectId,
+          collectionId
+        }
+      );
+      
+      const duplicateMap = new Map(
+        duplicateResults.map(d => [d.fileName, d.existingNames])
+      );
+
+      // Create new files with updated names
+      const updatedFiles = await Promise.all(selectedFiles.map(async (file) => {
+        const existingNames = duplicateMap.get(file.name);
+        if (existingNames) {
+          const newName = generateUniqueFileName(file.name, existingNames);
+          // Create new file with updated name
+          const fileContent = await file.arrayBuffer();
+          return new window.File(
+            [fileContent],
+            newName,
+            { type: file.type }
+          );
+        }
+        return file;
+      }));
+
+      // Update UI state
+      setSelectedFiles(updatedFiles);
+      setShowDuplicateDialog(false);
+
+      // Use the stored files for upload
+      await proceedWithUpload(updatedFiles);
+    } else if (action === 'delete') {
+      // Get the list of duplicate files that need to be deleted
+      const duplicateResults = await checkForDuplicates(
+        selectedFiles,
+        location,
+        {
+          parentFolderId,
+          projectId,
+          collectionId
+        }
+      );
+      
+      // Get all existing files in the location
+      const existingFiles = await getFilesWithSharing(getCurrentUserId(), {
+        parentFolderId: location === 'folder' ? parentFolderId : null,
+        projectId: location === 'project' ? projectId : null,
+        collectionId: location === 'collection' ? collectionId : null,
+        includeNested: false
+      });
+
+      // Find the files that need to be deleted
+      const filesToDelete = existingFiles.filter(existingFile => 
+        duplicateResults.some(duplicate => 
+          duplicate.existingNames.includes(existingFile.name)
+        )
+      );
+
+      try {
+        // Delete all duplicate files first
+        for (const file of filesToDelete) {
+          await deleteItem(file.id);
+        }
+
+        // Close dialog
+        setShowDuplicateDialog(false);
+        
+        // Proceed with upload of new files
+        await proceedWithUpload(selectedFiles);
+      } catch (error) {
+        console.error('Failed to delete existing files:', error);
+        toast({
+          title: "Error",
+          description: "Failed to replace existing files. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  // TODO: Fix supabase query to get all files owned by the current user with a matching name
-  // AND make this secure with access conditions somehow? Not sure how supabase works
-  const checkForDuplicates = async () => {
-    console.log("Checking for duplicates");
-    setShowDuplicateDialog(true);
-    const duplicates = selectedFiles.map(file => file.name);
-    setDuplicateFiles(duplicates);
-    setSelectedDuplicateFile(duplicates[0]);
-    return true;
-  };
-
-  const proceedWithUpload = async () => {
+  const proceedWithUpload = async (filesToProcess: File[]) => {
     if (!currentUser) return;
-    if (selectedFiles.length === 0) return;
+    if (filesToProcess.length === 0) return;
 
     setIsUploading(true);
     setSuccessfulUploads(0);
     let successCount = 0;
 
-    // Initialize progress for all files
-    const initialProgress = selectedFiles.reduce((acc, file) => {
-      acc[file.name] = {
-        id: file.name,
-        progress: 0,
-        status: 'pending'
-      };
-      return acc;
+    // Use the passed files instead of selectedFiles state
+    const initialProgress = filesToProcess.reduce((acc, file) => {
+        acc[file.name] = {
+            id: file.name,
+            progress: 0,
+            status: 'pending'
+        };
+        return acc;
     }, {} as Record<string, FileUploadProgress>);
     
     setFileProgress(initialProgress);
 
     try {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        
-        // Update status to uploading
-        setFileProgress(prev => ({
-          ...prev,
-          [file.name]: { ...prev[file.name], status: 'uploading' }
-        }));
+        for (let i = 0; i < filesToProcess.length; i++) {
+            const file = filesToProcess[i];
+            
+            // Update status to uploading
+            setFileProgress(prev => ({
+              ...prev,
+              [file.name]: { ...prev[file.name], status: 'uploading' }
+            }));
 
-        const fileExtension = file.name.split('.').pop()?.toLowerCase();
-        const newItem = {
-          createdAt: new Date(),
-          lastModified: new Date(),
-          lastOpened: new Date(),
-          name: file.name,
-          isStarred: false,
-          parentFolderIds: parentFolderId ? [parentFolderId] : [],
-          filePath: null,
-          type: ItemType.FILE,
-          duration: 0,
-          format: fileExtension as FileFormat,
-          owner: currentUser,
-          sharedWith: selectedUsers,
-          tags: null,
-          projectIds: location === 'project' || location === 'collection' ? [projectId!] : [],
-          size: file.size,
-          description: null,
-          icon: null,
-          collectionIds: location === 'collection' ? [collectionId!] : [],
-        };
+            const fileExtension = file.name.split('.').pop()?.toLowerCase();
+            console.log("File name", file.name)
+            const newItem = {
+              createdAt: new Date(),
+              lastModified: new Date(),
+              lastOpened: new Date(),
+              name: file.name,
+              isStarred: false,
+              parentFolderIds: parentFolderId ? [parentFolderId] : [],
+              filePath: null,
+              type: ItemType.FILE,
+              duration: 0,
+              format: fileExtension as FileFormat,
+              owner: currentUser,
+              sharedWith: selectedUsers,
+              tags: null,
+              projectIds: location === 'project' || location === 'collection' ? [projectId!] : [],
+              size: file.size,
+              description: null,
+              icon: null,
+              collectionIds: location === 'collection' ? [collectionId!] : [],
+            };
 
-        try {
-          const fileContent = await file.arrayBuffer();
-          await new Promise<void>((resolve, reject) => {
-            const combinedSharedWith = [
-              ...selectedUsers,
-              ...(location === 'project' || location === 'collection' ? parentProject?.owner ? [parentProject.owner] : [] : []),
-              ...(parentFolder?.owner ? [parentFolder.owner] : [])
-            ].filter((user, index, self) => 
-              index === self.findIndex((u) => u.id === user.id)
-            );
+            try {
+              const fileContent = await file.arrayBuffer();
+              await new Promise<void>((resolve, reject) => {
+                const combinedSharedWith = [
+                  ...selectedUsers,
+                  ...(location === 'project' || location === 'collection' ? parentProject?.owner ? [parentProject.owner] : [] : []),
+                  ...(parentFolder?.owner ? [parentFolder.owner] : [])
+                ].filter((user, index, self) => 
+                  index === self.findIndex((u) => u.id === user.id)
+                );
 
-            addFileOrFolder({ 
-              item: newItem, 
-              sharedWith: combinedSharedWith.length > 0 ? combinedSharedWith : undefined,
-              fileContent
-            }, {
-              onSuccess: () => {
-                successCount++;
-                setSuccessfulUploads(successCount);
-                setFileProgress(prev => ({
-                  ...prev,
-                  [file.name]: { 
-                    ...prev[file.name], 
-                    progress: 100,
-                    status: 'completed'
+                addFileOrFolder({ 
+                  item: newItem, 
+                  sharedWith: combinedSharedWith.length > 0 ? combinedSharedWith : undefined,
+                  fileContent
+                }, {
+                  onSuccess: () => {
+                    successCount++;
+                    setSuccessfulUploads(successCount);
+                    setFileProgress(prev => ({
+                      ...prev,
+                      [file.name]: { 
+                        ...prev[file.name], 
+                        progress: 100,
+                        status: 'completed'
+                      }
+                    }));
+                    resolve();
+                  },
+                  onError: (error) => {
+                    setFileProgress(prev => ({
+                      ...prev,
+                      [file.name]: { 
+                        ...prev[file.name], 
+                        status: 'error'
+                      }
+                    }));
+                    reject(error);
                   }
-                }));
-                resolve();
-              },
-              onError: (error) => {
-                setFileProgress(prev => ({
-                  ...prev,
-                  [file.name]: { 
-                    ...prev[file.name], 
-                    status: 'error'
-                  }
-                }));
-                reject(error);
-              }
-            });
-          });
-        } catch (error) {
-          console.error(`Failed to upload ${file.name}:`, error);
+                });
+              });
+            } catch (error) {
+              console.error(`Failed to upload ${file.name}:`, error);
+            }
         }
-      }
 
-      toast({
-        title: "Upload Complete",
-        description: `Successfully uploaded ${successCount} of ${selectedFiles.length} files`,
-        variant: "default",
-      });
+        toast({
+          title: "Upload Complete",
+          description: `Successfully uploaded ${successCount} of ${filesToProcess.length} files`,
+          variant: "default",
+        });
     } catch (error) {
       console.error('Upload failed:', error);
       toast({
@@ -353,15 +431,14 @@ export function UploadFiles({
       return;
     }
 
-    // Only check for duplicates if we're not in the home location
     if (location !== 'home') {
-      const hasDuplicates = await checkForDuplicates();
+      const hasDuplicates = await checkForDuplicatesInUpload();
       if (hasDuplicates) {
         return;
       }
     }
     
-    await proceedWithUpload();
+    await proceedWithUpload(selectedFiles);
   };
 
   const renderUploadDialogContent = () => {

@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
-import { Box, Upload, FileSearch, Folder } from 'lucide-react'
+import { Box, Upload, Folder } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
@@ -106,7 +106,7 @@ function CollectionPage() {
                 Upload file
                 <DropdownMenuShortcut>⇧⌘U</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => dialogState.selectFiles.onOpen({
+              {/* <DropdownMenuItem onClick={() => dialogState.selectFiles.onOpen({
                 location: 'collection',
                 initialSelections: [],
                 projectItem: currentProject,
@@ -115,7 +115,7 @@ function CollectionPage() {
                 <FileSearch className="h-4 w-4 mr-2" />
                 Choose files
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuItem onClick={() => 
                 dialogState.createFolder.onOpen({ parentFolderId: null, location: 'collection', projectId, collectionId, parentProject: currentProject })
               }>

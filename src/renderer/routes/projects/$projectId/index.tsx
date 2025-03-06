@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
 import { PageHeader } from '@renderer/components/page-layout/page-header'
 import { PageContent } from '@renderer/components/page-layout/page-content'
 import { PageMain } from '@renderer/components/page-layout/page-main'
-import { Box, Upload, FileSearch, Folder } from 'lucide-react'
+import { Box, Upload, Folder } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { DataTable } from '@renderer/components/data-table/data-table'
 import { createColumns } from '@renderer/components/data-table/columns'
@@ -20,6 +20,7 @@ import { CollectionsSidebar } from '@renderer/components/collections/collections
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
 import React from 'react'
+import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
 
 // Define route params interface
 export interface ProjectParams {
@@ -65,6 +66,18 @@ function ProjectPage() {
     }
   };
 
+  const handleFileDrop = (files: File[]) => {
+    if (files.length > 0) {
+      dialogState.uploadFiles.onOpen({
+        initialFiles: files,
+        parentFolderId: null,
+        location: 'project',
+        projectId,
+        parentProject: currentProject
+      });
+    }
+  };
+
   // Handle loading state
   if (isLoading.currentProject || isLoading.filesAndFolders) {
     return (
@@ -106,7 +119,7 @@ function ProjectPage() {
                 Upload file
                 <DropdownMenuShortcut>⇧⌘U</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => dialogState.selectFiles.onOpen({
+              {/* <DropdownMenuItem onClick={() => dialogState.selectFiles.onOpen({
                 location: 'project',
                 initialSelections: [],
                 projectItem: currentProject
@@ -114,7 +127,7 @@ function ProjectPage() {
                 <FileSearch className="h-4 w-4 mr-2" />
                 Choose files
                 <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuItem onClick={() => dialogState.createFolder.onOpen({ parentFolderId: null, location: 'project', projectId, parentProject: currentProject })}>
                 <Folder/>
                 Create folder
@@ -149,22 +162,24 @@ function ProjectPage() {
           />
 
           <div className="grow w-full md:w-[8rem] lg:w-[8rem]">
-            <DataTable
-              columns={columns}
-              data={filesAndFolders}
-              enableSelection={true}
-              viewMode="table"
-              pageSize={10}
-              isLoading={isLoading.filesAndFolders}
-              onRowClick={handleRowClick}
-              onBulkDelete={async (items) => {
-                const itemIds = items.map(item => item.id);
-                await bulkDelete(itemIds);
-              }}
-              onEditFile={(item) => dialogState.editFile.onOpen({ item })}
-              onShare={(item) => dialogState.share.onOpen({ item })}
-              onDelete={(item) => dialogState.delete.onOpen({ item })}
-            />
+            <FileDropZone onFileDrop={handleFileDrop}>
+              <DataTable
+                columns={columns}
+                data={filesAndFolders}
+                enableSelection={true}
+                viewMode="table"
+                pageSize={10}
+                isLoading={isLoading.filesAndFolders}
+                onRowClick={handleRowClick}
+                onBulkDelete={async (items) => {
+                  const itemIds = items.map(item => item.id);
+                  await bulkDelete(itemIds);
+                }}
+                onEditFile={(item) => dialogState.editFile.onOpen({ item })}
+                onShare={(item) => dialogState.share.onOpen({ item })}
+                onDelete={(item) => dialogState.delete.onOpen({ item })}
+              />
+            </FileDropZone>
           </div>
         </div>
       </PageContent>

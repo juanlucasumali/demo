@@ -8,7 +8,7 @@ import { shareNewItem } from './share-service'
 import * as userService from './user-service'
 
 // Helper function to get current user ID
-const getCurrentUserId = () => {
+export const getCurrentUserId = () => {
   const user = useUserStore.getState().user
   if (!user) throw new Error('User not authenticated')
   return user.id
@@ -903,4 +903,74 @@ export async function addToCollection(items: DemoItem[], collectionId: string, p
   }
 
   console.log('Successfully added to both collection and project');
+}
+
+export async function checkForDuplicates(
+  files: File[], 
+  location: 'project' | 'home' | 'collection' | 'folder',
+  params: {
+    parentFolderId?: string | null,
+    projectId?: string | null,
+    collectionId?: string | null
+  }
+): Promise<{ fileName: string, existingNames: string[] }[]> {
+  const userId = getCurrentUserId();
+  
+  // Get all existing files based on location
+  const existingFiles = await getFilesWithSharing(userId, {
+    parentFolderId: location === 'folder' ? params.parentFolderId : null,
+    projectId: location === 'project' ? params.projectId : null,
+    collectionId: location === 'collection' ? params.collectionId : null,
+    includeNested: false
+  });
+
+  // Get duplicates and their variations
+  const duplicates: { fileName: string, existingNames: string[] }[] = [];
+  
+  for (const file of files) {
+    // Remove any existing (n) from the name to get base name
+    const baseFileName = file.name.replace(/\s*\(\d+\)$/, '');
+    const matchingFiles = existingFiles.filter(f => 
+      f.name === file.name || // Exact match
+      f.name.startsWith(baseFileName.replace(/\.[^/.]+$/, '')) // Matches without extension and numbers
+    );
+
+    if (matchingFiles.length > 0) {
+      duplicates.push({
+        fileName: file.name,
+        existingNames: matchingFiles.map(f => f.name)
+      });
+    }
+  }
+
+  return duplicates;
+}
+
+export function generateUniqueFileName(
+  originalName: string, 
+  existingNames: string[]
+): string {
+  // Remove any existing (n) from the name
+  const baseName = originalName.replace(/\s*\(\d+\)$/, '');
+  const ext = baseName.includes('.') ? 
+    '.' + baseName.split('.').pop()! : '';
+  const nameWithoutExt = baseName.replace(ext, '');
+
+  // If no duplicates exist, return original name
+  if (!existingNames.includes(originalName)) {
+    return originalName;
+  }
+
+  // Find the highest number in existing duplicates
+  let highestNum = 0;
+  existingNames.forEach(name => {
+    const match = name.match(/\((\d+)\)/);
+    if (match) {
+      const num = parseInt(match[1]);
+      highestNum = Math.max(highestNum, num);
+    }
+  });
+
+  // Return new name with incremented number
+  return `${nameWithoutExt} (${highestNum + 1})${ext}`;
 }

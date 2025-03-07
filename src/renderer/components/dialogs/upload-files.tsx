@@ -581,12 +581,16 @@ export function UploadFiles({
   }
 
   const renderDuplicateDialogContent = () => {
+    const locationName = location === 'project' || location === 'collection' 
+      ? parentProject?.name 
+      : parentFolder?.name || 'this location';
+
     return (
       <>
         <DialogHeader className="mb-4">
           <DialogTitle className="text-base font-large">Duplicate files</DialogTitle>
           <DialogDescription>
-            The following files already exist in this location:
+            The following files already exists in <span className="font-bold">{locationName}</span>:
           </DialogDescription>
         </DialogHeader>
 

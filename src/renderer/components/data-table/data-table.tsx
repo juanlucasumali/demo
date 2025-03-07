@@ -200,8 +200,16 @@ export function DataTable<DemoItem>({
     const currentTrack = row.original as DemoItem;
     const mediaPlayerStore = useMediaPlayerStore.getState();
     
+    console.log('🎵 handlePlayToggle called', {
+      rowId,
+      currentTrackId: mediaPlayerStore.currentTrackId,
+      isPlaying: mediaPlayerStore.isPlaying,
+      currentTrack: currentTrack
+    });
+
     // If this row is current AND playing, pause it
     if (audioState.currentRow === rowId && mediaPlayerStore.isPlaying) {
+      console.log('🎵 Pausing current track');
       mediaPlayerStore.pauseTrack();
       setAudioState(prev => ({ ...prev, playingRow: null }));
       return;
@@ -210,15 +218,17 @@ export function DataTable<DemoItem>({
     try {
       // If we're switching to a different track
       if (mediaPlayerStore.currentTrackId !== (currentTrack as any).id) {
+        console.log('🎵 Starting new track', (currentTrack as any).id);
         setAudioState(prev => ({ 
           ...prev, 
           loadingRow: rowId,
           currentRow: rowId,
-          downloadingRow: null // Reset downloadingRow when loading new track
+          downloadingRow: null
         }));
         
         mediaPlayerStore.onPause = () => {
-          setAudioState(prev => ({ ...prev, playingRow: null })); // Keep currentRow unchanged
+          console.log('🎵 onPause callback triggered');
+          setAudioState(prev => ({ ...prev, playingRow: null }));
         };
 
         await mediaPlayerStore.playTrack((currentTrack as any).id, (currentTrack as any).name, (currentTrack as any).filePath!);
@@ -229,6 +239,7 @@ export function DataTable<DemoItem>({
           currentRow: rowId 
         }));
       } else {
+        console.log('🎵 Resuming current track');
         mediaPlayerStore.resumeTrack();
         setAudioState(prev => ({ ...prev, playingRow: rowId }));
       }
@@ -238,7 +249,7 @@ export function DataTable<DemoItem>({
         ...prev, 
         playingRow: null, 
         loadingRow: null 
-      })); // Keep currentRow unchanged on error
+      }));
     }
   };
 

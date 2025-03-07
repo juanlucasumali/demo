@@ -30,7 +30,15 @@ export const useMediaPlayerStore = create<MediaPlayerStore>((set, get) => ({
   audioCache: new Map(),
   wavesurfer: null,
 
-  setWavesurfer: (ws) => set({ wavesurfer: ws }),
+  setWavesurfer: (ws) => {
+    console.log('🎵 setWavesurfer called with new instance:', ws);
+    const currentWs = get().wavesurfer;
+    if (currentWs && currentWs !== ws) {
+      console.log('🎵 Destroying previous wavesurfer instance');
+      currentWs.destroy();
+    }
+    set({ wavesurfer: ws });
+  },
   setIsVisible: (visible) => set({ isVisible: visible }),
   setCurrentTrack: (trackId, trackName) => set({ currentTrackId: trackId, currentTrackName: trackName, isVisible: !!trackId }),
 

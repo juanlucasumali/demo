@@ -3,7 +3,7 @@ import { useMediaPlayerStore } from "@renderer/stores/use-media-player-store"
 import { Button } from "@renderer/components/ui/button"
 import { Play, Pause, Square } from "lucide-react"
 import WavesurferPlayer from '@wavesurfer/react'
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 
 function formatTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -25,6 +25,9 @@ export function MediaPlayer() {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
+  // Add a ref to track initialization
+  const initRef = useRef(false);
 
   useEffect(() => {
     if (arrayBuffer) {
@@ -54,15 +57,46 @@ export function MediaPlayer() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isPlaying, isVisible, pauseTrack, resumeTrack]);
 
-  const onReady = (ws) => {
+  // useEffect(() => {
+  //   // Cleanup function for wavesurfer
+  //   return () => {
+  //     const currentWavesurfer = useMediaPlayerStore.getState().wavesurfer;
+  //     if (currentWavesurfer) {
+  //       console.log('🎵 Cleaning up previous wavesurfer instance');
+  //       currentWavesurfer.destroy();
+  //       useMediaPlayerStore.getState().setWavesurfer(null);
+  //     }
+  //   };
+  // }, []);
+
+  const onReady = useCallback((ws) => {
+    console.log('🎵 MediaPlayer onReady called with wavesurfer instance:', ws);
+    
+    // Prevent double initialization
+    if (initRef.current) {
+      console.log('🎵 Skipping duplicate initialization');
+      return;
+    }
+    
+    initRef.current = true;
+    
     setWavesurfer(ws);
     setDuration(ws.getDuration());
     ws.on('timeupdate', (currentTime) => {
       setCurrentTime(currentTime);
     });
+    
+    console.log('🎵 About to call ws.play() in onReady');
     ws.play();
     useMediaPlayerStore.setState({ isPlaying: true });
-  };
+  }, [setWavesurfer]); // Add proper dependencies
+
+  useEffect(() => {
+    // Reset initialization flag when arrayBuffer changes
+    if (arrayBuffer) {
+      initRef.current = false;
+    }
+  }, [arrayBuffer]);
 
   if (!isVisible) return null;
 
@@ -83,14 +117,24 @@ export function MediaPlayer() {
             <div className="flex-1">
               {arrayBuffer && blobUrl && (
                 <WavesurferPlayer
+                  key={blobUrl}
                   height={32}
                   waveColor="rgb(182, 182, 182)"
                   progressColor="rgb(var(--primary))"
                   url={blobUrl}
                   onReady={onReady}
-                  onPlay={() => useMediaPlayerStore.setState({ isPlaying: true })}
-                  onPause={() => useMediaPlayerStore.setState({ isPlaying: false })}
-                  onFinish={() => useMediaPlayerStore.setState({ isPlaying: false })}
+                  onPlay={() => {
+                    console.log('🎵 WavesurferPlayer onPlay triggered');
+                    useMediaPlayerStore.setState({ isPlaying: true });
+                  }}
+                  onPause={() => {
+                    console.log('🎵 WavesurferPlayer onPause triggered');
+                    useMediaPlayerStore.setState({ isPlaying: false });
+                  }}
+                  onFinish={() => {
+                    console.log('🎵 WavesurferPlayer onFinish triggered');
+                    useMediaPlayerStore.setState({ isPlaying: false });
+                  }}
                   onError={(error) => {
                     console.error('🌊 Wavesurfer error:', error);
                   }}

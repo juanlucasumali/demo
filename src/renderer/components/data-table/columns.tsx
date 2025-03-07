@@ -168,6 +168,18 @@ export const createColumns = ({
       const isCurrent = audioState?.currentRow === row.id;
       const isPlaying = isCurrent && useMediaPlayerStore.getState().isPlaying;
 
+      const handlePlayClick = (e: React.MouseEvent) => {
+        if (isAudio) {
+          console.log('🎵 Play button clicked in data table', {
+            rowId: row.id,
+            isPlaying,
+            isCurrent
+          });
+          e.stopPropagation();
+          onPlayToggle?.(row.id);
+        }
+      };
+
       return (
         <div className="flex gap-1" style={{ maxWidth: "700px" }}>
           <div className="flex items-center gap-2 whitespace-nowrap">
@@ -190,12 +202,7 @@ export const createColumns = ({
               </div>
             )}
             <div 
-              onClick={(e) => {
-                if (isAudio) {
-                  e.stopPropagation();
-                  onPlayToggle?.(row.id);
-                }
-              }}
+              onClick={handlePlayClick}
               className={isAudio ? "cursor-pointer" : ""}
             >
               {type === "folder" ? (

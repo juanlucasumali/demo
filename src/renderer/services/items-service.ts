@@ -187,38 +187,6 @@ export async function getProjects(): Promise<DemoItem[]> {
   return getItemsWithSharing('projects', userId);
 }
 
-interface ShareRecord {
-  file_id: string | null;
-  project_id: string | null;
-  shared_with_id: string;
-  shared_by_id: string;
-}
-
-async function createShareRecords(
-  itemId: string,
-  itemType: 'file' | 'project',
-  sharedWith: UserProfile[],
-  sharedById: string
-) {
-  if (!sharedWith || sharedWith.length === 0) return;
-
-  const shareRecords: ShareRecord[] = sharedWith.map(user => ({
-    file_id: itemType === 'file' ? itemId : null,
-    project_id: itemType === 'project' ? itemId : null,
-    shared_with_id: user.id,
-    shared_by_id: sharedById,
-  }));
-
-  const { error: shareError } = await supabase
-    .from('shared_items')
-    .upsert(shareRecords, {
-      onConflict: `${itemType}_id,shared_with_id`,
-      ignoreDuplicates: true
-    });
-
-  if (shareError) throw shareError;
-}
-
 // Helper functions for managing relationships
 async function addToProjects(fileId: string, projectIds: string[]) {
   if (!projectIds.length) return;
@@ -399,9 +367,8 @@ export async function addProject(item: Omit<DemoItem, 'id'>, sharedWith?: UserPr
 
   if (error) throw error;
 
-  // If we have users to share with, create the share records
-  if (sharedWith && sharedWith.length > 0) {
-    await createShareRecords(data.id, 'project', sharedWith || [], currentUserId);
+  if (sharedWith?.length) {
+    await shareNewItem(data.id, 'project', sharedWith);
   }
 
   return {

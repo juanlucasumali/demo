@@ -619,7 +619,7 @@ export function UploadFiles({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[425px]" onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-[425px]">
         {showDuplicateDialog ? renderDuplicateDialogContent() : renderUploadDialogContent()}
       </DialogContent>
     </Dialog>

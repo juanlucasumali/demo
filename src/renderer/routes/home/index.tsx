@@ -127,6 +127,7 @@ function Home() {
           </div>
           <SubHeader subHeader="All files"/>
           <DataTable 
+            pageSize={50}
             columns={createColumns({ 
               enableStarToggle: true,
               onEditFile: (item) => dialogState.editFile.onOpen({ item }),

@@ -14,6 +14,7 @@ interface AvatarGroupProps {
   showRemove?: boolean
   variant?: "stack" | "grid"
   className?: string
+  currentUserId?: string
 }
 
 // Grid layout positions matching the original GridItem implementation
@@ -33,7 +34,8 @@ export function AvatarGroup({
   onRemove,
   showRemove = false,
   variant = "stack",
-  className
+  className,
+  currentUserId,
 }: AvatarGroupProps) {
   // Filter out owner from users array if owner exists
   const filteredUsers = owner 
@@ -53,6 +55,13 @@ export function AvatarGroup({
 
   const avatarSize = sizeClasses[size]
 
+  const shouldShowRemoveButton = (user: UserProfile) => {
+    if (!showRemove || !onRemove) return false;
+    if (user.id === owner?.id) return false;
+    if (user.id === currentUserId) return false;
+    return true;
+  };
+
   const renderDropdownContent = () => (
     <DropdownMenuContent align="end">
       {remainingUsers.map((user) => (
@@ -62,18 +71,18 @@ export function AvatarGroup({
               <Avatar className="h-6 w-6 mr-2">
                 <AvatarImage src={user.avatar || ""} alt={user.username} />
                 <AvatarFallback>
-                {user.username[0]?.toUpperCase() || "U"}
+                  {user.username[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
             </Link>
             <span>@{user.username}</span>
           </div>
-          {showRemove && onRemove && user.id !== owner?.id && (
+          {shouldShowRemoveButton(user) && (
             <button
               onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onRemove(user.id)
+                e.preventDefault();
+                e.stopPropagation();
+                if (onRemove) onRemove(user.id);
               }}
               className="ml-2 text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-100/10"
             >
@@ -84,6 +93,23 @@ export function AvatarGroup({
       ))}
     </DropdownMenuContent>
   )
+
+  const renderTooltipContent = (user: UserProfile, index: number) => (
+    <div className="flex items-center gap-1">
+      <span>@{user.username}</span>
+      {index === 0 && owner && (
+        <span className="text-xs text-muted-foreground">(Owner)</span>
+      )}
+      {shouldShowRemoveButton(user) && (
+        <button 
+          onClick={() => onRemove && onRemove(user.id)}
+          className="text-red-500 hover:text-red-600"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
 
   if (variant === "grid") {
     return (
@@ -103,20 +129,7 @@ export function AvatarGroup({
               </div>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <div className="flex items-center gap-1">
-                <p className="text-xs">@{user.username}</p>
-                {index === 0 && owner && (
-                  <span className="text-xs text-muted-foreground">(Owner)</span>
-                )}
-                {showRemove && onRemove && user.id !== owner?.id && (
-                  <button
-                    onClick={() => onRemove(user.id)}
-                    className="text-red-500 hover:text-red-600"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
+              {renderTooltipContent(user, index)}
             </TooltipContent>
           </Tooltip>
         ))}
@@ -159,20 +172,7 @@ export function AvatarGroup({
               </div>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <div className="flex items-center gap-1">
-                <span>@{user.username}</span>
-                {index === 0 && owner && (
-                  <span className="text-xs text-muted-foreground">(Owner)</span>
-                )}
-                {showRemove && onRemove && user.id !== owner?.id && (
-                  <button 
-                    onClick={() => onRemove(user.id)}
-                    className="text-red-500 hover:text-red-600"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
+              {renderTooltipContent(user, index)}
             </TooltipContent>
           </Tooltip>
         ))}

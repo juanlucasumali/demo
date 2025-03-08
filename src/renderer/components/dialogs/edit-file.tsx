@@ -29,6 +29,7 @@ import { UserProfile } from "@renderer/types/users";
 import { maxFileNameLength } from "@renderer/lib/utils";
 import { UseMutateFunction } from "@tanstack/react-query";
 import { useItems } from "@renderer/hooks/use-items";
+import { useUserStore } from "@renderer/stores/user-store";
 
 // Schema and validation rules remain the same
 const editFileSchema = z.object({
@@ -64,7 +65,9 @@ export function EditFileDialog({
   const { toast } = useToast();
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showConfirmLeave, setShowConfirmLeave] = useState(false);
   const { friends, isLoading } = useItems({ searchTerm });
+  const currentUser = useUserStore((state) => state.user);
 
   useEffect(() => {
     setSelectedUsers(existingFile.sharedWith || []);
@@ -112,6 +115,80 @@ export function EditFileDialog({
       });
     }
   };
+
+  const getLeaveButtonText = () => {
+    switch (existingFile.type) {
+      case ItemType.PROJECT:
+        return "Leave Project";
+      case ItemType.FOLDER:
+        return "Leave Folder";
+      default:
+        return "Remove Access";
+    }
+  };
+
+  const handleLeave = async () => {
+    try {
+      // Create updated item with current user removed from sharedWith
+      const updatedItem = {
+        ...existingFile,
+        sharedWith: selectedUsers.filter(user => user.id !== currentUser?.id)
+      };
+
+      await updateItem({ updatedItem, originalItem: existingFile });
+
+      toast({
+        title: "Left successfully",
+        description: <>You have removed your access to <span className="font-bold">{existingFile.name}</span>.</>,
+      });
+
+      setEditFile(false);
+      handleDialogClose(false);
+      setSelectedUsers([]);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove access. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (showConfirmLeave) {
+    return (
+      <Dialog open={editFile} onOpenChange={(value) => {
+        setEditFile(value);
+        handleDialogClose(value);
+        setShowConfirmLeave(false);
+      }}>
+        <DialogContent className="max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Leave</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove your access to <span className="font-bold">{existingFile.name}</span>? 
+              You won't be able to access it unless someone shares it with you again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowConfirmLeave(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleLeave}
+            >
+              Confirm
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={editFile} onOpenChange={(value) => {
@@ -184,21 +261,34 @@ export function EditFileDialog({
                 setSelectedUsers={setSelectedUsers}
                 onSearch={setSearchTerm}
                 isLoading={isLoading.friends}
+                currentUserId={currentUser?.id}
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setEditFile(false);
-                  handleDialogClose(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Save changes</Button>
+            <div className="flex justify-between items-center pt-4">
+              {currentUser?.id !== existingFile.owner?.id && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowConfirmLeave(true)}
+                  className="mr-auto"
+                >
+                  {getLeaveButtonText()}
+                </Button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditFile(false);
+                    handleDialogClose(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Save changes</Button>
+              </div>
             </div>
           </form>
         </Form>

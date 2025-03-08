@@ -45,6 +45,9 @@ interface FriendsSearchProps {
 
   /** Callback function when a user is removed */
   onRemove?: (userId: string) => void;
+
+  /** Optional prop to indicate current user ID */
+  currentUserId?: string;
 }
 
 export function FriendsSearch({
@@ -56,6 +59,7 @@ export function FriendsSearch({
   onSearch,
   isLoading = false,
   onRemove,
+  currentUserId,
 }: FriendsSearchProps) {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -119,6 +123,7 @@ export function FriendsSearch({
         onRemove={handleRemoveUser}
         showRemove={true}
         limit={10}
+        currentUserId={currentUserId}
       />
 
       <Popover open={open} onOpenChange={setOpen}>

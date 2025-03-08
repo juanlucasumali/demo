@@ -35,6 +35,7 @@ interface TableActionsProps {
   setAudioState?: React.Dispatch<React.SetStateAction<AudioState>>
   menuType: 'context' | 'dropdown'
   onCloseMenu?: () => void
+  hideFileActions?: boolean
 }
 
 export function TableActions({
@@ -44,7 +45,8 @@ export function TableActions({
   onDelete,
   setAudioState,
   menuType,
-  onCloseMenu
+  onCloseMenu,
+  hideFileActions = false
 }: TableActionsProps) {
   const { toast } = useToast()
   
@@ -121,104 +123,108 @@ export function TableActions({
         <Share className="mr-2 h-4 w-4" /> Share
       </MenuItem>
 
-      <MenuSub>
-        <MenuSubTrigger>
-          <RefreshCcw className="mr-2 h-4 w-4" /> Convert
-        </MenuSubTrigger>
-        <MenuSubContent>
-          <MenuItem
-            disabled={row.original.format !== FileFormat.WAV}
-            onClick={async (e) => {
-              e.stopPropagation()
-              try {
-                const handle = await window.showSaveFilePicker({
-                  suggestedName: row.original.name.replace(/\.wav$/i, '.mp3'),
-                  types: [{
-                    description: 'MP3 Audio',
-                    accept: { 'audio/mpeg': ['.mp3'] }
-                  }]
-                })
+      {!hideFileActions && (
+        <>
+          <MenuSub>
+            <MenuSubTrigger>
+              <RefreshCcw className="mr-2 h-4 w-4" /> Convert
+            </MenuSubTrigger>
+            <MenuSubContent>
+              <MenuItem
+                disabled={row.original.format !== FileFormat.WAV}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  try {
+                    const handle = await window.showSaveFilePicker({
+                      suggestedName: row.original.name.replace(/\.wav$/i, '.mp3'),
+                      types: [{
+                        description: 'MP3 Audio',
+                        accept: { 'audio/mpeg': ['.mp3'] }
+                      }]
+                    })
 
-                const wavData = await b2Service.retrieveFile(row.original.filePath!)
-                const mp3Data = await AudioConverterService.wavToMp3(wavData)
-                
-                const writable = await handle.createWritable()
-                await writable.write(mp3Data)
-                await writable.close()
-                
-                console.log('✅ WAV to MP3 conversion saved successfully')
-              } catch (error) {
-                if (error instanceof Error && error.name !== 'AbortError') {
-                  console.error('❌ Conversion failed:', error)
-                }
-              }
-            }}
-          >
-            WAV to MP3
-          </MenuItem>
-        </MenuSubContent>
-      </MenuSub>
-
-      {row.original.type === "file" ? (
-        <MenuItem
-          onClick={async (e) => {
-            e.stopPropagation()
-            try {
-              setAudioState?.(prev => ({
-                ...prev,
-                downloadingRow: row.id
-              }))
-              
-              const fileName = row.original.name
-              const extension = row.original.format?.toLowerCase() || ''
-              
-              const baseFileName = fileName.toLowerCase().endsWith(`.${extension}`) 
-                ? fileName 
-                : `${fileName}.${extension}`
-
-              const handle = await window.showSaveFilePicker({
-                suggestedName: baseFileName,
-                types: [{
-                  description: `${extension.toUpperCase()} File`,
-                  accept: {
-                    [mimeTypes[extension] || 'application/octet-stream']: [`.${extension}`]
+                    const wavData = await b2Service.retrieveFile(row.original.filePath!)
+                    const mp3Data = await AudioConverterService.wavToMp3(wavData)
+                    
+                    const writable = await handle.createWritable()
+                    await writable.write(mp3Data)
+                    await writable.close()
+                    
+                    console.log('✅ WAV to MP3 conversion saved successfully')
+                  } catch (error) {
+                    if (error instanceof Error && error.name !== 'AbortError') {
+                      console.error('❌ Conversion failed:', error)
+                    }
                   }
-                }]
-              })
-              
-              const fileData = await b2Service.retrieveFile(row.original.filePath!)
-              
-              const writable = await handle.createWritable()
-              await writable.write(fileData)
-              await writable.close()
+                }}
+              >
+                WAV to MP3
+              </MenuItem>
+            </MenuSubContent>
+          </MenuSub>
 
-              toast({
-                title: "Download Complete",
-                description: `Successfully downloaded ${fileName}`,
-              })
+          {row.original.type === "file" ? (
+            <MenuItem
+              onClick={async (e) => {
+                e.stopPropagation()
+                try {
+                  setAudioState?.(prev => ({
+                    ...prev,
+                    downloadingRow: row.id
+                  }))
+                  
+                  const fileName = row.original.name
+                  const extension = row.original.format?.toLowerCase() || ''
+                  
+                  const baseFileName = fileName.toLowerCase().endsWith(`.${extension}`) 
+                    ? fileName 
+                    : `${fileName}.${extension}`
 
-            } catch (error) {
-              if (error instanceof Error && error.name !== 'AbortError') {
-                console.error('❌ Download failed:', error)
-                toast({
-                  variant: "destructive",
-                  title: "Download Failed",
-                  description: "There was an error downloading your file.",
-                })
-              }
-            } finally {
-              setAudioState?.(prev => ({ ...prev, downloadingRow: null }))
-            }
-          }}
-        >
-          <Download className="mr-2 h-4 w-4" /> Download
-        </MenuItem>
-      ) : (
-        <MenuItem 
-          onClick={() => handleFolderDownload(row.original.id!, row.original.name)}
-        >
-          <Download className="mr-2 h-4 w-4" /> Download
-        </MenuItem>
+                  const handle = await window.showSaveFilePicker({
+                    suggestedName: baseFileName,
+                    types: [{
+                      description: `${extension.toUpperCase()} File`,
+                      accept: {
+                        [mimeTypes[extension] || 'application/octet-stream']: [`.${extension}`]
+                      }
+                    }]
+                  })
+                  
+                  const fileData = await b2Service.retrieveFile(row.original.filePath!)
+                  
+                  const writable = await handle.createWritable()
+                  await writable.write(fileData)
+                  await writable.close()
+
+                  toast({
+                    title: "Download Complete",
+                    description: `Successfully downloaded ${fileName}`,
+                  })
+
+                } catch (error) {
+                  if (error instanceof Error && error.name !== 'AbortError') {
+                    console.error('❌ Download failed:', error)
+                    toast({
+                      variant: "destructive",
+                      title: "Download Failed",
+                      description: "There was an error downloading your file.",
+                    })
+                  }
+                } finally {
+                  setAudioState?.(prev => ({ ...prev, downloadingRow: null }))
+                }
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" /> Download
+            </MenuItem>
+          ) : (
+            <MenuItem 
+              onClick={() => handleFolderDownload(row.original.id!, row.original.name)}
+            >
+              <Download className="mr-2 h-4 w-4" /> Download
+            </MenuItem>
+          )}
+        </>
       )}
 
       <MenuItem 

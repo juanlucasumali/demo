@@ -63,6 +63,7 @@ interface DataTableProps<DemoItem> {
   onDelete?: (item: DemoItem) => void
   onSearch?: (term: string) => void
   searchTerm?: string;
+  hideFileActions?: boolean;
 }
 
 export type AudioState = {
@@ -96,6 +97,7 @@ export function DataTable<DemoItem>({
   onDelete,
   onSearch,
   searchTerm = "",
+  hideFileActions = false,
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -536,7 +538,11 @@ export function DataTable<DemoItem>({
             enableRowLink={enableRowLink}
             onRowClick={onRowClick}
             onToggleStar={onToggleStar}
-            />
+            onEditFile={onEditFile}
+            onShare={onShare}
+            onDelete={onDelete}
+            hideFileActions={hideFileActions}
+          />
         )}
       </div>
   

@@ -60,7 +60,7 @@ export function DeleteDialog({ open, onOpenChange, item, handleDialogClose, dele
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete
-            "{item.name}" from our servers.
+            <span className="font-bold">{item.name}</span> from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

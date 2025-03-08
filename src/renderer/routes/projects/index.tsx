@@ -56,6 +56,10 @@ export default function Projects() {
           pageSize={12}
           isLoading={isLoading.projects}
           onToggleStar={(id, isStarred, type) => toggleStar({ id, isStarred, type })}
+          onEditFile={(item) => dialogState.editFile.onOpen({ item })}
+          onShare={(item) => dialogState.share.onOpen({ item })}
+          onDelete={(item) => dialogState.delete.onOpen({ item })}
+          hideFileActions={true}
         />
       </PageContent>
 

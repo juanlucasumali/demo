@@ -9,6 +9,8 @@ import { cn } from "@renderer/lib/utils"
 import { Link } from "@tanstack/react-router"
 import { AvatarGroup } from "@renderer/components/ui/avatar-group"
 import { ItemType } from "@renderer/types/items"
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@renderer/components/ui/context-menu"
+import { TableActions } from "./table-actions"
 
 interface GridItemProps<TData> {
   row: Row<TData>;
@@ -23,8 +25,17 @@ export function GridItem<DemoItem>({
   isSelected, 
   onSelectionChange, 
   enableSelection, 
-  enableRowLink = true
-}: GridItemProps<DemoItem>) {
+  enableRowLink = true,
+  onEditFile,
+  onShare,
+  onDelete,
+  hideFileActions = false
+}: GridItemProps<DemoItem> & {
+  onEditFile?: (item: any) => void;
+  onShare?: (item: any) => void;
+  onDelete?: (item: any) => void;
+  hideFileActions?: boolean;
+}) {
   const owner = row.getValue("owner") as UserProfile;
   const sharedWith = row.getValue("sharedWith") as UserProfile[] | null;
   const hasCollaborators = !row.getValue("icon") && sharedWith && sharedWith.length > 0;
@@ -113,12 +124,30 @@ export function GridItem<DemoItem>({
     </div>
   );
 
-  return enableRowLink ? (
-    <Link 
-      to={`/projects/${itemId}`}
-      className="no-underline text-foreground"
-    >
-      {content}
-    </Link>
-  ) : content;
+  const wrappedContent = (
+    <ContextMenu modal={false}>
+      <ContextMenuTrigger asChild>
+        {enableRowLink ? (
+          <Link 
+            to={`/projects/${itemId}` as any}
+            className="no-underline text-foreground"
+          >
+            {content}
+          </Link>
+        ) : content}
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-64">
+        <TableActions
+          row={row as any}
+          menuType="context"
+          onEditFile={onEditFile}
+          onShare={onShare}
+          onDelete={onDelete}
+          hideFileActions={hideFileActions}
+        />
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+
+  return wrappedContent;
 } 

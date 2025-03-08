@@ -3,8 +3,6 @@ import { ReactNode } from 'react'
 import { SidebarProvider } from '../ui/sidebar'
 import { AppSidebar } from '../sidebar/app-sidebar'
 import { AppTopbar } from '../topbar/app-topbar'
-import { MediaPlayer } from '../media-player/media-player'
-import { useMediaPlayerStore } from '@renderer/stores/use-media-player-store'
 import { NotificationsProvider } from '../notifications/notifications-provider'
 import { useNotificationsStore } from '@renderer/stores/notifications-store'
 
@@ -14,7 +12,6 @@ interface PageContentProps {
 }
 
 export function PageMain({ children, className }: PageContentProps) {
-    const isPlayerVisible = useMediaPlayerStore(state => state.isVisible)
     const isNotificationsOpen = useNotificationsStore(state => state.isOpen)
 
     return (
@@ -36,7 +33,6 @@ export function PageMain({ children, className }: PageContentProps) {
                     <div className={cn("flex flex-1 flex-col gap-4 p-4 pt-0", className)}>
                         {children}
                     </div>
-                    {isPlayerVisible && <MediaPlayer />}
                 </div>
             </NotificationsProvider>
         </SidebarProvider>

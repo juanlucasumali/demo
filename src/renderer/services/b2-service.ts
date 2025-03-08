@@ -14,10 +14,10 @@ class B2Service {
   private uploadAuthToken: string | null = null;
 
   constructor() {
-    console.log('🚀 Initializing B2Service with config:', {
-      keyId: B2_CONFIG.applicationKeyId.substring(0, 8) + '...',
-      bucketId: B2_CONFIG.bucketId
-    });
+    // console.log('🚀 Initializing B2Service with config:', {
+    //   keyId: B2_CONFIG.applicationKeyId.substring(0, 8) + '...',
+    //   bucketId: B2_CONFIG.bucketId
+    // });
     
     // Override the getAuthHeaderObject method to use browser APIs
     const customAuth = {
@@ -40,15 +40,15 @@ class B2Service {
 
   private async ensureAuthorized() {
     if (!this.authorized) {
-      console.log('🔑 Starting B2 authorization...');
+      // console.log('🔑 Starting B2 authorization...');
       try {
         const authResponse = await this.b2.authorize();
         this.authorized = true;
-        console.log('✅ B2 authorization successful:', {
-          accountId: authResponse.data?.accountId,
-          apiUrl: authResponse.data?.apiUrl,
-          downloadUrl: authResponse.data?.downloadUrl
-        });
+        // console.log('✅ B2 authorization successful:', {
+        //   accountId: authResponse.data?.accountId,
+        //   apiUrl: authResponse.data?.apiUrl,
+        //   downloadUrl: authResponse.data?.downloadUrl
+        // });
       } catch (error: any) {
         console.error('❌ B2 authorization failed:', {
           error,
@@ -61,14 +61,14 @@ class B2Service {
 
   private async getUploadUrl() {
     if (!this.uploadUrl || !this.uploadAuthToken) {
-      console.log('Getting new upload URL...');
+      // console.log('Getting new upload URL...');
       try {
         const response = await this.b2.getUploadUrl({
           bucketId: B2_CONFIG.bucketId
         });
         this.uploadUrl = response.data.uploadUrl;
         this.uploadAuthToken = response.data.authorizationToken;
-        console.log('Got new upload URL:', this.uploadUrl);
+        // console.log('Got new upload URL:', this.uploadUrl);
       } catch (error) {
         console.error('Failed to get upload URL:', error);
         throw error;
@@ -80,32 +80,12 @@ class B2Service {
     };
   }
 
-  // Convert ArrayBuffer to base64 string
-  private arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-  }
-
-  // Convert base64 string to ArrayBuffer
-  private base64ToArrayBuffer(base64: string): ArrayBuffer {
-    const binaryString = window.atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes.buffer;
-  }
-
   async uploadFile(fileName: string, data: ArrayBuffer): Promise<string> {
-    console.log('📤 Starting file upload:', {
-      fileName,
-      sizeBytes: data.byteLength,
-      sizeMB: (data.byteLength / (1024 * 1024)).toFixed(2) + 'MB'
-    });
+    // console.log('📤 Starting file upload:', {
+    //   fileName,
+    //   sizeBytes: data.byteLength,
+    //   sizeMB: (data.byteLength / (1024 * 1024)).toFixed(2) + 'MB'
+    // });
 
     await this.ensureAuthorized();
     
@@ -113,7 +93,7 @@ class B2Service {
       const { uploadUrl, uploadAuthToken } = await this.getUploadUrl();
       if (!uploadUrl) throw new Error('Failed to get upload URL');
       
-      console.log('📍 Got upload URL:', { uploadUrl });
+      // console.log('📍 Got upload URL:', { uploadUrl });
       
       // Calculate SHA1 hash using Web Crypto API
       const hashBuffer = await crypto.subtle.digest('SHA-1', data);
@@ -137,11 +117,11 @@ class B2Service {
       }
 
       const result = await response.json();
-      console.log('✅ Upload successful:', {
-        fileId: result.fileId,
-        fileName: result.fileName,
-        contentLength: result.contentLength
-      });
+      // console.log('✅ Upload successful:', {
+      //   fileId: result.fileId,
+      //   fileName: result.fileName,
+      //   contentLength: result.contentLength
+      // });
       
       return result.fileId;
     } catch (error: any) {
@@ -157,26 +137,26 @@ class B2Service {
   }
 
   async downloadFile(fileId: string): Promise<ArrayBuffer> {
-    console.log(`⬇️ Starting B2 download for fileId: ${fileId}`);
+    // console.log(`⬇️ Starting B2 download for fileId: ${fileId}`);
     await this.ensureAuthorized();
 
     try {
-      console.log('🔄 Making B2 download request...');
+      // console.log('🔄 Making B2 download request...');
       const response = await this.b2.downloadFileById({
         fileId,
         responseType: 'arraybuffer',
-        onDownloadProgress: (event: any) => {
-          const progress = Math.round((event.loaded * 100) / event.total);
-          console.log(`📊 Download progress: ${progress}%`);
-        }
+        // onDownloadProgress: (event: any) => {
+          // const progress = Math.round((event.loaded * 100) / event.total);
+          // console.log(`📊 Download progress: ${progress}%`);
+        // }
       });
 
-      console.log('📦 B2 download response:', {
-        status: response.status,
-        headers: response.headers,
-        dataType: Object.prototype.toString.call(response.data),
-        dataLength: response.data?.byteLength
-      });
+      // console.log('📦 B2 download response:', {
+      //   status: response.status,
+      //   headers: response.headers,
+      //   dataType: Object.prototype.toString.call(response.data),
+      //   dataLength: response.data?.byteLength
+      // });
 
       return response.data;
     } catch (error) {
@@ -186,7 +166,7 @@ class B2Service {
   }
 
   async deleteFile(fileId: string, fileName: string): Promise<void> {
-    console.log(`Deleting file: ${fileName} (${fileId})`);
+    // console.log(`Deleting file: ${fileName} (${fileId})`);
     await this.ensureAuthorized();
 
     try {
@@ -194,7 +174,7 @@ class B2Service {
         fileId,
         fileName: encodeURIComponent(fileName)
       });
-      console.log('File deleted successfully');
+      // console.log('File deleted successfully');
     } catch (error) {
       console.error('Delete failed:', error, {
         fileId,
@@ -216,11 +196,11 @@ class B2Service {
 
   async storeAvatar(userId: string, fileId: string, fileName: string, data: ArrayBuffer): Promise<string> {
     const storagePath = this.generatePath('avatar', {userId, fileId, fileName});
-    console.log(`Storing avatar at path: ${storagePath}`);
+    // console.log(`Storing avatar at path: ${storagePath}`);
     
     try {
       const b2FileId = await this.uploadFile(storagePath, data);
-      console.log(`Avatar stored successfully with B2 fileId: ${b2FileId}`);
+      // console.log(`Avatar stored successfully with B2 fileId: ${b2FileId}`);
       return b2FileId;
     } catch (error) {
       console.error('Failed to store avatar:', error);
@@ -230,11 +210,11 @@ class B2Service {
 
   async storeFile(userId: string, fileId: string, fileName: string, data: ArrayBuffer): Promise<string> {
     const storagePath = this.generatePath('file', {userId, fileId, fileName});
-    console.log(`Storing file at path: ${storagePath}`);
+    // console.log(`Storing file at path: ${storagePath}`);
     
     try {
       const b2FileId = await this.uploadFile(storagePath, data);
-      console.log(`File stored successfully with B2 fileId: ${b2FileId}`);
+      // console.log(`File stored successfully with B2 fileId: ${b2FileId}`);
       return b2FileId;
     } catch (error) {
       console.error('Failed to store file:', error);
@@ -243,14 +223,14 @@ class B2Service {
   }
 
   async retrieveFile(b2FileId: string): Promise<ArrayBuffer> {
-    console.log(`🎯 Retrieving file with B2 fileId: ${b2FileId}`);
+    // console.log(`🎯 Retrieving file with B2 fileId: ${b2FileId}`);
     try {
       const data = await this.downloadFile(b2FileId);
-      console.log('📦 Retrieved file data:', {
-        byteLength: data.byteLength,
-        type: Object.prototype.toString.call(data),
-        hasData: new Uint8Array(data).some(byte => byte !== 0)
-      });
+      // console.log('📦 Retrieved file data:', {
+      //   byteLength: data.byteLength,
+      //   type: Object.prototype.toString.call(data),
+      //   hasData: new Uint8Array(data).some(byte => byte !== 0)
+      // });
       return data;
     } catch (error) {
       console.error('❌ Failed to retrieve file:', error);
@@ -259,16 +239,16 @@ class B2Service {
   }
 
   async removeFile(b2FileId: string, fileName: string): Promise<void> {
-    console.log('🗑️ B2 removeFile called with:', {
-      b2FileId,
-      fileName,
-      authToken: this.uploadAuthToken ? 'present' : 'missing',
-      apiUrl: this.uploadUrl ? 'present' : 'missing'
-    })
+    // console.log('🗑️ B2 removeFile called with:', {
+    //   b2FileId,
+    //   fileName,
+    //   authToken: this.uploadAuthToken ? 'present' : 'missing',
+    //   apiUrl: this.uploadUrl ? 'present' : 'missing'
+    // })
 
     // Ensure we're authorized
     if (!this.authorized) {
-      console.log('🔑 Reauthorizing B2 service before delete...')
+      // console.log('🔑 Reauthorizing B2 service before delete...')
       await this.ensureAuthorized()
     }
 
@@ -278,7 +258,7 @@ class B2Service {
         fileId: b2FileId
       })
       
-      console.log('📄 File info:', fileInfo.data)
+      // console.log('📄 File info:', fileInfo.data)
 
       // Use the actual B2 fileName from the file info
       await this.b2.deleteFileVersion({
@@ -286,7 +266,7 @@ class B2Service {
         fileName: fileInfo.data.fileName
       })
       
-      console.log('✅ B2 delete successful for:', fileInfo.data.fileName)
+      // console.log('✅ B2 delete successful for:', fileInfo.data.fileName)
     } catch (error: any) {
       console.error('❌ B2 delete error details:', {
         error,

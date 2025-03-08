@@ -30,15 +30,14 @@ export function ProfileDropdown() {
       setIsLoading(true)
       await signOut()
       
-      // Set a timeout for navigation and toast
-      setTimeout(() => {
-        navigate({ to: '/auth' })
-        toast({
-          title: 'Success',
-          description: 'Successfully logged out',
-        })
-        setIsLoading(false)
-      }, 1000)
+      // Remove the setTimeout and handle the flow synchronously
+      navigate({ to: '/auth' })
+      toast({
+        title: 'Success',
+        description: 'Successfully logged out',
+      })
+      
+      // We don't need to setIsLoading(false) here since the component will unmount
     } catch (error) {
       toast({
         variant: 'destructive',

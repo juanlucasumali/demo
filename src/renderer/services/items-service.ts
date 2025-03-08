@@ -8,7 +8,7 @@ import { shareNewItem } from './share-service'
 import * as userService from './user-service'
 
 // Helper function to get current user ID
-const getCurrentUserId = () => {
+export const getCurrentUserId = () => {
   const user = useUserStore.getState().user
   if (!user) throw new Error('User not authenticated')
   return user.id
@@ -115,7 +115,8 @@ export async function getFilesWithSharing(
     parentFolderId?: string | null,
     projectId?: string | null,
     collectionId?: string | null,
-    includeNested?: boolean
+    includeNested?: boolean,
+    searchTerm?: string
   }
 ): Promise<DemoItem[]> {
   const { data, error } = await supabase
@@ -124,7 +125,8 @@ export async function getFilesWithSharing(
       p_parent_folder_id: filters?.parentFolderId,
       p_project_id: filters?.projectId,
       p_collection_id: filters?.collectionId,
-      p_include_nested: filters?.includeNested || false
+      p_include_nested: filters?.includeNested || false,
+      p_search_term: filters?.searchTerm
     });
 
   if (error) {
@@ -165,15 +167,16 @@ async function getItemsWithSharing(
 export async function getFilesAndFolders(
   parentFolderId?: string | null,
   projectId?: string | null,
-  collectionId?: string | null
+  collectionId?: string | null,
+  searchTerm?: string
 ): Promise<DemoItem[]> {
   const userId = getCurrentUserId();
   
-  // If no parentFolderId is provided, we want root items
   const filters = {
     parentFolderId: parentFolderId === undefined ? null : parentFolderId,
     projectId,
-    collectionId
+    collectionId,
+    searchTerm
   };
   
   return getItemsWithSharing('files', userId, filters);
@@ -182,38 +185,6 @@ export async function getFilesAndFolders(
 export async function getProjects(): Promise<DemoItem[]> {
   const userId = getCurrentUserId();
   return getItemsWithSharing('projects', userId);
-}
-
-interface ShareRecord {
-  file_id: string | null;
-  project_id: string | null;
-  shared_with_id: string;
-  shared_by_id: string;
-}
-
-async function createShareRecords(
-  itemId: string,
-  itemType: 'file' | 'project',
-  sharedWith: UserProfile[],
-  sharedById: string
-) {
-  if (!sharedWith || sharedWith.length === 0) return;
-
-  const shareRecords: ShareRecord[] = sharedWith.map(user => ({
-    file_id: itemType === 'file' ? itemId : null,
-    project_id: itemType === 'project' ? itemId : null,
-    shared_with_id: user.id,
-    shared_by_id: sharedById,
-  }));
-
-  const { error: shareError } = await supabase
-    .from('shared_items')
-    .upsert(shareRecords, {
-      onConflict: `${itemType}_id,shared_with_id`,
-      ignoreDuplicates: true
-    });
-
-  if (shareError) throw shareError;
 }
 
 // Helper functions for managing relationships
@@ -396,9 +367,8 @@ export async function addProject(item: Omit<DemoItem, 'id'>, sharedWith?: UserPr
 
   if (error) throw error;
 
-  // If we have users to share with, create the share records
-  if (sharedWith && sharedWith.length > 0) {
-    await createShareRecords(data.id, 'project', sharedWith || [], currentUserId);
+  if (sharedWith?.length) {
+    await shareNewItem(data.id, 'project', sharedWith);
   }
 
   return {
@@ -836,91 +806,6 @@ export async function searchFriends(searchTerm?: string): Promise<UserProfile[]>
   return Promise.all(data.map(user => processUserProfile(user)));
 }
 
-export async function shareItems(
-  items: DemoItem[], 
-  users: { id: string }[] | UserProfile[]
-) {
-  const currentUserId = getCurrentUserId();
-  
-  // Split items into files and projects
-  const fileItems = items.filter(item => item.type === ItemType.FILE || item.type === ItemType.FOLDER);
-  const projectItems = items.filter(item => item.type === ItemType.PROJECT);
-
-  // Create share records for files
-  if (fileItems.length > 0) {
-    const fileShares = fileItems.flatMap(item =>
-      users.map(user => ({
-        file_id: item.id,
-        project_id: null,
-        shared_with_id: user.id,
-        shared_by_id: currentUserId
-      }))
-    );
-
-    const { error: fileError } = await supabase
-      .from('shared_items')
-      .upsert(fileShares, {
-        onConflict: 'file_id,shared_with_id',
-        ignoreDuplicates: true
-      });
-
-    if (fileError) throw fileError;
-  }
-
-  // Create share records for projects
-  if (projectItems.length > 0) {
-    const projectShares = projectItems.flatMap(item =>
-      users.map(user => ({
-        file_id: null,
-        project_id: item.id,
-        shared_with_id: user.id,
-        shared_by_id: currentUserId
-      }))
-    );
-
-    const { error: projectError } = await supabase
-      .from('shared_items')
-      .upsert(projectShares, {
-        onConflict: 'project_id,shared_with_id',
-        ignoreDuplicates: true
-      });
-
-    if (projectError) throw projectError;
-  }
-}
-
-async function getAllNestedItems(folderId: string): Promise<string[]> {
-  const itemIds: string[] = [];
-  
-  // Get immediate children
-  const { data: children } = await supabase
-    .from('file_folders')
-    .select(`
-      file:file_id (
-        id,
-        type
-      )
-    `)
-    .eq('folder_id', folderId);
-
-  if (!children) return itemIds;
-
-  // Process each child
-  for (const child of children as any[]) {
-    if (!child.file) continue;
-    
-    itemIds.push(child.file.id);
-    
-    // If it's a folder, recursively get its children
-    if (child.file.type === 'folder') {
-      const nestedItems = await getAllNestedItems(child.file.id);
-      itemIds.push(...nestedItems);
-    }
-  }
-
-  return itemIds;
-}
-
 export async function addToProject(items: DemoItem[], projectId: string) {
   const fileProjectRecords = items.map(item => ({
     file_id: item.id,
@@ -935,18 +820,6 @@ export async function addToProject(items: DemoItem[], projectId: string) {
     });
 
   if (error) throw error;
-
-  // If the project has shared users, share the new files with them too
-  const { data: project } = await supabase
-    .from('projects')
-    .select('shared_items(shared_with_id)')
-    .eq('id', projectId)
-    .single();
-
-  if (project?.shared_items?.length) {
-    const sharedUsers = project.shared_items.map((share: any) => ({ id: share.shared_with_id }));
-    await shareItems(items, sharedUsers);
-  }
 }
 
 export async function addToCollection(items: DemoItem[], collectionId: string, projectId: string) {
@@ -997,4 +870,74 @@ export async function addToCollection(items: DemoItem[], collectionId: string, p
   }
 
   console.log('Successfully added to both collection and project');
+}
+
+export async function checkForDuplicates(
+  files: File[], 
+  location: 'project' | 'home' | 'collection' | 'folder',
+  params: {
+    parentFolderId?: string | null,
+    projectId?: string | null,
+    collectionId?: string | null
+  }
+): Promise<{ fileName: string, existingNames: string[] }[]> {
+  const userId = getCurrentUserId();
+  
+  // Get all existing files based on location
+  const existingFiles = await getFilesWithSharing(userId, {
+    parentFolderId: location === 'folder' ? params.parentFolderId : null,
+    projectId: location === 'project' ? params.projectId : null,
+    collectionId: location === 'collection' ? params.collectionId : null,
+    includeNested: false
+  });
+
+  // Get duplicates and their variations
+  const duplicates: { fileName: string, existingNames: string[] }[] = [];
+  
+  for (const file of files) {
+    // Remove any existing (n) from the name to get base name
+    const baseFileName = file.name.replace(/\s*\(\d+\)$/, '');
+    const matchingFiles = existingFiles.filter(f => 
+      f.name === file.name || // Exact match
+      f.name.startsWith(baseFileName.replace(/\.[^/.]+$/, '')) // Matches without extension and numbers
+    );
+
+    if (matchingFiles.length > 0) {
+      duplicates.push({
+        fileName: file.name,
+        existingNames: matchingFiles.map(f => f.name)
+      });
+    }
+  }
+
+  return duplicates;
+}
+
+export function generateUniqueFileName(
+  originalName: string, 
+  existingNames: string[]
+): string {
+  // Remove any existing (n) from the name
+  const baseName = originalName.replace(/\s*\(\d+\)$/, '');
+  const ext = baseName.includes('.') ? 
+    '.' + baseName.split('.').pop()! : '';
+  const nameWithoutExt = baseName.replace(ext, '');
+
+  // If no duplicates exist, return original name
+  if (!existingNames.includes(originalName)) {
+    return originalName;
+  }
+
+  // Find the highest number in existing duplicates
+  let highestNum = 0;
+  existingNames.forEach(name => {
+    const match = name.match(/\((\d+)\)/);
+    if (match) {
+      const num = parseInt(match[1]);
+      highestNum = Math.max(highestNum, num);
+    }
+  });
+
+  // Return new name with incremented number
+  return `${nameWithoutExt} (${highestNum + 1})${ext}`;
 }

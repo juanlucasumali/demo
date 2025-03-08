@@ -38,22 +38,28 @@ export function useDialogState() {
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
     collectionId?: string | null
-    sharedWith: UserProfile[] | null
+    parentFolder?: DemoItem | null
+    parentProject?: DemoItem | null
   }>({ 
     isOpen: false,
-    sharedWith: null
+    parentFolder: null,
+    parentProject: null
   })
 
   const [uploadFiles, setUploadFiles] = useState<{
     isOpen: boolean
     parentFolderId?: string | null
-    location?: 'project' | 'home' | 'collection'
+    location: 'project' | 'home' | 'collection' | 'folder'
     projectId?: string | null
     collectionId?: string | null
-    sharedWith: UserProfile[] | null
+    parentFolder?: DemoItem | null
+    parentProject?: DemoItem | null
+    initialFiles?: File[]
   }>({
     isOpen: false,
-    sharedWith: null
+    parentFolder: null,
+    parentProject: null,
+    location: 'home'
   })
 
   const [createProject, setCreateProject] = useState<{
@@ -98,6 +104,12 @@ export function useDialogState() {
     isOpen: false
   })
 
+  const [notifications, setNotifications] = useState<{
+    isOpen: boolean
+  }>({
+    isOpen: false
+  })
+
   return {
   editFile: {
       ...editFile,
@@ -121,13 +133,15 @@ export function useDialogState() {
         location,
         projectId,
         collectionId,
-        sharedWith,
+        parentFolder,
+        parentProject,
       }: {
         parentFolderId?: string | null
         location?: 'project' | 'home' | 'collection'
         projectId?: string | null
         collectionId?: string | null
-        sharedWith?: UserProfile[] | null
+        parentFolder?: DemoItem | null
+        parentProject?: DemoItem | null
       }) =>
         setCreateFolder({ 
           isOpen: true, 
@@ -135,9 +149,14 @@ export function useDialogState() {
           location, 
           projectId, 
           collectionId,
-          sharedWith: sharedWith || null,
+          parentFolder: parentFolder || null,
+          parentProject: parentProject || null,
         }),
-      onClose: () => setCreateFolder({ isOpen: false, sharedWith: null })
+      onClose: () => setCreateFolder({ 
+        isOpen: false, 
+        parentFolder: null,
+        parentProject: null 
+      })
     },
     uploadFiles: {
       ...uploadFiles,
@@ -146,13 +165,17 @@ export function useDialogState() {
         location,
         projectId,
         collectionId,
-        sharedWith,
+        parentFolder,
+        parentProject,
+        initialFiles,
       }: {
         parentFolderId?: string | null
-        location?: 'project' | 'home' | 'collection'
+        location: 'project' | 'home' | 'collection' | 'folder'
         projectId?: string | null
         collectionId?: string | null
-        sharedWith?: UserProfile[] | null
+        parentFolder?: DemoItem | null
+        parentProject?: DemoItem | null
+        initialFiles?: File[]
       }) =>
         setUploadFiles({ 
           isOpen: true, 
@@ -160,9 +183,16 @@ export function useDialogState() {
           location, 
           projectId, 
           collectionId,
-          sharedWith: sharedWith || null,
+          parentFolder: parentFolder || null,
+          parentProject: parentProject || null,
+          initialFiles,
         }),
-      onClose: () => setUploadFiles({ isOpen: false, sharedWith: null })
+      onClose: () => setUploadFiles({ 
+        isOpen: false, 
+        parentFolder: null,
+        parentProject: null,
+        location: 'home'
+      })
     },
     createProject: {
       ...createProject,
@@ -205,6 +235,11 @@ export function useDialogState() {
       onOpen: ({ item, location }: { item: DemoItem, location?: 'folder' | 'project' | 'collection' }) => 
         setRemoveDialog({ isOpen: true, item, location }),
       onClose: () => setRemoveDialog({ isOpen: false })
+    },
+    notifications: {
+      ...notifications,
+      onOpen: () => setNotifications({ isOpen: true }),
+      onClose: () => setNotifications({ isOpen: false })
     }
   }
 } 

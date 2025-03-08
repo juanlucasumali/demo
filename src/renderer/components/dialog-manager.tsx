@@ -5,13 +5,14 @@ import { ShareDialog } from "./dialogs/share-dialog"
 import { EditFileDialog } from "./dialogs/edit-file"
 import { CreateFolder } from "./dialogs/create-folder"
 import { CreateProject } from "./dialogs/create-project"
-import { RequestDialog } from "./dialogs/request"
+import { RequestDialog } from "./dialogs/request-dialog"
 import { SaveItemsDialog } from "./dialogs/save-items-dialog"
 import { SelectFilesDialog } from "./dialogs/select-files"
 import { UserProfile } from "@renderer/types/users"
 import { CreateCollection } from "./dialogs/create-collection"
 import { RemoveDialog } from "./dialogs/remove-dialog"
 import { UploadFiles } from "./dialogs/upload-files"
+import { NotificationsDialog } from "./dialogs/notifications-dialog"
 
 interface DialogManagerProps {
   editFile: {
@@ -36,16 +37,19 @@ interface DialogManagerProps {
     location?: 'project' | 'home' | 'collection'
     projectId?: string | null
     collectionId?: string | null
-    sharedWith: UserProfile[] | null
+    parentFolder?: DemoItem | null
+    parentProject?: DemoItem | null
   }
   uploadFiles: {
     isOpen: boolean
     onClose: () => void
     parentFolderId?: string | null
-    location?: 'project' | 'home' | 'collection'
+    location: 'project' | 'home' | 'collection' | 'folder'
     projectId?: string | null
     collectionId?: string | null
-    sharedWith: UserProfile[] | null
+    parentFolder?: DemoItem | null
+    parentProject?: DemoItem | null
+    initialFiles?: File[]
   }
   createProject: {
     isOpen: boolean
@@ -89,6 +93,11 @@ interface DialogManagerProps {
     item?: DemoItem
     location?: 'folder' | 'project' | 'collection'
   }
+  notifications: {
+    isOpen: boolean
+    onClose: () => void
+    onSearch?: (term: string) => void
+  }
 }
 
 export function DialogManager({
@@ -105,7 +114,8 @@ export function DialogManager({
   deleteItem,
   isLoading,
   createCollection,
-  remove
+  remove,
+  notifications
 }: DialogManagerProps) {
   return (
     <>
@@ -144,7 +154,8 @@ export function DialogManager({
           parentFolderId={createFolder.parentFolderId}
           projectId={createFolder.projectId}
           collectionId={createFolder.collectionId}
-          sharedWith={createFolder.sharedWith}
+          parentFolder={createFolder.parentFolder}
+          parentProject={createFolder.parentProject}
         />
       )}
 
@@ -152,11 +163,13 @@ export function DialogManager({
         <UploadFiles
           isOpen={uploadFiles.isOpen}
           onClose={() => uploadFiles.onClose()}
-          location={uploadFiles.location || 'home'}
+          location={uploadFiles.location}
           parentFolderId={uploadFiles.parentFolderId}
           projectId={uploadFiles.projectId}
           collectionId={uploadFiles.collectionId}
-          sharedWith={uploadFiles.sharedWith}
+          parentFolder={uploadFiles.parentFolder}
+          parentProject={uploadFiles.parentProject}
+          initialFiles={uploadFiles.initialFiles}
         />
       )}
 
@@ -212,6 +225,12 @@ export function DialogManager({
           location={remove.location}
         />
       )}
+
+      <NotificationsDialog
+        open={notifications.isOpen}
+        onOpenChange={() => notifications.onClose()}
+        onSearch={notifications.onSearch}
+      />
     </>
   )
 } 

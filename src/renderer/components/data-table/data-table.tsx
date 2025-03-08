@@ -61,6 +61,8 @@ interface DataTableProps<DemoItem> {
   onEditFile?: (item: DemoItem) => void
   onShare?: (item: DemoItem) => void
   onDelete?: (item: DemoItem) => void
+  onSearch?: (term: string) => void
+  searchTerm?: string;
 }
 
 export type AudioState = {
@@ -92,6 +94,8 @@ export function DataTable<DemoItem>({
   onEditFile,
   onShare,
   onDelete,
+  onSearch,
+  searchTerm = "",
 }: DataTableProps<DemoItem>) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'isStarred', desc: true }, // true first
@@ -196,8 +200,16 @@ export function DataTable<DemoItem>({
     const currentTrack = row.original as DemoItem;
     const mediaPlayerStore = useMediaPlayerStore.getState();
     
+    console.log('🎵 handlePlayToggle called', {
+      rowId,
+      currentTrackId: mediaPlayerStore.currentTrackId,
+      isPlaying: mediaPlayerStore.isPlaying,
+      currentTrack: currentTrack
+    });
+
     // If this row is current AND playing, pause it
     if (audioState.currentRow === rowId && mediaPlayerStore.isPlaying) {
+      console.log('🎵 Pausing current track');
       mediaPlayerStore.pauseTrack();
       setAudioState(prev => ({ ...prev, playingRow: null }));
       return;
@@ -206,15 +218,17 @@ export function DataTable<DemoItem>({
     try {
       // If we're switching to a different track
       if (mediaPlayerStore.currentTrackId !== (currentTrack as any).id) {
+        console.log('🎵 Starting new track', (currentTrack as any).id);
         setAudioState(prev => ({ 
           ...prev, 
           loadingRow: rowId,
           currentRow: rowId,
-          downloadingRow: null // Reset downloadingRow when loading new track
+          downloadingRow: null
         }));
         
         mediaPlayerStore.onPause = () => {
-          setAudioState(prev => ({ ...prev, playingRow: null })); // Keep currentRow unchanged
+          console.log('🎵 onPause callback triggered');
+          setAudioState(prev => ({ ...prev, playingRow: null }));
         };
 
         await mediaPlayerStore.playTrack((currentTrack as any).id, (currentTrack as any).name, (currentTrack as any).filePath!);
@@ -225,6 +239,7 @@ export function DataTable<DemoItem>({
           currentRow: rowId 
         }));
       } else {
+        console.log('🎵 Resuming current track');
         mediaPlayerStore.resumeTrack();
         setAudioState(prev => ({ ...prev, playingRow: rowId }));
       }
@@ -234,7 +249,7 @@ export function DataTable<DemoItem>({
         ...prev, 
         playingRow: null, 
         loadingRow: null 
-      })); // Keep currentRow unchanged on error
+      }));
     }
   };
 
@@ -339,6 +354,17 @@ export function DataTable<DemoItem>({
     }
   };
 
+  // Set initial filter value when searchTerm changes
+  React.useEffect(() => {
+    table.getColumn("name")?.setFilterValue(searchTerm);
+  }, [searchTerm]);
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    table.getColumn("name")?.setFilterValue(value);
+    onSearch?.(value);
+  };
+
   return (
     <div className="space-y-4">
       {/* Search Filter and Action Buttons Container */}
@@ -346,11 +372,9 @@ export function DataTable<DemoItem>({
         <div className="flex flex-row items-center pb-4 justify-between space-x-4 lg:space-y-0">
           <div className="flex-1 flex items-center space-x-4">
             <Input
-              placeholder="Search files..."
+              placeholder="Search..."
               value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("name")?.setFilterValue(event.target.value)
-              }
+              onChange={handleSearchChange}
               className="max-w-sm"
             />
             

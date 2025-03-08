@@ -12,14 +12,15 @@ interface UseItemsOptions {
 
 export function useItems(options?: UseItemsOptions) {
   const queryClient = useQueryClient()
-  const queryKey = ['files-and-folders', options?.parentFolderId, options?.projectId];
+  const queryKey = ['files-and-folders', options?.parentFolderId, options?.projectId, options?.searchTerm];
 
   const { data: filesAndFolders = [], isLoading } = useQuery({
-    queryKey: ['files-and-folders', options?.parentFolderId, options?.projectId, options?.collectionId],
+    queryKey: ['files-and-folders', options?.parentFolderId, options?.projectId, options?.collectionId, options?.searchTerm],
     queryFn: () => itemsService.getFilesAndFolders(
       options?.parentFolderId, 
       options?.projectId,
-      options?.collectionId
+      options?.collectionId,
+      options?.searchTerm
     ),
   });
 
@@ -129,17 +130,6 @@ export function useItems(options?: UseItemsOptions) {
     }
   });
 
-  // Add this inside useItems function
-  const shareItemsMutation = useMutation({
-    mutationFn: ({ items, users }: { items: DemoItem[], users: UserProfile[] }) =>
-      itemsService.shareItems(items, users),
-    onSuccess: () => {
-      // Invalidate queries that might be affected by sharing
-      queryClient.invalidateQueries({ queryKey: ['files-and-folders'] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-    }
-  });
-
   // Add query for current folder if parentFolderId is provided
   const { data: currentFolder, isLoading: isLoadingCurrentFolder } = useQuery({
     queryKey: ['folder', options?.parentFolderId],
@@ -244,7 +234,6 @@ export function useItems(options?: UseItemsOptions) {
     updateItem: updateItem.mutate,
     toggleStar: toggleStar.mutate,
     addCollection: addCollection.mutate,
-    shareItems: shareItemsMutation.mutate,
     currentCollection,
     removeCollection,
     friends: searchFriendsQuery.data || [],
@@ -262,7 +251,6 @@ export function useItems(options?: UseItemsOptions) {
       currentFolder: isLoadingCurrentFolder,
       currentProject: isLoadingCurrentProject,
       addCollection: addCollection.isPending,
-      shareItems: shareItemsMutation.isPending,
       collections: isLoadingCollections,
       currentCollection: isLoadingCurrentCollection,
       removeCollection: removeCollection.isPending,

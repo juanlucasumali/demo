@@ -42,6 +42,9 @@ interface FriendsSearchProps {
 
   /** Optional prop to indicate loading state */
   isLoading?: boolean;
+
+  /** Callback function when a user is removed */
+  onRemove?: (userId: string) => void;
 }
 
 export function FriendsSearch({
@@ -52,6 +55,7 @@ export function FriendsSearch({
   singleSelect = false,
   onSearch,
   isLoading = false,
+  onRemove,
 }: FriendsSearchProps) {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -103,6 +107,7 @@ export function FriendsSearch({
   const handleRemoveUser = (userId: string) => {
     if (owner?.id === userId) return;
     setSelectedUsers((prev) => prev.filter((u) => u.id !== userId));
+    onRemove?.(userId);
   };
 
   return (

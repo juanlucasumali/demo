@@ -13,6 +13,7 @@ import { ItemType } from '@renderer/types/items'
 import { DemoItem } from '@renderer/types/items'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
+import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
 
 // Define route params interface
 export interface FolderParams {
@@ -52,6 +53,17 @@ function FolderPage() {
     }
   };
 
+  const handleFileDrop = (files: File[]) => {
+    if (files.length > 0) {
+      dialogState.uploadFiles.onOpen({
+        initialFiles: files,
+        parentFolderId: folderId,
+        location: 'folder',
+        parentFolder: currentFolder
+      });
+    }
+  };
+
   return (
     <PageMain>
       <PageHeader
@@ -61,7 +73,11 @@ function FolderPage() {
         owner={currentFolder?.owner || undefined}
         sharedWith={currentFolder?.sharedWith}
       >
-        <Button variant="default" onClick={() => dialogState.uploadFiles.onOpen({ parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
+        <Button variant="default" onClick={() => dialogState.uploadFiles.onOpen({ 
+          parentFolderId: folderId, 
+          location: 'folder', 
+          parentFolder: currentFolder 
+        })}>
           Upload
         </Button>
 
@@ -71,7 +87,11 @@ function FolderPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className='w-56' align='end' forceMount>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => dialogState.createFolder.onOpen({ parentFolderId: folderId, location: 'home', sharedWith: currentFolder?.sharedWith })}>
+              <DropdownMenuItem onClick={() => dialogState.createFolder.onOpen({ 
+                parentFolderId: folderId, 
+                location: 'home', 
+                parentFolder: currentFolder 
+              })}>
                 <User/> Create folder
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
               </DropdownMenuItem>
@@ -94,25 +114,27 @@ function FolderPage() {
       </PageHeader>
 
       <PageContent>
-        <DataTable 
-          columns={createColumns({
-            onEditFile: (item) => dialogState.editFile.onOpen({ item }),
-            onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (item) => dialogState.delete.onOpen({ item }),
-            onRemove: (item) => dialogState.remove.onOpen({ item, location: 'folder' }),
-            location: 'folder'
-          })} 
-          data={filesAndFolders}
-          onRowClick={handleRowClick}
-          isLoading={isLoading.filesAndFolders}
-          onBulkDelete={async (items) => {
-            const itemIds = items.map(item => item.id);
-            await bulkDelete(itemIds);
-          }}
-          onEditFile={(item) => dialogState.editFile.onOpen({ item })}
-          onShare={(item) => dialogState.share.onOpen({ item })}
-          onDelete={(item) => dialogState.delete.onOpen({ item })}
-        />
+        <FileDropZone onFileDrop={handleFileDrop}>
+          <DataTable 
+            columns={createColumns({
+              onEditFile: (item) => dialogState.editFile.onOpen({ item }),
+              onShare: (item) => dialogState.share.onOpen({ item }),
+              onDelete: (item) => dialogState.delete.onOpen({ item }),
+              onRemove: (item) => dialogState.remove.onOpen({ item, location: 'folder' }),
+              location: 'folder'
+            })} 
+            data={filesAndFolders}
+            onRowClick={handleRowClick}
+            isLoading={isLoading.filesAndFolders}
+            onBulkDelete={async (items) => {
+              const itemIds = items.map(item => item.id);
+              await bulkDelete(itemIds);
+            }}
+            onEditFile={(item) => dialogState.editFile.onOpen({ item })}
+            onShare={(item) => dialogState.share.onOpen({ item })}
+            onDelete={(item) => dialogState.delete.onOpen({ item })}
+          />
+        </FileDropZone>
       </PageContent>
 
       <DialogManager

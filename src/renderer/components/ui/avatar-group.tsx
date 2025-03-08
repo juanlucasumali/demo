@@ -35,10 +35,15 @@ export function AvatarGroup({
   variant = "stack",
   className
 }: AvatarGroupProps) {
-  const allUsers = owner ? [owner, ...users] : users
-  const visibleUsers = allUsers.slice(0, limit - 1)
-  const remainingUsers = allUsers.slice(limit - 1)
-  const hasMoreUsers = remainingUsers.length > 0
+  // Filter out owner from users array if owner exists
+  const filteredUsers = owner 
+    ? users.filter(user => user.id !== owner.id)
+    : users;
+
+  const allUsers = owner ? [owner, ...filteredUsers] : filteredUsers;
+  const visibleUsers = allUsers.slice(0, limit - 1);
+  const remainingUsers = allUsers.slice(limit - 1);
+  const hasMoreUsers = remainingUsers.length > 0;
 
   const sizeClasses = {
     sm: "h-7 w-7",

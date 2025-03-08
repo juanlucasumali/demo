@@ -178,6 +178,7 @@ export function EditFileDialog({
             <div className="space-y-2">
               <FormLabel>Share With</FormLabel>
               <FriendsSearch 
+                owner={existingFile.owner || undefined}
                 friendsList={friends}
                 selectedUsers={selectedUsers}
                 setSelectedUsers={setSelectedUsers}

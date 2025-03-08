@@ -15,6 +15,7 @@ interface TableRowWithContextProps {
   onEditFile?: (item: DemoItem) => void
   onShare?: (item: DemoItem) => void
   onDelete?: (item: DemoItem) => void
+  onLeave?: (item: DemoItem) => void
   setAudioState?: React.Dispatch<React.SetStateAction<AudioState>>
 }
 
@@ -24,6 +25,7 @@ export function TableRowWithContext({
   onEditFile,
   onShare,
   onDelete,
+  onLeave,
   setAudioState
 }: TableRowWithContextProps) {
   return (
@@ -38,6 +40,7 @@ export function TableRowWithContext({
           onEditFile={onEditFile}
           onShare={onShare}
           onDelete={onDelete}
+          onLeave={onLeave}
           setAudioState={setAudioState}
         />
       </ContextMenuContent>

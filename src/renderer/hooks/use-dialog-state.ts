@@ -110,6 +110,13 @@ export function useDialogState() {
     isOpen: false
   })
 
+  const [leaveDialog, setLeaveDialog] = useState<{ 
+    isOpen: boolean
+    item?: DemoItem 
+  }>({
+    isOpen: false
+  })
+
   return {
   editFile: {
       ...editFile,
@@ -240,6 +247,11 @@ export function useDialogState() {
       ...notifications,
       onOpen: () => setNotifications({ isOpen: true }),
       onClose: () => setNotifications({ isOpen: false })
+    },
+    leave: {
+      ...leaveDialog,
+      onOpen: ({ item }: { item: DemoItem }) => setLeaveDialog({ isOpen: true, item }),
+      onClose: () => setLeaveDialog({ isOpen: false })
     }
   }
 } 

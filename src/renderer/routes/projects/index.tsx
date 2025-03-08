@@ -47,7 +47,8 @@ export default function Projects() {
             enableActions: true,
             onEditFile: (item) => dialogState.editFile.onOpen({ item }),
             onShare: (item) => dialogState.share.onOpen({ item }),
-            onDelete: (item) => dialogState.delete.onOpen({ item })
+            onDelete: (item) => dialogState.delete.onOpen({ item }),
+            onLeave: (item) => dialogState.leave.onOpen({ item })
           })}
           data={projects}
           enableSelection={false}
@@ -59,6 +60,7 @@ export default function Projects() {
           onEditFile={(item) => dialogState.editFile.onOpen({ item })}
           onShare={(item) => dialogState.share.onOpen({ item })}
           onDelete={(item) => dialogState.delete.onOpen({ item })}
+          onLeave={(item) => dialogState.leave.onOpen({ item })}
           hideFileActions={true}
         />
       </PageContent>

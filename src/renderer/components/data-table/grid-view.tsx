@@ -1,14 +1,5 @@
 import { Table } from "@tanstack/react-table"
-import { cn } from "@renderer/lib/utils"
 import { ItemType } from "@renderer/types/items"
-import { Star } from "lucide-react"
-import { Checkbox } from "@renderer/components/ui/checkbox"
-import { AvatarGroup } from "@renderer/components/ui/avatar-group"
-import TagBadge from "@renderer/components/tag-badge"
-import { Link } from "@tanstack/react-router"
-import { UserProfile } from "@renderer/types/users"
-import folderImage from "@renderer/assets/macos-folder.png"
-import { ProjectTag } from "@renderer/types/tags"
 import { GridItem } from "./grid-item"
 
 interface DataTableGridViewProps<TData> {
@@ -17,20 +8,21 @@ interface DataTableGridViewProps<TData> {
   enableRowLink?: boolean
   onRowClick?: (item: TData) => void
   onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void
-  onEditFile?: (item: any) => void
-  onShare?: (item: any) => void
-  onDelete?: (item: any) => void
+  onEditFile?: (item: TData) => void
+  onShare?: (item: TData) => void
+  onDelete?: (item: TData) => void
+  onLeave?: (item: TData) => void
+  hideFileActions?: boolean
 }
 
 export function DataTableGridView<TData>({ 
   table,
   enableSelection,
   enableRowLink = true,
-  onRowClick,
-  onToggleStar,
   onEditFile,
   onShare,
   onDelete,
+  onLeave,
   hideFileActions = false
 }: DataTableGridViewProps<TData> & {
   onEditFile?: (item: any) => void;
@@ -51,6 +43,7 @@ export function DataTableGridView<TData>({
           onEditFile={onEditFile}
           onShare={onShare}
           onDelete={onDelete}
+          onLeave={onLeave}
           hideFileActions={hideFileActions}
         />
       ))}

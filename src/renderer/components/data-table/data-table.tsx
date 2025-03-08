@@ -56,14 +56,15 @@ interface DataTableProps<DemoItem> {
   onRowClick?: (item: DemoItem) => void
   isLoading?: boolean
   onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void
-  onBulkDelete?: (items: DemoItem[]) => Promise<void>;
-  onBulkShare?: (items: DemoItem[]) => void;
+  onBulkDelete?: (items: DemoItem[]) => Promise<void>
+  onBulkShare?: (items: DemoItem[]) => void
   onEditFile?: (item: DemoItem) => void
   onShare?: (item: DemoItem) => void
   onDelete?: (item: DemoItem) => void
+  onLeave?: (item: DemoItem) => void
   onSearch?: (term: string) => void
-  searchTerm?: string;
-  hideFileActions?: boolean;
+  searchTerm?: string
+  hideFileActions?: boolean
 }
 
 export type AudioState = {
@@ -95,6 +96,7 @@ export function DataTable<DemoItem>({
   onEditFile,
   onShare,
   onDelete,
+  onLeave,
   onSearch,
   searchTerm = "",
   hideFileActions = false,
@@ -490,6 +492,7 @@ export function DataTable<DemoItem>({
                       onEditFile={onEditFile as (item: any) => void}
                       onShare={onShare as (item: any) => void}
                       onDelete={onDelete as (item: any) => void}
+                      onLeave={onLeave as (item: any) => void}
                       setAudioState={setAudioState}
                     >
                       <TableRow
@@ -541,6 +544,7 @@ export function DataTable<DemoItem>({
             onEditFile={onEditFile}
             onShare={onShare}
             onDelete={onDelete}
+            onLeave={onLeave}
             hideFileActions={hideFileActions}
           />
         )}

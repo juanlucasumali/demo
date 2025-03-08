@@ -18,6 +18,11 @@ interface GridItemProps<TData> {
   onSelectionChange: (checked: boolean) => void;
   enableSelection?: boolean;
   enableRowLink?: boolean;
+  onLeave?: (item: TData) => void;
+  onEditFile?: (item: TData) => void;
+  onShare?: (item: TData) => void;
+  onDelete?: (item: TData) => void;
+  hideFileActions?: boolean;
 }
 
 export function GridItem<DemoItem>({ 
@@ -29,11 +34,13 @@ export function GridItem<DemoItem>({
   onEditFile,
   onShare,
   onDelete,
+  onLeave,
   hideFileActions = false
 }: GridItemProps<DemoItem> & {
   onEditFile?: (item: any) => void;
   onShare?: (item: any) => void;
   onDelete?: (item: any) => void;
+  onLeave?: (item: any) => void;
   hideFileActions?: boolean;
 }) {
   const owner = row.getValue("owner") as UserProfile;
@@ -143,6 +150,7 @@ export function GridItem<DemoItem>({
           onEditFile={onEditFile}
           onShare={onShare}
           onDelete={onDelete}
+          onLeave={onLeave}
           hideFileActions={hideFileActions}
         />
       </ContextMenuContent>

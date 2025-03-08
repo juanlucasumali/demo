@@ -133,7 +133,8 @@ function Home() {
               onEditFile: (item) => dialogState.editFile.onOpen({ item }),
               onShare: (item) => dialogState.share.onOpen({ item }),
               onDelete: (item) => dialogState.delete.onOpen({ item }),
-              onToggleStar: (id, isStarred, type) => toggleStar({ id, isStarred, type })
+              onToggleStar: (id, isStarred, type) => toggleStar({ id, isStarred, type }),
+              onLeave: (item) => dialogState.leave.onOpen({ item })
             })} 
             data={filesAndFolders}
             onRowClick={handleRowClick}
@@ -147,6 +148,7 @@ function Home() {
             onDelete={(item) => dialogState.delete.onOpen({ item })}
             onSearch={setSearchTerm}
             searchTerm={searchTerm}
+            onLeave={(item) => dialogState.leave.onOpen({ item })}
           />
         </FileDropZone>
       </PageContent>

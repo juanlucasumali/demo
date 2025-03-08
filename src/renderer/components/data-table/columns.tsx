@@ -44,6 +44,7 @@ interface ColumnOptions {
   onShare?: (item: DemoItem) => void
   onDelete?: (item: DemoItem) => void
   onRemove?: (item: DemoItem) => void
+  onLeave?: (item: DemoItem) => void
   onToggleStar?: (id: string, isStarred: boolean, type: ItemType) => void;
 }
 
@@ -57,6 +58,8 @@ export const createColumns = ({
   onEditFile,
   onShare,
   onDelete,
+  onRemove,
+  onLeave,
   onToggleStar,
 }: ColumnOptions = {}): ColumnDef<DemoItem>[] => {
   const baseColumns: ColumnDef<DemoItem>[] = [

@@ -13,6 +13,7 @@ import { CreateCollection } from "./dialogs/create-collection"
 import { RemoveDialog } from "./dialogs/remove-dialog"
 import { UploadFiles } from "./dialogs/upload-files"
 import { NotificationsDialog } from "./dialogs/notifications-dialog"
+import { LeaveDialog } from "./dialogs/leave-dialog"
 
 interface DialogManagerProps {
   editFile: {
@@ -98,6 +99,11 @@ interface DialogManagerProps {
     onClose: () => void
     onSearch?: (term: string) => void
   }
+  leave: {
+    isOpen: boolean
+    onClose: () => void
+    item?: DemoItem
+  }
 }
 
 export function DialogManager({
@@ -115,7 +121,8 @@ export function DialogManager({
   isLoading,
   createCollection,
   remove,
-  notifications
+  notifications,
+  leave,
 }: DialogManagerProps) {
   return (
     <>
@@ -231,6 +238,16 @@ export function DialogManager({
         onOpenChange={() => notifications.onClose()}
         onSearch={notifications.onSearch}
       />
+
+      {leave.item && updateItem && (
+        <LeaveDialog
+          open={leave.isOpen}
+          onOpenChange={() => leave.onClose()}
+          item={leave.item}
+          updateItem={updateItem}
+          handleDialogClose={() => leave.onClose()}
+        />
+      )}
     </>
   )
 } 

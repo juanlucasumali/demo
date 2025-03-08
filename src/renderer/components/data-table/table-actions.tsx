@@ -1,7 +1,7 @@
 import { Row } from "@tanstack/react-table"
 import { DemoItem, FileFormat } from "@renderer/types/items"
 import { AudioState } from "./data-table"
-import { Edit, Share, RefreshCcw, Download, Trash } from "lucide-react"
+import { Edit, Share, RefreshCcw, Download, Trash, LogOut } from "lucide-react"
 import { b2Service } from '@renderer/services/b2-service'
 import { AudioConverterService } from '@renderer/services/audio-converter'
 import { useToast } from "@renderer/hooks/use-toast"
@@ -10,6 +10,7 @@ import { createFolderZip, ZipProgress } from '@renderer/services/zip-service'
 import { DownloadProgress } from '@renderer/components/download-progress'
 import { useState } from 'react'
 import { getFilesAndFolders } from '@renderer/services/items-service'
+import { useUserStore } from "@renderer/stores/user-store"
 
 // For Context Menu
 import {
@@ -32,6 +33,7 @@ interface TableActionsProps {
   onEditFile?: (item: DemoItem) => void
   onShare?: (item: DemoItem) => void
   onDelete?: (item: DemoItem) => void
+  onLeave?: (item: DemoItem) => void
   setAudioState?: React.Dispatch<React.SetStateAction<AudioState>>
   menuType: 'context' | 'dropdown'
   onCloseMenu?: () => void
@@ -43,12 +45,15 @@ export function TableActions({
   onEditFile,
   onShare,
   onDelete,
+  onLeave,
   setAudioState,
   menuType,
   onCloseMenu,
   hideFileActions = false
 }: TableActionsProps) {
   const { toast } = useToast()
+  const currentUser = useUserStore((state) => state.user)
+  const isOwner = row.original.owner?.id === currentUser?.id
   
   const MenuItem = menuType === 'context' ? ContextMenuItem : DropdownMenuItem
   const MenuSub = menuType === 'context' ? ContextMenuSub : DropdownMenuSub
@@ -227,15 +232,27 @@ export function TableActions({
         </>
       )}
 
-      <MenuItem 
-        onClick={(e) => {
-          e.stopPropagation()
-          handleAction(onDelete!)
-        }}
-        className="text-red-500"
-      >
-        <Trash className="mr-2 h-4 w-4" /> Delete
-      </MenuItem>
+      {!isOwner ? (
+        <MenuItem 
+          onClick={(e) => {
+            e.stopPropagation()
+            handleAction(onLeave!)
+          }}
+          className="text-red-500"
+        >
+          <LogOut className="mr-2 h-4 w-4" /> Leave
+        </MenuItem>
+      ) : (
+        <MenuItem 
+          onClick={(e) => {
+            e.stopPropagation()
+            handleAction(onDelete!)
+          }}
+          className="text-red-500"
+        >
+          <Trash className="mr-2 h-4 w-4" /> Delete
+        </MenuItem>
+      )}
 
       {downloadProgress && (
         <DownloadProgress 

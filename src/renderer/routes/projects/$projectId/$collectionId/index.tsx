@@ -39,6 +39,7 @@ function CollectionPage() {
       onShare: (item) => dialogState.share.onOpen({ item }),
       onDelete: (item) => dialogState.delete.onOpen({ item }),
       onRemove: (item) => dialogState.remove.onOpen({ item, location: 'collection' }),
+      onLeave: (item) => dialogState.leave.onOpen({ item }),
       location: 'collection'
     }),
     [dialogState]
@@ -168,6 +169,7 @@ function CollectionPage() {
                 onEditFile={(item) => dialogState.editFile.onOpen({ item })}
                 onShare={(item) => dialogState.share.onOpen({ item })}
                 onDelete={(item) => dialogState.delete.onOpen({ item })}
+                onLeave={(item) => dialogState.leave.onOpen({ item })}
               />
             </FileDropZone>
           </div>

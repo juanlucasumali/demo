@@ -108,6 +108,7 @@ function ProjectPage() {
         tag={currentProject.tags}
         owner={currentProject.owner ?? undefined}
         sharedWith={currentProject.sharedWith}
+        projectId={projectId}
       >
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>

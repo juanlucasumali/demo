@@ -5,6 +5,7 @@ import { FileTag } from "@renderer/types/tags"
 import TagBadge from "@renderer/components/tag-badge"
 import { UserProfile } from "@renderer/types/users";
 import { AvatarGroup } from "../ui/avatar-group"
+import folderImage from "@renderer/assets/macos-folder.png"
 
 interface PageHeaderProps {
   title: string
@@ -45,11 +46,18 @@ export function PageHeader({
           <div 
             className={`
               flex size-16 items-center justify-center top-0 rounded-xl shrink-0
-              ${projectId ? '' : 'bg-muted'}
+              // ${projectId ? '' : 'bg-muted'}
+              ${'bg-muted'}
             `}
-            style={projectId ? iconGradientStyle : undefined}
+            // style={projectId ? iconGradientStyle : undefined}
           >
-            {Icon && <Icon size={37} />}
+            {projectId ? (
+              <img 
+                src={folderImage} 
+                alt="Folder Icon" 
+                className="w-10 h-10 object-contain" 
+              />
+            ) : Icon && <Icon size={37} />}
           </div>
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2">

@@ -3,9 +3,7 @@ import {
   getCurrentSubscription, 
   createCheckoutSession, 
   createPortalSession,
-  getSubscriptionPlans
 } from '@renderer/services/subscription-service'
-import { Subscription, SubscriptionPlan } from '@renderer/types/subscriptions'
 import { useToast } from '@renderer/hooks/use-toast'
 
 export function useSubscription() {
@@ -22,58 +20,53 @@ export function useSubscription() {
     queryFn: getCurrentSubscription,
   })
 
-  // Get available plans
-  const { 
-    data: plans = [], 
-    isLoading: isLoadingPlans 
-  } = useQuery({
-    queryKey: ['subscription-plans'],
-    queryFn: getSubscriptionPlans,
-  })
-
   // Subscribe to a plan
   const subscribeToPlan = useMutation({
-    mutationFn: (planId: string) => createCheckoutSession(planId),
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Subscription Error",
-        description: error instanceof Error ? error.message : "Failed to create subscription",
-      })
+    mutationFn: async (planId: string) => {
+      try {
+        await createCheckoutSession(planId)
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Subscription Error",
+          description: error instanceof Error ? error.message : "Failed to create subscription",
+        })
+        throw error
+      }
     }
   })
 
   // Manage subscription
   const manageSubscription = useMutation({
-    mutationFn: createPortalSession,
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Portal Error",
-        description: error instanceof Error ? error.message : "Failed to open subscription portal",
-      })
+    mutationFn: async () => {
+      try {
+        await createPortalSession()
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Portal Error",
+          description: error instanceof Error ? error.message : "Failed to open subscription portal",
+        })
+        throw error
+      }
     }
   })
 
-  // Get current plan details
-  const currentPlan = subscription 
-    ? plans.find(plan => plan.id === subscription.plan_id) || plans[0] 
-    : plans[0]
-
   // Check if subscription is active
   const isSubscriptionActive = subscription?.status === 'active' || subscription?.status === 'trialing'
+  
+  // Get current plan ID from subscription
+  const currentPlanId = subscription?.plan_id || 'free'
 
   return {
     subscription,
     isLoadingSubscription,
     subscriptionError,
-    plans,
-    isLoadingPlans,
-    currentPlan,
     isSubscriptionActive,
-    subscribeToPlan: subscribeToPlan.mutate,
+    currentPlanId,
+    startCheckoutSession: subscribeToPlan.mutate,
     isSubscribing: subscribeToPlan.isPending,
-    manageSubscription: manageSubscription.mutate,
+    openCustomerPortal: manageSubscription.mutate,
     isManaging: manageSubscription.isPending,
   }
 }

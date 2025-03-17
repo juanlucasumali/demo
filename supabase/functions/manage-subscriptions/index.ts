@@ -15,7 +15,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 // Domain for success/cancel URLs
 const APP_DOMAIN = Deno.env.get('APP_DOMAIN') || 'http://localhost:3000'
 
-serve(async (req) => {
+serve(async (req, res) => {
   const { url, method } = req
   const path = new URL(url).pathname
 
@@ -88,6 +88,8 @@ serve(async (req) => {
         }
       })
 
+      res.redirect(303, session.url);
+
       return new Response(
         JSON.stringify({ sessionId: session.id, url: session.url }),
         { status: 200, headers: { ...headers, 'Content-Type': 'application/json' } }
@@ -125,59 +127,17 @@ serve(async (req) => {
         return_url: `${APP_DOMAIN}/settings/subscription`,
       })
 
+      res.redirect(303, portalSession.url);
+
       return new Response(
         JSON.stringify({ url: portalSession.url }),
         { status: 200, headers: { ...headers, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Webhook endpoint to handle Stripe events
-    // TODO: Setup webhook secrets so that this works, but not needed for now
-    if (path === '/webhook' && method === 'POST') {
-      const body = await req.text()
-      const signature = req.headers.get('stripe-signature')
-
-      if (!signature) {
-        return new Response(
-          JSON.stringify({ error: 'Missing stripe-signature header' }),
-          { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Verify webhook signature
-      const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || ''
-      let event
-
-      try {
-        event = stripe.webhooks.constructEvent(body, signature, endpointSecret)
-      } catch (err) {
-        console.error(`⚠️ Webhook signature verification failed: ${err.message}`)
-        return new Response(
-          JSON.stringify({ error: `Webhook Error: ${err.message}` }),
-          { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // With the FDW, you may only need to handle specific events that require
-      // immediate action in your application, as the data will be available
-      // through the stripe schema tables
-      if (event.type === 'checkout.session.completed') {
-        console.log('checkout.session.completed', event)
-      }
-
-      return new Response(JSON.stringify({ received: true }), { 
-        status: 200, 
-        headers: { ...headers, 'Content-Type': 'application/json' } 
-      })
-    }
-    return new Response(
-      JSON.stringify({ error: 'Not Found' }),
-      { status: 404, headers: { ...headers, 'Content-Type': 'application/json' } }
-    )
   } catch (error) {
-    console.error('Error processing request:', error)
+    // Add error handling here
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }
     )
   }

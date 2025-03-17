@@ -2,9 +2,6 @@ create extension if not exists "wrappers" with schema "extensions";
 
 create schema if not exists "stripe";
 
--- Create subscription related tables
-CREATE TYPE subscription_status AS ENUM ('trialing', 'active', 'canceled', 'incomplete', 'incomplete_expired', 'past_due', 'unpaid');
-
 create foreign table stripe.subscriptions (
   id text,
   customer text,

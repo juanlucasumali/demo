@@ -14,6 +14,7 @@ import { RemoveDialog } from "./dialogs/remove-dialog"
 import { UploadFiles } from "./dialogs/upload-files"
 import { NotificationsDialog } from "./dialogs/notifications-dialog"
 import { LeaveDialog } from "./dialogs/leave-dialog"
+import { SubscriptionDialog } from "./dialogs/subscription-dialog"
 
 interface DialogManagerProps {
   editFile: {
@@ -104,6 +105,10 @@ interface DialogManagerProps {
     onClose: () => void
     item?: DemoItem
   }
+  subscription: {
+    isOpen: boolean
+    onClose: () => void
+  }
 }
 
 export function DialogManager({
@@ -123,6 +128,7 @@ export function DialogManager({
   remove,
   notifications,
   leave,
+  subscription,
 }: DialogManagerProps) {
   return (
     <>
@@ -248,6 +254,11 @@ export function DialogManager({
           handleDialogClose={() => leave.onClose()}
         />
       )}
+
+      <SubscriptionDialog
+        open={subscription.isOpen}
+        onOpenChange={() => subscription.onClose()}
+      />
     </>
   )
 } 

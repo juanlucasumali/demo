@@ -1,4 +1,4 @@
-import { User as UserIcon } from 'lucide-react'
+import { User as UserIcon, LogOut, Crown } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import {
@@ -17,6 +17,8 @@ import { useUserStore } from '@renderer/stores/user-store'
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { useDialogState } from '@renderer/hooks/use-dialog-state'
+import { DialogManager } from '../dialog-manager'
 
 export function ProfileDropdown() {
   const navigate = useNavigate()
@@ -24,6 +26,7 @@ export function ProfileDropdown() {
   const { toast } = useToast()
   const profile = useUserStore((state) => state.profile)
   const [isLoading, setIsLoading] = useState(false)
+  const dialogState = useDialogState()
 
   const handleLogout = async () => {
     try {
@@ -71,14 +74,22 @@ export function ProfileDropdown() {
       <DropdownMenuContent className='w-56' align='end' forceMount>
         <DropdownMenuGroup>
           <Link to={`/profiles/${profile.id}` as any}>
-            <DropdownMenuItem 
-              disabled={isLoading}
-            >
-            Profile
-            {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
+            <DropdownMenuItem disabled={isLoading} className="gap-2">
+              <UserIcon className="h-4 w-4" />
+              Profile
+            </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>
+        <DropdownMenuItem 
+          onClick={() => {
+            dialogState.subscription.onOpen();
+          }}
+          disabled={isLoading}
+          className="gap-2"
+        >
+          <Crown className="h-4 w-4" />
+          Upgrade
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={e => {
@@ -96,12 +107,16 @@ export function ProfileDropdown() {
             </>
           ) : (
             <>
+              <LogOut className="h-4 w-4" />
               Log out
-              {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
             </>
           )}
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <DialogManager
+        {...dialogState}
+        isLoading={{ deleteItem: false, updateItem: false }}
+      />
     </DropdownMenu>
   )
 }

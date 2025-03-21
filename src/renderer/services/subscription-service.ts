@@ -6,9 +6,8 @@ export async function createCheckoutSession(priceId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('User not authenticated')
 
-  // Call the Edge Function (see supabase/functions/manage-subscriptions/index.ts)
-  // The function in that index file was deployed to supabase server using the supabase CLI
-  const { error } = await supabase.functions.invoke('create-checkout-session', {
+  // Call corresponding edge function in supabase/functions
+  const { error, data } = await supabase.functions.invoke('create-checkout-session', {
     body: {
       userId: user.id,
       priceId: priceId
@@ -16,7 +15,13 @@ export async function createCheckoutSession(priceId: string) {
     method: 'POST',
   })
 
-  if (error) throw error
+  console.log('Data:', data)
+
+  window.api.openExternalUrl(data.sessionUrl);
+
+  if (error) {
+    console.log('Function returned an error', error)
+  }
 }
 
 // Start a Stripe Customer Portal session (for managing existing subscriptions)

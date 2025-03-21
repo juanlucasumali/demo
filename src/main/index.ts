@@ -150,6 +150,8 @@ ipcMain.handle('delete-file', async (_, filePath: string) => {
 }
 })
 
+ipcMain.handle('open-external-url', (_, url) => shell.openExternal(url))
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({

@@ -29,6 +29,7 @@ declare global {
         size: number;
       }>
       getTempPath: () => Promise<string>
+      openExternalUrl: (url: string) => Promise<void>
     }
   }
 }

@@ -34,8 +34,8 @@ export function SubscriptionTest() {
 
   // Plans to test checkout
   const testPlans = [
-    { id: 'price_essentials', name: 'Essentials' },
-    { id: 'price_pro', name: 'Pro' }
+    { id: 'price_1R1XqbEw6kqX5Y2BbIq85VhW', name: 'Essentials' },
+    { id: 'price_1R1XqbEw6kqX5Y2BbIq85VhW', name: 'Pro' }
   ]
 
   return (

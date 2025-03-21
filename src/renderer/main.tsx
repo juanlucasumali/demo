@@ -76,7 +76,7 @@ if (!rootElement.innerHTML) {
         <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
           <AuthProvider>
             <SubscriptionProvider>
-            <InnerApp />
+              <InnerApp />
             </SubscriptionProvider>
           </AuthProvider>
         </ThemeProvider>

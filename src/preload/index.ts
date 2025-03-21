@@ -72,6 +72,7 @@ const api = {
   getTempPath: async () => {
     return os.tmpdir();
   },
+  openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

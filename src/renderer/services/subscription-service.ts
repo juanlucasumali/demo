@@ -15,8 +15,6 @@ export async function createCheckoutSession(priceId: string) {
     method: 'POST',
   })
 
-  console.log('Data:', data)
-
   window.api.openExternalUrl(data.sessionUrl);
 
   if (error) {
@@ -29,14 +27,60 @@ export async function createPortalSession() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('User not authenticated')
 
-  // Call the Edge Function (see supabase/functions/manage-subscriptions/index.ts)
-  // The function in that index file was deployed to supabase server using the supabase CLI
-  const { error } = await supabase.functions.invoke('create-portal-session', {
+  // Call corresponding edge function in supabase/functions
+  const { error, data } = await supabase.functions.invoke('create-portal-session', {
     body: {
       userId: user.id
     },
     method: 'POST',
   })
 
-  if (error) throw error
+  window.api.openExternalUrl(data.sessionUrl);
+
+  if (error) {
+    console.log('Function returned an error', error)
+  }
+}
+
+// Gets the Stripe customer object from the database
+export async function getCustomerMatch(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const { data, error } = await supabase
+    .rpc('get_customer_match', {
+      p_user_id: user.id
+    })
+  
+  console.log('Customer data:', data)
+
+  if (error) {
+    console.error('❌ Error fetching Stripe customer:', error)
+    throw error
+  }
+
+  return data
+} 
+
+// Gets the Stripe subscription object from the database
+export async function getSubscription(customerId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_subscription', {
+    customer_id: customerId
+  })
+  console.log('Subscription data:', data)
+
+  if (error) {
+    console.error('❌ Error fetching Stripe subscription:', error)
+    throw error
+  }
+
+  return data
+}
+
+// Refreshes subscription data for a customer
+export async function refreshSubscription(): Promise<string | null> {
+  const customer = await getCustomerMatch()
+  if (!customer) return null
+  
+  return await getSubscription(customer)
 }

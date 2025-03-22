@@ -1,12 +1,31 @@
-import { useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as subscriptionService from '@renderer/services/subscription-service'
-import { useSubscriptionContext } from '@renderer/context/subscription-context'
 import { useToast } from '@renderer/hooks/use-toast'
+import { useUserStore } from '@renderer/stores/user-store'
 
-export function useSubscriptions() {
-  const { subscription, isLoading, refreshSubscription } = useSubscriptionContext()
-  // const queryClient = useQueryClient()
+export function useSubscription() {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const user = useUserStore((state) => state.user)
+
+  // Query for customer match
+  const { data: customer, isLoading: isCustomerLoading } = useQuery({
+    queryKey: ['customer', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null
+      return subscriptionService.getCustomerMatch()
+    },
+    enabled: !!user?.id,
+    staleTime: Infinity
+  })
+
+  // Query for subscription data using refreshSubscription
+  const { data: subscription, isLoading: isSubscriptionLoading } = useQuery({
+    queryKey: ['subscription', customer],
+    queryFn: subscriptionService.refreshSubscription,
+    enabled: !!customer,
+    staleTime: Infinity
+  })
 
   // Subscribe to a plan
   const subscribeToPlan = useMutation({
@@ -23,8 +42,6 @@ export function useSubscriptions() {
       }
     },
     onSuccess: () => {
-      // We don't immediately refresh as the subscription won't be updated until
-      // the user completes the checkout flow in their browser
       toast({
         title: "Checkout Started",
         description: "Please complete the checkout in your browser",
@@ -54,49 +71,26 @@ export function useSubscriptions() {
     }
   })
 
-  // Check if subscription is active
-  const isSubscriptionActive = subscription?.status === 'active' || subscription?.status === 'trialing'
-  
-  // Get current plan ID from subscription
-  const currentPlanId = subscription?.plan_id || 'free'
-
-  // Feature matrix defining which features are available in each plan
-  // TODO: Move to server side for security reasons
-  const FEATURE_MATRIX: Record<string, string[]> = {
-    'free': ['basic_storage', 'basic_projects', 'file_sync', 'file_conversion'],
-    'price_essentials': ['advanced_storage', 'unlimited_projects', 'ai_filtering', 'share_lists'],
-    'price_pro': ['unlimited_storage', 'exclusive_cosmetics', 'file_analytics', 'early_access']
-  }
-  
-  // Check feature access
-  const hasFeatureAccess = (featureKey: string) => {
-    // Check if subscription is active
-    if (!subscription || subscription.status !== 'active' && subscription.status !== 'trialing') return false
-    
-    // Get features for the user's plan
-    const planFeatures = FEATURE_MATRIX[subscription.plan_id] || []
-    
-    // Check if the requested feature is included in the plan
-    return planFeatures.includes(featureKey)
-  }
-
+  const findCustomerMatch = useMutation({
+    mutationFn: async () => {
+      await subscriptionService.getCustomerMatch()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer', user?.id] })
+    }
+  })
   return {
     // Data
     subscription,
-    isSubscriptionActive,
-    currentPlanId,
-    
-    // Feature access
-    hasFeatureAccess,
     
     // Actions
     startCheckoutSession: subscribeToPlan.mutate,
     openCustomerPortal: manageSubscription.mutate,
-    refreshSubscription,
+    findCustomerMatch: findCustomerMatch.mutate,
     
     // Loading states
     isLoading: {
-      subscription: isLoading,
+      subscription: isCustomerLoading || isSubscriptionLoading,
       subscribing: subscribeToPlan.isPending,
       managing: manageSubscription.isPending
     }

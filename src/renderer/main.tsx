@@ -15,7 +15,6 @@ import { MediaPlayer } from './components/media-player/media-player'
 import { SyncCheck } from './components/sync-check'
 import { Toaster as Sonner } from "./components/ui/sonner"
 import { Subscript } from 'lucide-react'
-import { SubscriptionProvider } from './context/subscription-context'
 
 
 const memoryHistory = createMemoryHistory({
@@ -75,9 +74,7 @@ if (!rootElement.innerHTML) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
           <AuthProvider>
-            <SubscriptionProvider>
-              <InnerApp />
-            </SubscriptionProvider>
+            <InnerApp />
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

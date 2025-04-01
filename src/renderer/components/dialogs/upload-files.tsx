@@ -663,7 +663,7 @@ export function UploadFiles({
         <DialogHeader className="mb-4">
           <DialogTitle className="text-base font-large">Storage Limit Exceeded</DialogTitle>
           <DialogDescription>
-            You don't have enough storage space to upload these files.
+            You’ve exceeded your storage limit for the free tier. Upgrade for more space!
           </DialogDescription>
         </DialogHeader>
 
@@ -697,16 +697,3 @@ export function UploadFiles({
     </Dialog>
   );
 }
-
-function formatBytes(bytes: number): string {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let size = bytes;
-  let unitIndex = 0;
-
-  while (size >= 1000 && unitIndex < units.length - 1) {
-    size /= 1000;
-    unitIndex++;
-  }
-
-  return `${size.toFixed(1)} ${units[unitIndex]}`;
-} 

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as itemsService from '@renderer/services/items-service'
 import { DemoItem, ItemType } from '@renderer/types/items';
 import { UserProfile } from '@renderer/types/users';
+import { getCurrentUserId } from '@renderer/services/items-service';
 
 interface UseItemsOptions {
   parentFolderId?: string;
@@ -221,6 +222,12 @@ export function useItems(options?: UseItemsOptions) {
     }
   });
 
+  // Add project count query
+  const { data: projectCount = 0, isLoading: isLoadingProjectCount } = useQuery({
+    queryKey: ['project-count'],
+    queryFn: () => itemsService.getProjectCount(getCurrentUserId()),
+  });
+
   return {
     filesAndFolders,
     projects,
@@ -228,6 +235,7 @@ export function useItems(options?: UseItemsOptions) {
     currentFolder,
     currentProject,
     collections,
+    projectCount,
     addFileOrFolder: addFileOrFolder.mutate,
     addProject: addProject.mutate,
     deleteItem: deleteItem.mutate,
@@ -257,7 +265,8 @@ export function useItems(options?: UseItemsOptions) {
       friends: searchFriendsQuery.isLoading,
       bulkDelete: bulkDeleteMutation.isPending,
       addToProject: addToProjectMutation.isPending,
-      addToCollection: addToCollectionMutation.isPending
+      addToCollection: addToCollectionMutation.isPending,
+      projectCount: isLoadingProjectCount,
     }
   }
 } 

@@ -949,3 +949,13 @@ export function generateUniqueFileName(
   // Return new name with incremented number
   return `${nameWithoutExt} (${highestNum + 1})${ext}`;
 }
+
+export async function getProjectCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('projects')
+    .select('*', { count: 'exact', head: true })
+    .eq('owner_id', userId);
+
+  if (error) throw error;
+  return count || 0;
+}

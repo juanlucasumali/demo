@@ -1,15 +1,25 @@
 import { StorageQuota } from "@renderer/types/storage";
+import { b2Service } from './b2-service';
+import { getCurrentUserId } from './items-service';
 
 // This is a dummy implementation. In a real app, this would fetch from your backend
 export async function getStorageQuota(): Promise<StorageQuota> {
-  // Simulating an API call with dummy data
-  // 7.5GB used of 15GB total
-  const used = 7.5 * 1024 * 1024 * 1024;  // 7.5GB in bytes
-  const total = 15 * 1024 * 1024 * 1024;  // 15GB in bytes
+  const userId = getCurrentUserId();
   
-  return {
-    used,
-    total,
-    percentage: (used / total) * 100
-  };
+  try {
+    // Get actual storage usage from B2
+    const { used } = await b2Service.getUserStorageUsage(userId);
+    
+    // Changed from 1024 to 1000 to match display units
+    const total = 10 * 1000 * 1000 * 1000;  // 10GB in bytes
+    
+    return {
+      used,
+      total,
+      percentage: (used / total) * 100
+    };
+  } catch (error) {
+    console.error('Failed to get storage quota:', error);
+    throw error;
+  }
 } 

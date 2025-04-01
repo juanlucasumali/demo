@@ -280,6 +280,43 @@ class B2Service {
       throw error
     }
   }
+
+  async getUserStorageUsage(userId: string): Promise<{ used: number }> {
+    await this.ensureAuthorized();
+    
+    try {
+      let totalSize = 0;
+      let startFileName = '';
+      let moreFiles = true;
+      
+      // List all files in the user's directory
+      while (moreFiles) {
+        const response = await this.b2.listFileNames({
+          bucketId: B2_CONFIG.bucketId,
+          prefix: `file/${userId}/`, // This matches your file path pattern
+          startFileName,
+          maxFileCount: 1000
+        });
+        
+        // Sum up the sizes of all files
+        response.data.files.forEach((file: any) => {
+          totalSize += file.contentLength;
+        });
+        
+        // Check if there are more files to fetch
+        if (response.data.nextFileName) {
+          startFileName = response.data.nextFileName;
+        } else {
+          moreFiles = false;
+        }
+      }
+      
+      return { used: totalSize };
+    } catch (error) {
+      console.error('Failed to get storage usage:', error);
+      throw error;
+    }
+  }
 }
 
 export const b2Service = new B2Service(); 

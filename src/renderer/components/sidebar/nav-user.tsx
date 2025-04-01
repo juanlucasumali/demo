@@ -12,15 +12,20 @@ import {
   SidebarMenuItem,
 } from "../../components/ui/sidebar"
 import { Link, useRouterState } from "@tanstack/react-router"
+import { StorageMeter } from "@renderer/components/storage-meter"
 
 export function NavUser({}: {}) {
   const profile = useUserStore((state) => state.profile)  
   if (!profile) return null
+  
   return (
     <SidebarMenu>
+      <StorageMeter />
       <SidebarMenuItem>
         <Link to={`/profiles/${profile.id}` as any}>
-          <SidebarMenuButton tooltip={'Home'} isActive={useRouterState().location.pathname === `/profiles/${profile.id}`}
+          <SidebarMenuButton 
+            tooltip={'Home'} 
+            isActive={useRouterState().location.pathname === `/profiles/${profile.id}`}
             size="lg"
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >

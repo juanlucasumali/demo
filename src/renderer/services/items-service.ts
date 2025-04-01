@@ -134,19 +134,27 @@ export async function getFilesWithSharing(
     throw error;
   }
 
-  return (data || []).map(item => ({
-    ...toCamelCase(item),
-    id: item.id,
-    owner: item.owner_data,
-    sharedWith: item.shared_with,
-    type: item.type as ItemType,
-    isStarred: item.is_starred,
-    createdAt: new Date(item.created_at),
-    lastModified: new Date(item.last_modified),
-    lastOpened: new Date(item.last_opened),
-    projectIds: item.file_projects,
-    collectionIds: item.file_collections,
-    parentFolderIds: item.file_folders,
+  // Process each item's owner and shared users
+  return Promise.all((data || []).map(async item => {
+    const processedOwner = await processUserProfile(item.owner_data);
+    const processedSharedWith = await Promise.all(
+      item.shared_with?.map(user => processUserProfile(user)) || []
+    );
+
+    return {
+      ...toCamelCase(item),
+      id: item.id,
+      owner: processedOwner,
+      sharedWith: processedSharedWith,
+      type: item.type as ItemType,
+      isStarred: item.is_starred,
+      createdAt: new Date(item.created_at),
+      lastModified: new Date(item.last_modified),
+      lastOpened: new Date(item.last_opened),
+      projectIds: item.file_projects,
+      collectionIds: item.file_collections,
+      parentFolderIds: item.file_folders,
+    };
   }));
 }
 
@@ -940,4 +948,14 @@ export function generateUniqueFileName(
 
   // Return new name with incremented number
   return `${nameWithoutExt} (${highestNum + 1})${ext}`;
+}
+
+export async function getProjectCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('projects')
+    .select('*', { count: 'exact', head: true })
+    .eq('owner_id', userId);
+
+  if (error) throw error;
+  return count || 0;
 }

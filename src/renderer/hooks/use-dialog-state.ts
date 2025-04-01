@@ -117,6 +117,12 @@ export function useDialogState() {
     isOpen: false
   })
 
+  const [subscription, setSubscription] = useState<{
+    isOpen: boolean
+  }>({
+    isOpen: false
+  })
+
   return {
   editFile: {
       ...editFile,
@@ -252,6 +258,11 @@ export function useDialogState() {
       ...leaveDialog,
       onOpen: ({ item }: { item: DemoItem }) => setLeaveDialog({ isOpen: true, item }),
       onClose: () => setLeaveDialog({ isOpen: false })
+    },
+    subscription: {
+      ...subscription,
+      onOpen: () => setSubscription({ isOpen: true }),
+      onClose: () => setSubscription({ isOpen: false })
     }
   }
 } 

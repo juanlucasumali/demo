@@ -5,4 +5,5 @@ export interface UserProfile {
     username: string
     description: string | null
     email: string
+    subscription: string | null
 }

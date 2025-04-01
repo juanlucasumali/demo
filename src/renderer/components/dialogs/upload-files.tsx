@@ -21,6 +21,10 @@ import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 import { FileCheck, AlertCircle } from "lucide-react";
 import { DemoItem } from "@renderer/types/items";
 import { checkForDuplicates, generateUniqueFileName, getCurrentUserId, getFilesWithSharing } from '@renderer/services/items-service';
+import { checkStorageLimit } from '@renderer/services/storage-service';
+import { useDialogState } from "@renderer/hooks/use-dialog-state";
+import { StorageCheckResult } from "@renderer/types/storage";
+import { DialogManager } from "../dialog-manager";
 
 interface FileUploadProgress {
   id: string;
@@ -75,6 +79,10 @@ export function UploadFiles({
 
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [duplicateFiles, setDuplicateFiles] = useState<string[]>([]);
+  const [showStorageWarning, setShowStorageWarning] = useState(false);
+  const [storageInfo, setStorageInfo] = useState<StorageCheckResult | null>(null);
+
+  const dialogState = useDialogState();
 
   const form = useForm<UploadFilesFormValues>({
     resolver: zodResolver(uploadFilesSchema),
@@ -421,6 +429,27 @@ export function UploadFiles({
     }
   };
 
+  const checkStorage = async () => {
+    try {
+      const result = await checkStorageLimit();
+      console.log('Storage result:', result);
+      if (!result.allowed) {
+        setStorageInfo(result);
+        setShowStorageWarning(true);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to check storage limit:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check storage availability",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const onSubmit: SubmitHandler<UploadFilesFormValues> = async () => {
     if (selectedFiles.length === 0) {
       toast({
@@ -430,6 +459,11 @@ export function UploadFiles({
       });
       return;
     }
+
+    // Check storage limit first
+    const hasStorage = await checkStorage();
+    console.log('Has storage:', hasStorage);
+    if (!hasStorage) return;
 
     if (location !== 'home') {
       const hasDuplicates = await checkForDuplicatesInUpload();
@@ -621,11 +655,58 @@ export function UploadFiles({
     );
   }
 
+  const renderStorageWarningContent = () => {
+    if (!storageInfo) return null;
+
+    return (
+      <>
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-base font-large">Storage Limit Exceeded</DialogTitle>
+          <DialogDescription>
+            You don't have enough storage space to upload these files.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          
+          <Button 
+            onClick={() => dialogState.subscription.onOpen()}
+            className="w-full"
+          >
+            View Plans
+          </Button>
+        </div>
+      </>
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[425px]">
-        {showDuplicateDialog ? renderDuplicateDialogContent() : renderUploadDialogContent()}
+        {showStorageWarning 
+          ? renderStorageWarningContent()
+          : showDuplicateDialog 
+            ? renderDuplicateDialogContent() 
+            : renderUploadDialogContent()
+        }
       </DialogContent>
+      <DialogManager
+        {...dialogState}
+        isLoading={{ deleteItem: false, updateItem: false }}
+      />
     </Dialog>
   );
+}
+
+function formatBytes(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = bytes;
+  let unitIndex = 0;
+
+  while (size >= 1000 && unitIndex < units.length - 1) {
+    size /= 1000;
+    unitIndex++;
+  }
+
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
 } 

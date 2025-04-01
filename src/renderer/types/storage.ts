@@ -3,3 +3,8 @@ export interface StorageQuota {
   total: number; // in bytes
   percentage: number;
 } 
+
+export interface StorageCheckResult {
+  allowed: boolean;
+  availableSpace: number;  // in bytes
+}

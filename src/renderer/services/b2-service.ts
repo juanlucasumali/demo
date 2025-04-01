@@ -303,7 +303,6 @@ class B2Service {
         // Sum up the sizes of all files
         response.data.files.forEach((file: any) => {
           totalSize += file.contentLength;
-          console.log('Content length, totalSize:', file.contentLength, totalSize);
         });
         
         // Check if there are more files to fetch

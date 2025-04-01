@@ -3,19 +3,8 @@ import { useStorage } from "@renderer/hooks/use-storage";
 import { Button } from "@renderer/components/ui/button";
 import { useDialogState } from "@renderer/hooks/use-dialog-state";
 import { DialogManager } from "./dialog-manager";
-
-function formatBytes(bytes: number): string {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let size = bytes;
-  let unitIndex = 0;
-
-  while (size >= 1000 && unitIndex < units.length - 1) {
-    size /= 1000;
-    unitIndex++;
-  }
-
-  return `${size.toFixed(1)} ${units[unitIndex]}`;
-}
+import { cn } from "@renderer/lib/utils";
+import { formatBytes } from "@renderer/services/storage-service";
 
 export function StorageMeter() {
   const { quota, isLoading } = useStorage();
@@ -28,7 +17,13 @@ export function StorageMeter() {
   return (
     <>
       <div className="px-2 py-2">
-        <Progress value={quota.percentage} className="h-1 mb-1" />
+        <Progress 
+          value={quota.percentage} 
+          className={cn(
+            "h-1 mb-1",
+            quota.percentage >= 90 && "bg-destructive/20 [&>div]:bg-destructive"
+          )} 
+        />
         <p className="text-xs text-muted-foreground">
           {formatBytes(quota.used)} of {formatBytes(quota.total)} used
         </p>

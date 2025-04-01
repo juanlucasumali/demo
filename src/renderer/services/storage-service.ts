@@ -1,6 +1,7 @@
-import { StorageCheckResult, StorageQuota } from "@renderer/types/storage";
+import { STORAGE_LIMITS, StorageCheckResult, StorageQuota } from "@renderer/types/storage";
 import { b2Service } from './b2-service';
 import { getCurrentUserId } from './items-service';
+import * as userService from './user-service';
 
 // This is a dummy implementation. In a real app, this would fetch from your backend
 export async function getStorageQuota(): Promise<StorageQuota> {
@@ -9,10 +10,10 @@ export async function getStorageQuota(): Promise<StorageQuota> {
   try {
     // Get actual storage usage from B2
     const { used } = await b2Service.getUserStorageUsage(userId);
-    // const used = 9.99 * 1000 * 1000 * 1000;  // 9.99GB in bytes
     
-    // Changed from 1024 to 1000 to match display units
-    const total = 10 * 1000 * 1000 * 1000;  // 10GB in bytes
+    // Get user's subscription to determine storage limit
+    const profile = await userService.getProfile(userId);
+    const total = profile.subscription ? STORAGE_LIMITS[profile.subscription as keyof typeof STORAGE_LIMITS] : STORAGE_LIMITS.free;
     
     return {
       used,

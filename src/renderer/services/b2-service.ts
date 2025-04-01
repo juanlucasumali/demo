@@ -297,8 +297,6 @@ class B2Service {
           startFileName,
           maxFileCount: 1000
         });
-
-        console.log('Response:', response.data.files);
         
         // Sum up the sizes of all files
         response.data.files.forEach((file: any) => {

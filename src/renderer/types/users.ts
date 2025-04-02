@@ -1,3 +1,5 @@
+import { SubscriptionType } from "./subscriptions";
+
 export interface UserProfile {
     id: string;
     name: string;
@@ -5,5 +7,5 @@ export interface UserProfile {
     username: string
     description: string | null
     email: string
-    subscription: string | null
+    subscription: SubscriptionType
 }

@@ -2,6 +2,8 @@ import { supabase } from "@renderer/lib/supabase"
 import { UserProfile } from "@renderer/types/users"
 import { b2Service } from "./b2-service"
 import { DemoItem } from "@renderer/types/items"
+import * as subscriptionService from "./subscription-service"
+import { PRICE_TO_SUBSCRIPTION } from "@renderer/types/subscriptions"
 
 // Cache for avatar URLs to prevent multiple blob URL creations
 const avatarUrlCache = new Map<string, string>()
@@ -73,6 +75,25 @@ export async function getProfile(userId: string): Promise<UserProfile> {
       console.error('Failed to load avatar:', error)
       profile.avatar = null
     }
+  }
+
+  // Fetch subscription status
+  try {
+    const customer = await subscriptionService.getCustomerMatch()
+    if (customer) {
+      const priceId = await subscriptionService.getSubscription(customer)
+      if (priceId) {
+        // Map the price ID to our subscription type
+        profile.subscription = PRICE_TO_SUBSCRIPTION[priceId as keyof typeof PRICE_TO_SUBSCRIPTION] || 'free'
+      } else {
+        profile.subscription = 'free'
+      }
+    } else {
+      profile.subscription = 'free'
+    }
+  } catch (error) {
+    console.error('Failed to fetch subscription:', error)
+    profile.subscription = 'free'
   }
 
   return profile

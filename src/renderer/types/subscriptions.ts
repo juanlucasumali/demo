@@ -1,3 +1,10 @@
+export const PRICE_TO_SUBSCRIPTION = {
+  'price_1R1XpUEw6kqX5Y2Bsl9d1SNf': 'essentials',
+  'price_1R1XqbEw6kqX5Y2BbIq85VhW': 'pro'
+} as const
+
+export type SubscriptionType = 'free' | 'essentials' | 'pro'
+
 export type SubscriptionStatus = 
   | 'trialing' 
   | 'active' 

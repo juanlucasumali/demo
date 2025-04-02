@@ -2,9 +2,11 @@ import { Dialog, DialogContent } from "@renderer/components/ui/dialog"
 import { Button } from "@renderer/components/ui/button"
 import { Check } from "lucide-react"
 import demoSubscriptionsScreen from '@renderer/assets/demo-subscriptions-screen.png'
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { ToggleGroup, ToggleGroupItem } from "@renderer/components/ui/toggle-group"
 import { cn } from "@renderer/lib/utils"
+import { useSubscription } from "@renderer/hooks/use-subscription"
+import { useUserStore } from "@renderer/stores/user-store"
 
 interface SubscriptionDialogProps {
   open: boolean
@@ -23,6 +25,8 @@ interface Plan {
   features: PlanFeature[]
   isPopular?: boolean
   isCurrent?: boolean
+  priceId?: string
+  subscriptionType?: 'free' | 'essentials' | 'pro'
 }
 
 const plans: Plan[] = [
@@ -30,7 +34,7 @@ const plans: Plan[] = [
     name: "Free",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    isCurrent: true,
+    subscriptionType: 'free',
     features: [
       { text: "10GB storage", included: true },
       { text: "Up to 3 projects", included: true },
@@ -42,6 +46,8 @@ const plans: Plan[] = [
     name: "Essentials",
     monthlyPrice: 10,
     yearlyPrice: 8,
+    priceId: 'price_1R1XpUEw6kqX5Y2Bsl9d1SNf',
+    subscriptionType: 'essentials',
     features: [
       { text: "5TB storage", included: true },
       { text: "Unlimited projects", included: true },
@@ -53,6 +59,8 @@ const plans: Plan[] = [
     name: "Pro",
     monthlyPrice: 15,
     yearlyPrice: 12,
+    priceId: 'price_1R1XqbEw6kqX5Y2BbIq85VhW',
+    subscriptionType: 'pro',
     isPopular: true,
     features: [
       { text: "Unlimited storage", included: true },
@@ -76,6 +84,26 @@ const plans: Plan[] = [
 
 export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogProps) {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly")
+  const { startCheckoutSession, openCustomerPortal, isLoading } = useSubscription()
+  const profile = useUserStore((state) => state.profile)
+  const currentSubscription = profile?.subscription
+
+  // Memoize the plans with current plan marked
+  const plansWithCurrent = useMemo(() => {
+    return plans.map(plan => ({
+      ...plan,
+      isCurrent: plan.subscriptionType === currentSubscription
+    }))
+  }, [currentSubscription])
+
+  const handlePlanClick = async (plan: Plan) => {
+    if (plan.priceId) {
+      await startCheckoutSession(plan.priceId)
+    } else if (plan.name === "Teams") {
+      // Handle teams contact
+      window.open('mailto:contact@example.com?subject=Teams%20Plan%20Inquiry', '_blank')
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -107,7 +135,7 @@ export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogPro
 
             {/* Pricing Cards */}
             <div className="grid grid-cols-4 gap-6 max-w-5xl mx-auto w-full">
-              {plans.map((plan) => (
+              {plansWithCurrent.map((plan) => (
                 <div 
                   key={plan.name}
                   className={cn(
@@ -124,7 +152,7 @@ export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogPro
                   <div className="mb-4">
                     {plan.monthlyPrice === -1 ? (
                       <div className="text-white">
-                        <div className="text-xl font-bold">Contact for pricing</div>
+                        <div className="text-l font-bold">Contact for pricing</div>
                         <div className="text-xs text-white/80">For studios, agencies, and institutions</div>
                       </div>
                     ) : (
@@ -151,13 +179,29 @@ export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogPro
                       "w-full text-sm",
                       plan.isCurrent && "bg-white/10 text-white hover:bg-white/20 border-white/20"
                     )}
-                    disabled={plan.isCurrent}
+                    disabled={plan.isCurrent || isLoading.subscribing}
+                    onClick={() => handlePlanClick(plan)}
                   >
                     {plan.isCurrent ? "Current plan" : plan.monthlyPrice === -1 ? "Contact us" : "Get Started"}
                   </Button>
                 </div>
               ))}
             </div>
+
+            {/* Manage Subscription Button */}
+            {currentSubscription && currentSubscription !== 'free' && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-white border-white/20 hover:bg-white/10"
+                  onClick={() => openCustomerPortal()}
+                  disabled={isLoading.managing}
+                >
+                  Manage Subscription
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>

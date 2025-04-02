@@ -18,7 +18,6 @@ import { FileDropZone } from '@renderer/components/ui/file-drop-zone'
 import { useEffect } from 'react'
 import { useNotifications } from '@renderer/hooks/use-notifications'
 import { useNotificationsStore } from '@renderer/stores/notifications-store'
-import { SubscriptionTest } from '@renderer/components/payments/subscription-test'
 
 export const Route = createFileRoute('/home/')({
   beforeLoad: async ({ context }) => {
@@ -120,7 +119,7 @@ function Home() {
       </PageHeader>
 
       {/* Page Content */}
-      <SubscriptionTest />
+      {/* <SubscriptionTest /> */}
       <PageContent>
         <FileDropZone onFileDrop={handleFileDrop}>
           <div className='lg:grid lg:grid-cols-5 gap-4 pt-8'>

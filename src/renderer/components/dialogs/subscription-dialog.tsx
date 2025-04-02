@@ -7,6 +7,7 @@ import { ToggleGroup, ToggleGroupItem } from "@renderer/components/ui/toggle-gro
 import { cn } from "@renderer/lib/utils"
 import { useSubscription } from "@renderer/hooks/use-subscription"
 import { useUserStore } from "@renderer/stores/user-store"
+import { TeamsContactForm } from "./teams-contact-form"
 
 interface SubscriptionDialogProps {
   open: boolean
@@ -84,6 +85,7 @@ const plans: Plan[] = [
 
 export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogProps) {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly")
+  const [showTeamsForm, setShowTeamsForm] = useState(false)
   const { startCheckoutSession, openCustomerPortal, isLoading } = useSubscription()
   const profile = useUserStore((state) => state.profile)
   const currentSubscription = profile?.subscription
@@ -100,110 +102,137 @@ export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogPro
     if (plan.priceId) {
       await startCheckoutSession(plan.priceId)
     } else if (plan.name === "Teams") {
-      // Handle teams contact
-      window.open('mailto:contact@example.com?subject=Teams%20Plan%20Inquiry', '_blank')
+      setShowTeamsForm(true)
     }
   }
 
+  const renderPricingPlans = () => (
+    <div 
+      className="min-h-[700px] w-full flex flex-col relative overflow-x-auto"
+      style={{
+        backgroundImage: `url(${demoSubscriptionsScreen})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Add spacing for the Demo Subscriptions title */}
+      <div className="h-44" />
+
+      {/* Content Container */}
+      <div className="flex flex-col px-12 pb-12 min-w-[900px]">
+        {/* Billing Toggle */}
+        <div className="flex justify-center mb-12">
+          <ToggleGroup type="single" value={billingCycle} onValueChange={(value) => value && setBillingCycle(value as "monthly" | "yearly")}>
+            <ToggleGroupItem value="monthly" className="px-6 py-3 text-white data-[state=on]:bg-white data-[state=on]:text-black">
+              Monthly
+            </ToggleGroupItem>
+            <ToggleGroupItem value="yearly" className="px-6 py-3 text-white data-[state=on]:bg-white data-[state=on]:text-black">
+              Yearly
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-4 gap-6 max-w-5xl mx-auto w-full">
+          {plansWithCurrent.map((plan) => (
+            <div 
+              key={plan.name}
+              className={cn(
+                "bg-white/10 backdrop-blur-sm rounded-lg p-5 relative",
+                plan.isPopular && "border-2 border-white"
+              )}
+            >
+              {plan.isPopular && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-3 py-1 rounded-full text-xs">
+                  Most popular
+                </span>
+              )}
+              <h3 className="text-lg font-bold text-white mb-2">{plan.name}</h3>
+              <div className="mb-4">
+                {plan.monthlyPrice === -1 ? (
+                  <div className="text-white">
+                    <div className="text-l font-bold">Contact for pricing</div>
+                    <div className="text-xs text-white/80">For studios, agencies, and institutions</div>
+                  </div>
+                ) : (
+                  <div className="text-white">
+                    <span className="text-2xl font-bold">
+                      ${billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice}
+                    </span>
+                    <span className="text-xs text-white/80 block">per user/month, billed {billingCycle}</span>
+                  </div>
+                )}
+              </div>
+              <ul className="space-y-2 mb-6">
+                {plan.features.map((feature, index) => (
+                  <li key={index} className="flex items-start text-white gap-2">
+                    <Check className="h-3 w-3 mt-1 flex-shrink-0" />
+                    <span className="text-xs">{feature.text}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button 
+                variant={plan.isCurrent ? "outline" : "default"}
+                size="sm"
+                className={cn(
+                  "w-full text-sm",
+                  plan.isCurrent && "bg-white/10 text-white hover:bg-white/20 border-white/20"
+                )}
+                disabled={plan.isCurrent || isLoading.subscribing}
+                onClick={() => {
+                  if (plan.name === "Free" && currentSubscription && currentSubscription !== 'free') {
+                    openCustomerPortal()
+                  } else {
+                    handlePlanClick(plan)
+                  }
+                }}
+              >
+                {plan.isCurrent 
+                  ? "Current plan" 
+                  : plan.monthlyPrice === -1 
+                    ? "Contact us" 
+                    : plan.name === "Free" && currentSubscription && currentSubscription !== 'free'
+                      ? "Cancel Subscription"
+                      : "Get Started"}
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {/* Manage Subscription Button */}
+        {currentSubscription && currentSubscription !== 'free' && (
+          <div className="flex justify-center mt-8">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-white border-white/20 hover:bg-white/10"
+              onClick={() => openCustomerPortal()}
+              disabled={isLoading.managing}
+            >
+              Manage Subscription
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1000px] p-0 overflow-hidden" showCloseButton={false}>
-        <div 
-          className="min-h-[700px] w-full flex flex-col relative overflow-x-auto"
-          style={{
-            backgroundImage: `url(${demoSubscriptionsScreen})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          {/* Add spacing for the Demo Subscriptions title */}
-          <div className="h-44" />
-
-          {/* Content Container */}
-          <div className="flex flex-col px-12 pb-12 min-w-[900px]">
-            {/* Billing Toggle */}
-            <div className="flex justify-center mb-12">
-              <ToggleGroup type="single" value={billingCycle} onValueChange={(value) => value && setBillingCycle(value as "monthly" | "yearly")}>
-                <ToggleGroupItem value="monthly" className="px-6 py-3 text-white data-[state=on]:bg-white data-[state=on]:text-black">
-                  Monthly
-                </ToggleGroupItem>
-                <ToggleGroupItem value="yearly" className="px-6 py-3 text-white data-[state=on]:bg-white data-[state=on]:text-black">
-                  Yearly
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-
-            {/* Pricing Cards */}
-            <div className="grid grid-cols-4 gap-6 max-w-5xl mx-auto w-full">
-              {plansWithCurrent.map((plan) => (
-                <div 
-                  key={plan.name}
-                  className={cn(
-                    "bg-white/10 backdrop-blur-sm rounded-lg p-5 relative",
-                    plan.isPopular && "border-2 border-white"
-                  )}
-                >
-                  {plan.isPopular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-3 py-1 rounded-full text-xs">
-                      Most popular
-                    </span>
-                  )}
-                  <h3 className="text-lg font-bold text-white mb-2">{plan.name}</h3>
-                  <div className="mb-4">
-                    {plan.monthlyPrice === -1 ? (
-                      <div className="text-white">
-                        <div className="text-l font-bold">Contact for pricing</div>
-                        <div className="text-xs text-white/80">For studios, agencies, and institutions</div>
-                      </div>
-                    ) : (
-                      <div className="text-white">
-                        <span className="text-2xl font-bold">
-                          ${billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice}
-                        </span>
-                        <span className="text-xs text-white/80 block">per user/month, billed {billingCycle}</span>
-                      </div>
-                    )}
-                  </div>
-                  <ul className="space-y-2 mb-6">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start text-white gap-2">
-                        <Check className="h-3 w-3 mt-1 flex-shrink-0" />
-                        <span className="text-xs">{feature.text}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    variant={plan.isCurrent ? "outline" : "default"}
-                    size="sm"
-                    className={cn(
-                      "w-full text-sm",
-                      plan.isCurrent && "bg-white/10 text-white hover:bg-white/20 border-white/20"
-                    )}
-                    disabled={plan.isCurrent || isLoading.subscribing}
-                    onClick={() => handlePlanClick(plan)}
-                  >
-                    {plan.isCurrent ? "Current plan" : plan.monthlyPrice === -1 ? "Contact us" : "Get Started"}
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            {/* Manage Subscription Button */}
-            {currentSubscription && currentSubscription !== 'free' && (
-              <div className="flex justify-center mt-8">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-white border-white/20 hover:bg-white/10"
-                  onClick={() => openCustomerPortal()}
-                  disabled={isLoading.managing}
-                >
-                  Manage Subscription
-                </Button>
-              </div>
-            )}
+      <DialogContent 
+        className={cn(
+          "p-0 overflow-hidden",
+          showTeamsForm ? "sm:max-w-[600px]" : "sm:max-w-[1000px]"
+        )} 
+        showCloseButton={false}
+      >
+        {showTeamsForm ? (
+          <div className="p-6">
+            <TeamsContactForm onBack={() => setShowTeamsForm(false)} />
           </div>
-        </div>
+        ) : (
+          renderPricingPlans()
+        )}
       </DialogContent>
     </Dialog>
   )

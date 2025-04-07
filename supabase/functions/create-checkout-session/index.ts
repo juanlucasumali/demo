@@ -30,23 +30,61 @@ serve(async (req: Request) => {
       console.log('New customer ID:', customerId)
     } else {
       customerId = customerIdMatch
-      console.log('Old customer ID:', customerId)
+      console.log('Existing customer ID:', customerId)
     }
-    
-    const session = await stripe.checkout.sessions.create({
+
+    // Check for existing subscription
+    const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: 'subscription',
-      success_url: `${Deno.env.get('APP_DOMAIN')}/success`,
-      cancel_url: `${Deno.env.get('APP_DOMAIN')}/cancel`,
+      status: 'active',
     })
-    return new Response(JSON.stringify({ sessionUrl: session.url }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
+
+    let session
+    if (subscriptions.data.length > 0) {
+      // Customer has an active subscription, handle upgrade/downgrade
+      const subscription = subscriptions.data[0]
+      const subscriptionItem = subscription.items.data[0]
+
+      // Update the existing subscription
+      await stripe.subscriptions.update(subscription.id, {
+        items: [{
+          id: subscriptionItem.id,
+          price: priceId,
+        }],
+        proration_behavior: 'always_invoice', // This will prorate the change
+      })
+
+      // Create a portal session for the customer to review changes
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${Deno.env.get('APP_DOMAIN')}/success`,
+      })
+
+      return new Response(JSON.stringify({ sessionUrl: portalSession.url }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      })
+    } else {
+      // No active subscription, create a new checkout session
+      session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: 'subscription',
+        success_url: `${Deno.env.get('APP_DOMAIN')}/success`,
+        cancel_url: `${Deno.env.get('APP_DOMAIN')}/cancel`,
+      })
+
+      return new Response(JSON.stringify({ sessionUrl: session.url }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      })
+    }
   } catch (error) {
     console.error('Error:', error)
     return new Response(

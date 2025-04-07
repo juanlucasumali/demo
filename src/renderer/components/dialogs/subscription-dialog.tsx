@@ -200,7 +200,6 @@ export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogPro
         </div>
 
         {/* Manage Subscription Button */}
-        {currentSubscription && currentSubscription !== 'free' && (
           <div className="flex justify-center mt-8">
             <Button
               variant="outline"
@@ -212,7 +211,6 @@ export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogPro
               Manage Subscription
             </Button>
           </div>
-        )}
       </div>
     </div>
   )

@@ -51,7 +51,6 @@ serve(async (req: Request) => {
           id: subscriptionItem.id,
           price: priceId,
         }],
-        proration_behavior: 'always_invoice', // This will prorate the change
       })
 
       // Create a portal session for the customer to review changes

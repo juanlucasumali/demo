@@ -9,8 +9,8 @@ export async function getStorageQuota(): Promise<StorageQuota> {
   
   try {
     // Get actual storage usage from B2
-    // const { used } = await b2Service.getUserStorageUsage(userId);
-    const used = 1000000000000000000;
+    const { used } = await b2Service.getUserStorageUsage(userId);
+    // const used = 1000000000000000000;
     
     // Get user's subscription to determine storage limit
     const profile = await userService.getProfile(userId);

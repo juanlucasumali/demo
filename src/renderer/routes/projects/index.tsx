@@ -34,7 +34,7 @@ export default function Projects() {
   // Open the onboarding dialog after a small delay to prevent flicker
   useEffect(() => {
     if (!hasSeenProjectsOnboarding && showProjectsOnboardingOnStartup) {
-      // if (showProjectsOnboardingOnStartup) {
+    // if (showProjectsOnboardingOnStartup) {
       const timer = setTimeout(() => {
         dialogState.projectsOnboarding.onOpen();
         setHasSeenProjectsOnboarding(true);
@@ -42,6 +42,7 @@ export default function Projects() {
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [hasSeenProjectsOnboarding, showProjectsOnboardingOnStartup]);
 
   return (

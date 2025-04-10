@@ -129,6 +129,12 @@ export function useDialogState() {
     isOpen: false
   })
 
+  const [integrationsOnboarding, setIntegrationsOnboarding] = useState<{
+    isOpen: boolean
+  }>({
+    isOpen: false
+  })
+
   return {
     editFile: {
       ...editFile,
@@ -274,6 +280,11 @@ export function useDialogState() {
       ...projectsOnboarding,
       onOpen: () => setProjectsOnboarding({ isOpen: true }),
       onClose: () => setProjectsOnboarding({ isOpen: false })
+    },
+    integrationsOnboarding: {
+      ...integrationsOnboarding,
+      onOpen: () => setIntegrationsOnboarding({ isOpen: true }),
+      onClose: () => setIntegrationsOnboarding({ isOpen: false })
     }
   }
 } 

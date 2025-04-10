@@ -16,6 +16,7 @@ import { NotificationsDialog } from "./dialogs/notifications-dialog"
 import { LeaveDialog } from "./dialogs/leave-dialog"
 import { SubscriptionDialog } from "./dialogs/subscription-dialog"
 import { ProjectsOnboardingDialog } from "./dialogs/projects-onboarding-dialog"
+import { IntegrationsOnboardingDialog } from "./dialogs/integrations-onboarding-dialog"
 
 interface DialogManagerProps {
   editFile: {
@@ -114,6 +115,10 @@ interface DialogManagerProps {
     isOpen: boolean
     onClose: () => void
   }
+  integrationsOnboarding: {
+    isOpen: boolean
+    onClose: () => void
+  }
 }
 
 export function DialogManager({
@@ -135,6 +140,7 @@ export function DialogManager({
   leave,
   subscription,
   projectsOnboarding,
+  integrationsOnboarding,
 }: DialogManagerProps) {
   return (
     <>
@@ -269,6 +275,11 @@ export function DialogManager({
       <ProjectsOnboardingDialog
         open={projectsOnboarding.isOpen}
         onOpenChange={() => projectsOnboarding.onClose()}
+      />
+
+      <IntegrationsOnboardingDialog
+        open={integrationsOnboarding.isOpen}
+        onOpenChange={() => integrationsOnboarding.onClose()}
       />
     </>
   )

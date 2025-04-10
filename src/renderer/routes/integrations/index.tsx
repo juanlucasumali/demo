@@ -10,6 +10,9 @@ import { getSyncConfiguration } from '@renderer/services/sync-service'
 import { useUserStore } from '@renderer/stores/user-store'
 import { SyncType } from '@renderer/types/sync'
 import { Skeleton } from '@renderer/components/ui/skeleton'
+import { useDialogState } from '@renderer/hooks/use-dialog-state'
+import { useOnboardingStore } from '@renderer/stores/onboarding-store'
+import { DialogManager } from '@renderer/components/dialog-manager'
 
 export const Route = createFileRoute('/integrations/')({
   component: Integrations,
@@ -37,6 +40,12 @@ export default function Integrations() {
   const [dawConnected, setDawConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const profile = useUserStore((state) => state.profile)
+  const dialogState = useDialogState()
+  const { 
+    hasSeenIntegrationsOnboarding, 
+    showIntegrationsOnboardingOnStartup,
+    setHasSeenIntegrationsOnboarding 
+  } = useOnboardingStore()
 
   useEffect(() => {
     async function checkExistingConfig() {
@@ -56,6 +65,20 @@ export default function Integrations() {
 
     checkExistingConfig()
   }, [profile])
+
+  // Open the onboarding dialog after a small delay to prevent flicker
+  useEffect(() => {
+    // if (showIntegrationsOnboardingOnStartup) {
+    if (!hasSeenIntegrationsOnboarding && showIntegrationsOnboardingOnStartup) {
+      const timer = setTimeout(() => {
+        dialogState.integrationsOnboarding.onOpen()
+        setHasSeenIntegrationsOnboarding(true)
+      }, 100)
+
+      return () => clearTimeout(timer)
+    }
+    return undefined
+  }, [hasSeenIntegrationsOnboarding, showIntegrationsOnboardingOnStartup])
 
   const handleIntegrationClick = (integration: typeof integrations[0]) => {
     if (integration.available) {
@@ -141,6 +164,11 @@ export default function Integrations() {
           )}
         </div>
       </PageContent>
+
+      <DialogManager
+        {...dialogState}
+        isLoading={{ deleteItem: false, updateItem: false }}
+      />
     </PageMain>
   )
 }

@@ -15,6 +15,7 @@ import { UploadFiles } from "./dialogs/upload-files"
 import { NotificationsDialog } from "./dialogs/notifications-dialog"
 import { LeaveDialog } from "./dialogs/leave-dialog"
 import { SubscriptionDialog } from "./dialogs/subscription-dialog"
+import { ProjectsOnboardingDialog } from "./dialogs/projects-onboarding-dialog"
 
 interface DialogManagerProps {
   editFile: {
@@ -109,6 +110,10 @@ interface DialogManagerProps {
     isOpen: boolean
     onClose: () => void
   }
+  projectsOnboarding: {
+    isOpen: boolean
+    onClose: () => void
+  }
 }
 
 export function DialogManager({
@@ -129,6 +134,7 @@ export function DialogManager({
   notifications,
   leave,
   subscription,
+  projectsOnboarding,
 }: DialogManagerProps) {
   return (
     <>
@@ -258,6 +264,11 @@ export function DialogManager({
       <SubscriptionDialog
         open={subscription.isOpen}
         onOpenChange={() => subscription.onClose()}
+      />
+
+      <ProjectsOnboardingDialog
+        open={projectsOnboarding.isOpen}
+        onOpenChange={() => projectsOnboarding.onClose()}
       />
     </>
   )

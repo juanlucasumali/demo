@@ -123,8 +123,14 @@ export function useDialogState() {
     isOpen: false
   })
 
+  const [projectsOnboarding, setProjectsOnboarding] = useState<{
+    isOpen: boolean
+  }>({
+    isOpen: false
+  })
+
   return {
-  editFile: {
+    editFile: {
       ...editFile,
       onOpen: ({ item }: { item: DemoItem }) => setEditFile({ isOpen: true, item }),
       onClose: () => setEditFile({ isOpen: false })
@@ -263,6 +269,11 @@ export function useDialogState() {
       ...subscription,
       onOpen: () => setSubscription({ isOpen: true }),
       onClose: () => setSubscription({ isOpen: false })
+    },
+    projectsOnboarding: {
+      ...projectsOnboarding,
+      onOpen: () => setProjectsOnboarding({ isOpen: true }),
+      onClose: () => setProjectsOnboarding({ isOpen: false })
     }
   }
 } 

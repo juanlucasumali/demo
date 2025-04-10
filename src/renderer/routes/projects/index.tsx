@@ -9,7 +9,8 @@ import { createColumns } from '@renderer/components/data-table/columns'
 import { Button } from '@renderer/components/ui/button'
 import { useDialogState } from '@renderer/hooks/use-dialog-state'
 import { DialogManager } from '@renderer/components/dialog-manager'
-
+import { useEffect } from 'react'
+import { useOnboardingStore } from '@renderer/stores/onboarding-store'
 
 export const Route = createFileRoute('/projects/')({
   component: Projects,
@@ -24,6 +25,23 @@ export const Route = createFileRoute('/projects/')({
 export default function Projects() {
   const { projects, isLoading, updateItem, deleteItem, toggleStar } = useItems();
   const dialogState = useDialogState();
+  const { 
+    hasSeenProjectsOnboarding, 
+    showProjectsOnboardingOnStartup,
+    setHasSeenProjectsOnboarding 
+  } = useOnboardingStore();
+
+  // Open the onboarding dialog after a small delay to prevent flicker
+  useEffect(() => {
+    if (!hasSeenProjectsOnboarding && showProjectsOnboardingOnStartup) {
+      const timer = setTimeout(() => {
+        dialogState.projectsOnboarding.onOpen();
+        setHasSeenProjectsOnboarding(true);
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [hasSeenProjectsOnboarding, showProjectsOnboardingOnStartup]);
 
   return (
     <PageMain>

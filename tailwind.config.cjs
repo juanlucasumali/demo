@@ -5,6 +5,11 @@ module.exports = {
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
+  		fontFamily: {
+  			'apfel': ['ApfelGrotezk', 'sans-serif'],
+  			'apfel-satt': ['ApfelGrotezk-Satt', 'sans-serif'],
+  			'inter': ['Inter', 'sans-serif'],
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',

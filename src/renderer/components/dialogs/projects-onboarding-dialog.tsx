@@ -98,38 +98,41 @@ export function ProjectsOnboardingDialog({ open, onOpenChange }: ProjectsOnboard
         <div className="font-apfel-satt text-4xl tracking-[-0.06em] text-[#6a6a6a]">Projects</div>
       </div>
 
-      {/* Main headline text */}
-      <div className="absolute right-10 top-48 w-[600px] text-left">
-        <h2 className="font-inter text-2xl font-extrabold text-white leading-tight tracking-tight">
-          For small jobs and huge tasks, projects<br />
-          are your go-to for limitless collaboration<br />
-          and effortless file management.
-        </h2>
-      </div>
+      {/* Main content area */}
+      <div className="absolute right-10 top-72 w-full flex justify-between px-10">
+        {/* Main headline text */}
+        <div className="w-1/2 text-left">
+        </div>
 
-      {/* Bullet points */}
-      <div className="absolute right-10 top-[340px] w-[600px] text-right">
-        <ul className="space-y-2 text-white">
-          <li className="flex items-center justify-end gap-2">
-            <span className="text-base">Media within projects use the most recently updated versions.</span>
-            <span className="text-lg">•</span>
-          </li>
-          <li className="flex items-center justify-end gap-2">
-            <span className="text-base">Add as many collaborators as you want with real-time file updates.</span>
-            <span className="text-lg">•</span>
-          </li>
-        </ul>
-      </div>
+        {/* Bullet points */}
+        <div className="w-1/2 text-left">
+          <h2 className="font-inter text-2xl font-extrabold text-white leading-tight tracking-tight pb-8">
+            For small jobs and huge tasks, projects<br />
+            are your go-to for limitless collaboration<br />
+            and effortless file management.
+          </h2>
+          <ul className="space-y-1 text-white font-inter font-extrabold">
+            <li className="flex items-start gap-1">
+              <span className="text-base">•</span>
+              <span className="text-sm">Media within projects use the most recently updated versions.</span>
+            </li>
+            <li className="flex items-start gap-1">
+              <span className="text-base">•</span>
+              <span className="text-sm">Add as many collaborators as you want with real-time file updates.</span>
+            </li>
+          </ul>
 
-      {/* Frame text and Begin button */}
-      <div className="absolute right-10 bottom-[110px] w-[180px] text-center">
-        <Button 
-          variant="secondary" 
-          className="w-full h-12 text-base"
-          onClick={() => onOpenChange(false)}
-        >
-          Begin
-        </Button>
+          {/* Frame text and Begin button */}
+          <div className="mt-6 text-left">
+            <Button 
+              variant="default" 
+              className="w-1/3 h-10 text-base"
+              onClick={() => onOpenChange(false)}
+            >
+              Begin
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Content Container - Hidden in this design */}

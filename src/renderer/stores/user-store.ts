@@ -9,6 +9,7 @@ interface UserStore {
   user: User | null
   profile: UserProfile | null
   setUser: (user: User | null) => void
+  setProfile: (profile: UserProfile) => void
   clearUser: () => void
   createProfile: (data: UserProfile, avatarInfo?: { b2FileId: string, fileName: string }) => Promise<void>
   uploadAvatar: (userId: string, file: File) => Promise<{ b2FileId: string, fileName: string }>
@@ -43,6 +44,7 @@ export const useUserStore = create<UserStore>()(
         place: null
       },
       setUser: (user) => set({ user }),
+      setProfile: (profile) => set({ profile }),
       clearUser: () => {
         userService.cleanupAvatarUrls() // Clean up avatar URLs
         set({ 
@@ -54,7 +56,7 @@ export const useUserStore = create<UserStore>()(
       },
       fetchProfile: async (userId) => {
         const profile = await userService.getProfile(userId)
-        set({ profile })
+        set({ profile: profile.profile })
       },
       createProfile: async (data, avatarInfo) => {
         await userService.createProfile(data, avatarInfo)

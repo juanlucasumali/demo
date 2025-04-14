@@ -60,7 +60,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
   const currentUser = useUserStore((state) => state.profile);
   const dialogState = useDialogState();
 
-  const { addProject, isLoading, friends, projectCount } = useItems({ searchTerm });
+  const { addProject, isLoading, friends, projectCount, refetchProjectCount } = useItems({ searchTerm });
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -82,6 +82,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
   const handleSubmit: SubmitHandler<ProjectFormValues> = async (data) => {
     try {
       // Check project count for free users
+      console.log('Current user subscription:', currentUser);
       if (currentUser?.subscription === 'free' && projectCount >= 3) {
         console.log('Free user has reached maximum project limit (3)');
         setShowLimitReached(true);
@@ -110,6 +111,15 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
       };
 
       await addProject({ item: newProject, sharedWith: selectedUsers });
+
+      // Refetch project count after successful creation
+      const { data: updatedCount = 0 } = await refetchProjectCount();
+
+      // Check if the user has reached the limit after the new project was created
+      if (currentUser?.subscription === 'free' && updatedCount >= 3) {
+        setShowLimitReached(true);
+        return;
+      }
 
       toast({
         title: "Success!",
@@ -237,7 +247,7 @@ export function CreateProject({ createProject, setCreateProject, handleDialogClo
         <DialogHeader className="mb-4">
           <DialogTitle className="text-base font-large">Project Limit Reached</DialogTitle>
           <DialogDescription>
-            You’ve exceeded the maximum limit for the free tier. Upgrade for unlimited projects!
+            You've exceeded the maximum limit for the free tier. Upgrade for unlimited projects!
           </DialogDescription>
         </DialogHeader>
 

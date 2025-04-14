@@ -14,7 +14,7 @@ export async function getStorageQuota(): Promise<StorageQuota> {
     
     // Get user's subscription to determine storage limit
     const profile = await userService.getProfile(userId);
-    const total = profile.subscription ? STORAGE_LIMITS[profile.subscription as keyof typeof STORAGE_LIMITS] : STORAGE_LIMITS.free;
+    const total = profile?.subscription ? STORAGE_LIMITS[profile.subscription as keyof typeof STORAGE_LIMITS] : STORAGE_LIMITS.free;
     
     return {
       used,

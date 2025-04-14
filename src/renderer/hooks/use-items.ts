@@ -223,7 +223,7 @@ export function useItems(options?: UseItemsOptions) {
   });
 
   // Add project count query
-  const { data: projectCount = 0, isLoading: isLoadingProjectCount } = useQuery({
+  const { data: projectCount = 0, isLoading: isLoadingProjectCount, refetch: refetchProjectCount } = useQuery({
     queryKey: ['project-count'],
     queryFn: () => itemsService.getProjectCount(getCurrentUserId()),
   });
@@ -248,6 +248,7 @@ export function useItems(options?: UseItemsOptions) {
     bulkDelete: bulkDeleteMutation.mutate,
     addToProject: addToProjectMutation.mutate,
     addToCollection: addToCollectionMutation.mutate,
+    refetchProjectCount,
     isLoading: {
       addFileOrFolder: addFileOrFolder.isPending,
       addProject: addProject.isPending,

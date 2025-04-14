@@ -51,8 +51,6 @@ export async function getCustomerMatch(): Promise<string | null> {
     .rpc('get_customer_match', {
       p_user_id: user.id
     })
-  
-  console.log('Customer data:', data)
 
   if (error) {
     console.error('❌ Error fetching Stripe customer:', error)
@@ -67,7 +65,6 @@ export async function getSubscription(customerId: string): Promise<string | null
   const { data, error } = await supabase.rpc('get_subscription', {
     customer_id: customerId
   })
-  console.log('Subscription data:', data)
 
   if (error) {
     console.error('❌ Error fetching Stripe subscription:', error)

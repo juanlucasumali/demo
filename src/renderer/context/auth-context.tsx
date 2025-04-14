@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { useUserStore } from '@renderer/stores/user-store'
-import { checkHasProfile } from '@renderer/services/user-service'
+import { getProfile } from '@renderer/services/user-service'
 
 export interface AuthContextType {
   session: Session | null
@@ -23,23 +23,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [isProfileLoading, setIsProfileLoading] = useState(true)
   const [hasProfile, setHasProfile] = useState(false)
+  const initializationInProgress = useRef(false)
+  const lastInitializedUserId = useRef<string | null>(null)
   const setUser = useUserStore((state) => state.setUser)
   const clearUser = useUserStore((state) => state.clearUser)
-  const fetchProfile = useUserStore((state) => state.fetchProfile)
+  const setProfile = useUserStore((state) => state.setProfile)
 
   const initializeUserSession = async (user: User) => {
+    // Prevent concurrent initializations
+    if (initializationInProgress.current) {
+      return
+    }
+
+    // Skip if we've already initialized this user
+    if (lastInitializedUserId.current === user.id) {
+      return
+    }
+
+    initializationInProgress.current = true
     setUser(user)
+
     try {
-      // Run these checks in parallel
-      const [hasProfileResult] = await Promise.all([
-        checkHasProfile(user.id),
-        fetchProfile(user.id)
-      ])
-      setHasProfile(hasProfileResult)
+      const profile = await getProfile(user.id)
+      setHasProfile(!!profile)
+      if (profile) {
+        setProfile(profile)
+      }
+      lastInitializedUserId.current = user.id
     } catch (error) {
       console.error('Error initializing user session:', error)
-      // Handle error appropriately - maybe show a toast
+      // Reset initialization state on error
+      lastInitializedUserId.current = null
     } finally {
+      initializationInProgress.current = false
       setIsProfileLoading(false)
     }
   }
@@ -48,10 +64,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearUser()
     setHasProfile(false)
     setIsProfileLoading(false)
+    lastInitializedUserId.current = null
+    initializationInProgress.current = false
   }
 
   useEffect(() => {
+    let mounted = true
+
+    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
+
       setSession(session)
       if (session?.user) {
         initializeUserSession(session.user)
@@ -61,22 +84,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (session?.user) {
-        initializeUserSession(session.user)
-      } else {
-        clearUserSession()
+    // Auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!mounted) return
+
+      setSession(newSession)
+      
+      // Only initialize if:
+      // 1. We have a new session and no previous session
+      // 2. The user ID changed
+      // 3. The session became null (sign out)
+      const shouldInitialize = 
+        (newSession && !session) || 
+        (newSession?.user.id !== session?.user?.id) ||
+        (!newSession && session)
+
+      if (shouldInitialize) {
+        if (newSession?.user) {
+          initializeUserSession(newSession.user)
+        } else {
+          clearUserSession()
+        }
       }
     })
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [session]) // Add session as dependency to track changes
 
   const checkProfile = async (userId: string) => {
-    const hasProfile = await checkHasProfile(userId)
-    setHasProfile(hasProfile)
-    await fetchProfile(userId)
+    const profile = await getProfile(userId)
+    setHasProfile(!!profile)
+    if (profile) {
+      setProfile(profile)
+    }
     setIsProfileLoading(false)
   }
 

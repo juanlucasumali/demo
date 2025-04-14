@@ -6,13 +6,15 @@ import { DialogManager } from "./dialog-manager";
 import { cn } from "@renderer/lib/utils";
 import { formatBytes } from "@renderer/services/storage-service";
 import { useUserStore } from "@renderer/stores/user-store";
+import { useSidebarState } from "@renderer/hooks/use-sidebar-state";
 
 export function StorageMeter() {
   const { quota, isLoading } = useStorage();
   const dialogState = useDialogState();
   const profile = useUserStore((state) => state.profile);
+  const { isCollapsed } = useSidebarState();
 
-  if (isLoading || !quota) {
+  if (isLoading || !quota || isCollapsed) {
     return null;
   }
 
@@ -54,11 +56,11 @@ export function StorageMeter() {
             quota.percentage >= 90 && "bg-destructive/20 [&>div]:bg-destructive"
           )} 
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground truncate">
           {formatBytes(quota.used)} of {formatBytes(quota.total)} used
         </p>
       </div>
-      <div className="px-2 pb-2">
+      <div className="px-2 pb-2 truncate">
         <Button 
           variant="outline" 
           size="sm" 

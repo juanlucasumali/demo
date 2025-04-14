@@ -153,6 +153,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(data.session)
       if (data.session?.user) {
         await initializeUserSession(data.session.user)
+        // Explicitly check profile after initialization
+        await checkProfile(data.session.user.id)
       }
       
       return { isVerified: true }

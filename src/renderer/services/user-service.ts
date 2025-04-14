@@ -16,7 +16,7 @@ interface ProfileCacheEntry {
 const profileCache = new Map<string, ProfileCacheEntry>()
 const PROFILE_CACHE_TTL = 30000 // 30 seconds
 
-export async function createProfile(data: UserProfile, avatarInfo?: { b2FileId: string, fileName: string }) {
+export async function createProfile(data: Omit<UserProfile, 'subscription'>, avatarInfo?: { b2FileId: string, fileName: string }) {
   const { error } = await supabase
     .from('users')
     .insert({
@@ -67,7 +67,7 @@ export async function uploadAvatar(userId: string, file: File): Promise<{b2FileI
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   // Check cache first
   const cached = profileCache.get(userId)
-  if (cached && (Date.now() - cached.timestamp) < PROFILE_CACHE_TTL) {
+  if (cached && (Date.now() - cached.timestamp) < PROFILE_CACHE_TTL && cached.data.profile) {
     return cached.data.profile
   }
 
@@ -76,14 +76,17 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     .select('*')
     .eq('id', userId)
     .single()
-  
+
   if (error && error.code === 'PGRST116') { // Not found error
     const result = { exists: false, profile: null }
     profileCache.set(userId, { timestamp: Date.now(), data: result })
     return null
   }
   
-  if (error) throw error
+  if (error) {
+    console.error('Failed to get profile:', error)
+    throw error
+  }
 
   const profile = data as UserProfile
 

@@ -6,15 +6,15 @@ import { DialogManager } from "./dialog-manager";
 import { cn } from "@renderer/lib/utils";
 import { formatBytes } from "@renderer/services/storage-service";
 import { useUserStore } from "@renderer/stores/user-store";
-import { useSidebarState } from "@renderer/hooks/use-sidebar-state";
+import { useSidebar } from "./ui/sidebar";
 
 export function StorageMeter() {
   const { quota, isLoading } = useStorage();
   const dialogState = useDialogState();
   const profile = useUserStore((state) => state.profile);
-  const { isCollapsed } = useSidebarState();
+  const { state } = useSidebar();
 
-  if (isLoading || !quota || isCollapsed) {
+  if (isLoading || !quota || state === "collapsed") {
     return null;
   }
 

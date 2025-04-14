@@ -11,7 +11,7 @@ interface UserStore {
   setUser: (user: User | null) => void
   setProfile: (profile: UserProfile) => void
   clearUser: () => void
-  createProfile: (data: UserProfile, avatarInfo?: { b2FileId: string, fileName: string }) => Promise<void>
+  createProfile: (data: Omit<UserProfile, 'subscription'>, avatarInfo?: { b2FileId: string, fileName: string }) => Promise<void>
   uploadAvatar: (userId: string, file: File) => Promise<{ b2FileId: string, fileName: string }>
   fetchProfile: (userId: string) => Promise<void>
   getAvatar: (b2FileId: string) => Promise<ArrayBuffer>
@@ -56,7 +56,7 @@ export const useUserStore = create<UserStore>()(
       },
       fetchProfile: async (userId) => {
         const profile = await userService.getProfile(userId)
-        set({ profile: profile.profile })
+        set({ profile: profile })
       },
       createProfile: async (data, avatarInfo) => {
         await userService.createProfile(data, avatarInfo)

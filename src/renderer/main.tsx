@@ -54,10 +54,10 @@ function InnerApp() {
   const auth = useAuth()
   return (
     <>
-      <UpdateHandler />
-      <SyncCheck/>
+      {/* <UpdateHandler /> */}
+      {/* <SyncCheck/> */}
       <RouterProvider router={router} context={{ auth }} />
-      <MediaPlayer />
+      {/* <MediaPlayer /> */}
       <Toaster />
       <Sonner />
     </>
@@ -70,14 +70,14 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
 
   root.render(
-    <StrictMode>
+    // <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
           <AuthProvider>
-            <InnerApp />
+          <InnerApp />
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
-    </StrictMode>,
+    // {/* </StrictMode> */}
   )
 }

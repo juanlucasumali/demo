@@ -25,6 +25,8 @@ import { checkStorageLimit } from '@renderer/services/storage-service';
 import { useDialogState } from "@renderer/hooks/use-dialog-state";
 import { StorageCheckResult } from "@renderer/types/storage";
 import { DialogManager } from "../dialog-manager";
+import { useStorage } from "@renderer/hooks/use-storage";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface FileUploadProgress {
   id: string;
@@ -63,6 +65,8 @@ export function UploadFiles({
 }: UploadFilesProps) {
   const { toast } = useToast();
   const { addFileOrFolder, deleteItem } = useItems();
+  const queryClient = useQueryClient();
+  const { quota } = useStorage();
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(
     location === 'project' || location === 'collection'
       ? parentProject?.sharedWith || []
@@ -411,6 +415,11 @@ export function UploadFiles({
             }
         }
 
+        // Invalidate storage quota query after successful uploads
+        if (successCount > 0) {
+          await queryClient.invalidateQueries({ queryKey: ['storage-quota'] });
+        }
+
         toast({
           title: "Upload Complete",
           description: `Successfully uploaded ${successCount} of ${filesToProcess.length} files`,
@@ -431,6 +440,9 @@ export function UploadFiles({
 
   const checkStorage = async () => {
     try {
+      // Calculate total size of files to be uploaded
+      const totalFileSize = selectedFiles.reduce((total, file) => total + file.size, 0);
+      console.log('Total file size:', totalFileSize);
       const result = await checkStorageLimit();
       console.log('Storage result:', result);
       if (!result.allowed) {
@@ -663,7 +675,7 @@ export function UploadFiles({
         <DialogHeader className="mb-4">
           <DialogTitle className="text-base font-large">Storage Limit Exceeded</DialogTitle>
           <DialogDescription>
-            You’ve exceeded your storage limit for the free tier. Upgrade for more space!
+            You have exceeded your storage limit for the free tier. Upgrade for more space!
           </DialogDescription>
         </DialogHeader>
 
